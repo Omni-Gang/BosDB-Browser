@@ -14,6 +14,20 @@
 </div>
 
 ---
+![Page 1](https://github.com/Omni-Gang/BosDB-Browser/raw/main/images/1.png)
+
+
+![Page 2](https://github.com/Omni-Gang/BosDB-Browser/raw/main/images/2.png)
+
+
+![Page 3](https://github.com/Omni-Gang/BosDB-Browser/raw/main/images/3.png)
+
+
+![Page 4](https://github.com/Omni-Gang/BosDB-Browser/raw/main/images/4.png)
+
+
+![Page 5](https://github.com/Omni-Gang/BosDB-Browser/raw/main/images/5.png)
+
 
 ## ✨ Features
 
