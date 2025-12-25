@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Plus, Edit2, Trash2, Play, Database } from 'lucide-react';
+import { Save, Plus, Trash2, Play, Database } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
