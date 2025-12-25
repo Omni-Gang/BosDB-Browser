@@ -19,7 +19,6 @@ export default function SavedQueriesPage() {
     const [queries, setQueries] = useState<SavedQuery[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -69,10 +68,7 @@ export default function SavedQueriesPage() {
                             <span className="text-2xl font-bold">BosDB</span>
                         </Link>
                         <button
-                            onClick={() => {
-                                setEditingQuery(null);
-                                setShowModal(true);
-                            }}
+                            onClick={() => setShowModal(true)}
                             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition flex items-center gap-2"
                         >
                             <Plus className="w-4 h-4" />
