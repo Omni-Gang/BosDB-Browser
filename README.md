@@ -66,7 +66,7 @@
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
+git clone git@github.com:Omni-Gang/BosDB-Browser.git
 cd BosDB
 
 # Install dependencies
