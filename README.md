@@ -1,4 +1,4 @@
-# BosDB - Database Management Tool
+# BosDB - Browser based Database Management Tool
 
 <div align="center">
 
