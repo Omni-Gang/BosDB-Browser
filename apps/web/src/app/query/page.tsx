@@ -7,7 +7,6 @@ import { useTheme } from 'next-themes';
 import { Play, Save, Download, Clock, Table as TableIcon, Database, ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import { trackChange, parseQueryForChanges, getPendingChanges } from '@/lib/vcs-helper';
-import ContextMenu, { MenuItem } from '@/components/ContextMenu';
 
 interface QueryResult {
     success: boolean;
@@ -175,8 +174,7 @@ export default function QueryPage() {
     const [editorRef, setEditorRef] = useState<any>(null);
 
     // Table browser state
-    const [contextMenu, setContextMenu] = useState<{ table: string; schema: string; x: number; y: number } | null>(null);
-    const [tableBrowser, setTableBrowser] = useState<{
+    const [, setTableBrowser] = useState<{
         active: boolean;
         table: string;
         schema: string;
@@ -311,7 +309,7 @@ export default function QueryPage() {
         }
     }, [connectionId, query]);
 
-    const viewTableData = async (tableName: string, schema: string = 'public', page: number = 1, pageSize: number = 100) => {
+    const _viewTableData = async (tableName: string, schema: string = 'public', page: number = 1, pageSize: number = 100) => {
         const offset = (page - 1) * pageSize;
         const viewQuery = `SELECT * FROM ${schema}.${tableName} LIMIT ${pageSize} OFFSET ${offset};`;
 
