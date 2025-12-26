@@ -20,11 +20,16 @@
     "setup": "./setup.sh"
   },
   "devDependencies": {
-    "turbo": "^1.10.16",
     "prettier": "^3.0.3",
+    "turbo": "^1.10.16",
     "typescript": "^5.2.2"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@bosdb/db-adapters": "^0.1.0",
+    "@bosdb/security": "^0.1.0",
+    "@bosdb/utils": "^0.1.0"
   }
 }
