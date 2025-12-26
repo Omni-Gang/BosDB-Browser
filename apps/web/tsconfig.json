@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "noUnusedLocals": false,
     "target": "ES2017",
     "lib": [
       "dom",

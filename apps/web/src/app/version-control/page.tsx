@@ -487,7 +487,7 @@ export default function VersionControlPage() {
                                 <div className="flex justify-between mb-4">
                                     <h2 className="text-2xl font-bold">Pending Changes</h2>
                                     <button
-                                        onClick={createCommit}
+                                        onClick={() => createCommit()}
                                         disabled={pending.length === 0}
                                         className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition"
                                     >
