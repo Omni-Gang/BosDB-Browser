@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { Play, Save, Download, Clock, Table as TableIcon, Database, ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import { trackChange, parseQueryForChanges, getPendingChanges } from '@/lib/vcs-helper';
+import { DataEditor } from '@/components/DataEditor';
 
 interface QueryResult {
     success: boolean;
@@ -538,45 +539,45 @@ export default function QueryPage() {
                                         Query executed successfully but returned no rows
                                     </div>
                                 ) : (
-                                    <div className="border border-border rounded-lg overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">
-                                                <thead className="bg-muted">
-                                                    <tr>
-                                                        {result.fields.map((field) => (
-                                                            <th
-                                                                key={field.name}
-                                                                className="px-4 py-3 text-left text-sm font-semibold"
-                                                            >
-                                                                {field.name}
-                                                                <div className="text-xs font-normal text-muted-foreground mt-1">
-                                                                    {field.dataType}
-                                                                </div>
-                                                            </th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {result.rows.map((row, index) => (
-                                                        <tr key={index} className="border-t border-border hover:bg-accent/50">
-                                                            {result.fields.map((field) => (
-                                                                <td key={field.name} className="px-4 py-3 text-sm font-mono">
-                                                                    {row[field.name] === null ? (
-                                                                        <span className="text-muted-foreground italic">NULL</span>
-                                                                    ) : field.dataType === 'json' || field.dataType === 'jsonb' ? (
-                                                                        <pre className="text-xs">
-                                                                            {JSON.stringify(row[field.name], null, 2)}
-                                                                        </pre>
-                                                                    ) : (
-                                                                        String(row[field.name])
-                                                                    )}
-                                                                </td>
-                                                            ))}
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                    <div className="h-[500px]">
+                                        <DataEditor
+                                            rows={result.rows}
+                                            fields={result.fields}
+                                            onSave={async (updates) => {
+                                                try {
+                                                    const res = await fetch('/api/data/update', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            connectionId,
+                                                            schema: 'public', // TODO: Get detailed schema info
+                                                            table: result.fields[0]?.tableID ? 'TODO_GET_TABLE_NAME' : 'users', // Fallback/Hack for now until we parse table name
+                                                            updates
+                                                        })
+                                                    });
+
+                                                    const data = await res.json();
+                                                    if (res.ok) {
+                                                        // Refresh query
+                                                        executeQuery();
+                                                        // Add pending VCS change
+                                                        await trackChange(connectionId!, {
+                                                            type: 'DATA',
+                                                            operation: 'UPDATE',
+                                                            target: 'table_name', // Needs proper parsing
+                                                            description: `Direct edit of ${updates.length} rows`,
+                                                            query: 'UPDATE ... (batch direct edit)'
+                                                        });
+                                                        loadPendingChanges();
+                                                    } else {
+                                                        alert(`Update failed: ${data.error}`);
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    alert('Save failed');
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
