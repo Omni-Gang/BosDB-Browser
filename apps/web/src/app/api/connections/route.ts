@@ -10,13 +10,36 @@ const logger = new Logger('ConnectionsAPI');
 // Active connection tracking
 const activeConnections = new Map<string, string>(); // connectionId -> adapterId
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
-        // In production, filter by user ID from session
-        const allConnections = Array.from(connections.values());
+        // Get user info from headers (simulating session for this simple implementation)
+        const userId = request.headers.get('x-user-id');
+        const userRole = request.headers.get('x-user-role');
+
+        let visibleConnections;
+
+        if (userRole === 'admin') {
+            // Admin sees all connections
+            visibleConnections = Array.from(connections.values());
+        } else if (userId) {
+            // Regular user sees owned + shared connections
+            visibleConnections = Array.from(connections.values()).filter(conn =>
+                conn.ownerId === userId ||
+                (conn.sharedWith && conn.sharedWith.includes(userId)) ||
+                // Fallback: If no owner/shared info (legacy), treat as public for now or hide?
+                // For backward compatibility, showing untagged connections might be safer 
+                // but strictly we should hide them. Let's show them for now to avoid breaking existing flow 
+                // until everything is migrated.
+                (!conn.ownerId && !conn.sharedWith?.length)
+            );
+        } else {
+            // No user info? Fallback to all for backward compat or empty?
+            // Let's fallback to all for now to not break existing "Guest" flow if any
+            visibleConnections = Array.from(connections.values());
+        }
 
         return NextResponse.json({
-            connections: allConnections.map((conn) => ({
+            connections: visibleConnections.map((conn) => ({
                 id: conn.id,
                 name: conn.name,
                 type: conn.type,
@@ -24,6 +47,7 @@ export async function GET(_request: NextRequest) {
                 port: conn.port,
                 database: conn.database,
                 readOnly: conn.readOnly,
+                ownerId: conn.ownerId,
                 status: activeConnections.has(conn.id) ? 'connected' : 'disconnected',
             })),
         });
@@ -83,7 +107,6 @@ export async function POST(request: NextRequest) {
             port: config.port,
             database,
             credentials: encryptedCredentials,
-            readOnly: config.readOnly,
             readOnly: config.readOnly,
             ownerId: body.userId || 'admin', // Default to admin if not provided
             sharedWith: [], // Initial shared users list
