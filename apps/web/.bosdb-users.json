@@ -84,5 +84,23 @@
     "password": "$2b$10$.AZc2fUtbM0fyRRtUjM//u9.cbejvQC3afTPGoLzazc8enLpfQg8C",
     "status": "approved",
     "createdAt": "2025-12-27T11:32:58.640Z"
+  },
+  {
+    "id": "system",
+    "name": "System",
+    "email": "system@gmail.com",
+    "role": "user",
+    "password": "$2b$10$d.PrnzmkKGmM.bPzYwQSROk7kL8aeK8vrlrkgoCI.Hidi1b32rMLy",
+    "status": "approved",
+    "createdAt": "2025-12-27T12:28:01.706Z"
+  },
+  {
+    "id": "lund",
+    "name": "lund",
+    "email": "lund@gmail.com",
+    "role": "admin",
+    "password": "$2b$10$03rVuAXwhABdmEM1dxntneGnjeCZ.JyGockJW2JZM2jkVGX3KyV0C",
+    "status": "approved",
+    "createdAt": "2025-12-27T12:30:40.964Z"
   }
 ]
