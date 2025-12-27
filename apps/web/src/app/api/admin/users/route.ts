@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             id: u.id,
             name: u.name,
             email: u.email,
-            email: u.email,
             role: u.role,
             status: u.status,
             createdAt: u.createdAt
@@ -70,7 +69,8 @@ export async function POST(request: NextRequest) {
                 id: newUser.id,
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                status: newUser.status
             }
         });
     } catch (error: any) {
