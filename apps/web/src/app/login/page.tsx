@@ -28,7 +28,7 @@ export default function LoginPage() {
         status: 'approved'
       });
     }
-  }, [users]);
+  }, []);
 
   const handleLogin = () => {
     setError('');
@@ -51,8 +51,11 @@ export default function LoginPage() {
     setError('');
 
     try {
-      registerUser(newUser);
-      alert(`✅ User ${newUser.id} created successfully!`);
+      registerUser({
+        ...newUser,
+        status: 'pending'
+      });
+      alert(`✅ User ${newUser.id} created successfully! (Pending Admin Approval)`);
       setShowRegister(false);
       setNewUser({ id: '', name: '', email: '', role: 'user' });
     } catch (err: any) {
