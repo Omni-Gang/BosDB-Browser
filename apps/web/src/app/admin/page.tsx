@@ -18,6 +18,7 @@ interface Connection {
     id: string;
     name: string;
     type: string;
+    host: string;
     sharedWith?: string[];
     ownerId?: string;
 }
@@ -121,8 +122,8 @@ export default function AdminPage() {
                                         <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
-                                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                                 }`}>
                                                 {user.role}
                                             </span>
@@ -395,8 +396,8 @@ function ConnectionRow({
                     onClick={toggleAccess}
                     disabled={loading}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2 ${hasAccess
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
                         }`}
                 >
                     {loading ? '...' : hasAccess ? (

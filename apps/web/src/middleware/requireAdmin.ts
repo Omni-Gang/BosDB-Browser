@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/user-context';
 
-export function requireAdmin(req: NextRequest) {
+export function requireAdmin(_req: NextRequest) {
     // For now, we use the client-side user context logic adapted for server
     // In a real app, this would verify session token from cookies
 
