@@ -1,4 +1,4 @@
 #!/bin/bash
-# Production deployment using Next.js dev server
-cd /home/arushgupta/Desktop/BosDB
-NODE_ENV=production npm run dev
+# Simple production deployment using dev server
+cd /home/arushgupta/Desktop/BosDB/apps/web
+npm run dev
