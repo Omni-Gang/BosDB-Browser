@@ -50,15 +50,35 @@ export function getAdapterInstances(): Map<string, any> {
     return _adapterInstances;
 }
 
-// Legacy exports for compatibility - these now use lazy loading
+// Legacy exports for compatibility - these now use lazy loading with proper Map delegation
 export const connections = new Proxy({} as Map<string, any>, {
     get(_target, prop) {
-        return (getConnections() as any)[prop];
+        const map = getConnections();
+        const value = (map as any)[prop];
+        // Bind methods to the actual Map instance
+        if (typeof value === 'function') {
+            return value.bind(map);
+        }
+        return value;
+    },
+    set(_target, prop, value) {
+        (getConnections() as any)[prop] = value;
+        return true;
     }
 });
 
 export const adapterInstances = new Proxy({} as Map<string, any>, {
     get(_target, prop) {
-        return (getAdapterInstances() as any)[prop];
+        const map = getAdapterInstances();
+        const value = (map as any)[prop];
+        // Bind methods to the actual Map instance
+        if (typeof value === 'function') {
+            return value.bind(map);
+        }
+        return value;
+    },
+    set(_target, prop, value) {
+        (getAdapterInstances() as any)[prop] = value;
+        return true;
     }
 });

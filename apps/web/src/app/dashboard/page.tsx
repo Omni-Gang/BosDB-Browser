@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Database, Plus, Play, History, Save } from 'lucide-react';
+import { Database, Plus, Play, History, Save, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getCurrentUser, logout } from '@/lib/auth';
 
 interface Connection {
     id: string;
@@ -16,9 +18,21 @@ interface Connection {
 }
 
 export default function DashboardPage() {
+    const router = useRouter();
     const [connections, setConnections] = useState<Connection[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewConnection, setShowNewConnection] = useState(false);
+    const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
+
+    useEffect(() => {
+        // Check if user is logged in
+        const user = getCurrentUser();
+        if (!user) {
+            router.push('/login');
+            return;
+        }
+        setCurrentUser(user);
+    }, [router]);
 
     useEffect(() => {
         fetchConnections();
@@ -47,6 +61,13 @@ export default function DashboardPage() {
                             <span className="text-2xl font-bold">BosDB</span>
                         </Link>
                         <div className="flex items-center gap-4">
+                            {currentUser && (
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+                                    <User className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-medium">{currentUser.name}</span>
+                                    <span className="text-xs text-muted-foreground">({currentUser.id})</span>
+                                </div>
+                            )}
                             <Link href="/docs">
                                 <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition">
                                     Documentation
@@ -57,6 +78,16 @@ export default function DashboardPage() {
                                     Settings
                                 </button>
                             </Link>
+                            <button
+                                onClick={() => {
+                                    logout();
+                                    router.push('/login');
+                                }}
+                                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition flex items-center gap-2"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Logout
+                            </button>
                         </div>
                     </div>
                 </div>

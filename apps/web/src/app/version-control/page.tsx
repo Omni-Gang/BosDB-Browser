@@ -83,7 +83,8 @@ export default function VersionControlPage() {
 
         const author = {
             name: user.name,
-            email: user.email
+            email: user.email,
+            userId: (user as any).userId || (user as any).id // Include user ID for tracking
         };
 
         const res = await fetch('/api/vcs/commit', {
@@ -396,7 +397,13 @@ export default function VersionControlPage() {
                                                             )}
                                                         </div>
                                                         <p className="text-sm text-gray-400 mb-3">
-                                                            {commit.author?.name} • {new Date(commit.timestamp).toLocaleString()}
+                                                            by {commit.author?.name}
+                                                            {(commit.author as any)?.userId && (
+                                                                <span className="ml-1 text-purple-400">
+                                                                    ({(commit.author as any).userId})
+                                                                </span>
+                                                            )}
+                                                            {' • '}{new Date(commit.timestamp).toLocaleString()}
                                                         </p>
                                                         <div className="flex flex-wrap gap-2 mb-3">
                                                             {commit.changes?.map((change: any, cidx: number) => (
@@ -584,7 +591,13 @@ export default function VersionControlPage() {
                                                                     <h3 className="font-semibold text-lg">{commit.message}</h3>
                                                                 </div>
                                                                 <p className="text-sm text-gray-400 mt-1">
-                                                                    {commit.author?.name} • {new Date(commit.timestamp).toLocaleDateString()} at {new Date(commit.timestamp).toLocaleTimeString()}
+                                                                    by {commit.author?.name}
+                                                                    {(commit.author as any)?.userId && (
+                                                                        <span className="ml-1 text-purple-400">
+                                                                            ({(commit.author as any).userId})
+                                                                        </span>
+                                                                    )}
+                                                                    {' • '}{new Date(commit.timestamp).toLocaleDateString()} at {new Date(commit.timestamp).toLocaleTimeString()}
                                                                 </p>
                                                             </div>
                                                             <code className="text-xs bg-gray-900 px-2 py-1 rounded">
