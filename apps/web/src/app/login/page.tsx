@@ -4,9 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login, getAllUsers, initializeDefaultUsers, registerUser } from '@/lib/auth';
 
+// Define User type locally to resolve lint error or import it if exported
+// Assuming User type is compatible with what getAllUsers returns
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const users = getAllUsers(); // Moved to top
+  const [users, setUsers] = useState<User[]>([]); // Initialize empty for hydration stability
   const [userId, setUserId] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -18,8 +28,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Fetch users only on client side
+    const loadedUsers = getAllUsers();
+    setUsers(loadedUsers);
+
     // Initialize default user if needed
-    if (users.length === 0) {
+    if (loadedUsers.length === 0) {
       registerUser({
         id: 'admin',
         name: 'Administrator',
@@ -27,8 +41,10 @@ export default function LoginPage() {
         role: 'admin',
         status: 'approved'
       });
+      // Refresh list after registration
+      setUsers(getAllUsers());
     }
-  }, [users.length]);
+  }, []);
 
   const handleLogin = () => {
     setError('');
