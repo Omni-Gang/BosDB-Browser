@@ -104,45 +104,30 @@ export default function AdminPage() {
                 {loading ? (
                     <div className="text-center py-12 text-muted-foreground">Loading...</div>
                 ) : (
-                    <div className="bg-card border border-border rounded-lg overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-muted text-muted-foreground text-sm">
-                                <tr>
-                                    <th className="px-6 py-3">Name</th>
-                                    <th className="px-6 py-3">Email</th>
-                                    <th className="px-6 py-3">Role</th>
-                                    <th className="px-6 py-3">Created</th>
-                                    <th className="px-6 py-3 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-muted/50">
-                                        <td className="px-6 py-4 font-medium">{user.name}</td>
-                                        <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
-                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                }`}>
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-muted-foreground text-sm">
-                                            {new Date(user.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => setAssigningUser(user)}
-                                                className="text-primary hover:text-primary/80 text-sm font-medium"
-                                            >
-                                                Manage Access
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="space-y-8">
+                        {/* Admins Section */}
+                        <section>
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Shield className="w-5 h-5 text-purple-600" />
+                                Administrators
+                            </h3>
+                            <UserTable
+                                users={users.filter(u => u.role === 'admin')}
+                                onManageAccess={setAssigningUser}
+                            />
+                        </section>
+
+                        {/* Regular Users Section */}
+                        <section>
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Users className="w-5 h-5 text-blue-600" />
+                                Regular Users
+                            </h3>
+                            <UserTable
+                                users={users.filter(u => u.role !== 'admin')}
+                                onManageAccess={setAssigningUser}
+                            />
+                        </section>
                     </div>
                 )}
             </div>
@@ -166,6 +151,59 @@ export default function AdminPage() {
                     onUpdate={fetchData}
                 />
             )}
+        </div>
+    );
+}
+
+function UserTable({ users, onManageAccess }: { users: User[], onManageAccess: (user: User) => void }) {
+    if (users.length === 0) {
+        return (
+            <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
+                No users found in this group.
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-left">
+                <thead className="bg-muted text-muted-foreground text-sm">
+                    <tr>
+                        <th className="px-6 py-3">Name</th>
+                        <th className="px-6 py-3">Email</th>
+                        <th className="px-6 py-3">Role</th>
+                        <th className="px-6 py-3">Created</th>
+                        <th className="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                    {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-muted/50">
+                            <td className="px-6 py-4 font-medium">{user.name}</td>
+                            <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                    }`}>
+                                    {user.role}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 text-muted-foreground text-sm">
+                                {new Date(user.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                                <button
+                                    onClick={() => onManageAccess(user)}
+                                    className="text-primary hover:text-primary/80 text-sm font-medium"
+                                >
+                                    Manage Access
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }
