@@ -11,10 +11,10 @@ const nextConfig = {
         'long',
         'named-placeholders'
     ],
-    // Use standalone for production deployment
-    output: 'standalone',
-    // Skip generating static error pages
-    generateBuildId: async () => 'build-id',
+    // Disable static generation completely
+    output: undefined,
+    // Skip generating error pages
+    productionBrowserSourceMaps: false,
     webpack: (config, { isServer }) => {
         if (!isServer) {
             config.resolve.fallback = {
