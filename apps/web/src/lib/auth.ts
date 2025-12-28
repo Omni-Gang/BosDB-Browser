@@ -41,9 +41,11 @@ const SALT_ROUNDS = 10;
 /**
  * Hash a password using bcrypt
  */
+/**
+ * Hash a password using bcryptjs
+ */
 export async function hashPassword(password: string): Promise<string> {
-    // Dynamic import for client-side compatibility
-    const bcrypt = await import('bcrypt');
+    const bcrypt = await import('bcryptjs');
     return await bcrypt.hash(password, SALT_ROUNDS);
 }
 
@@ -51,7 +53,7 @@ export async function hashPassword(password: string): Promise<string> {
  * Verify a password against its hash
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-    const bcrypt = await import('bcrypt');
+    const bcrypt = await import('bcryptjs');
     return await bcrypt.compare(password, hash);
 }
 

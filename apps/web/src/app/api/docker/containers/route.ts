@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loadDockerDatabases } from '@/lib/docker-manager';
 
 // GET /api/docker/containers - List Docker databases for user's organization
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         // Get current user from headers
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest) {
 
         // Find user to get organization ID
         const { findUserByEmail } = await import('@/lib/users-store');
-        const user = findUserByEmail(userEmail);
+        const user = await findUserByEmail(userEmail);
         if (!user || !user.organizationId) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }

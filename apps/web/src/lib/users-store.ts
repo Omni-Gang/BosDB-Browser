@@ -86,7 +86,7 @@ export async function updateUser(id: string, updates: Partial<IUser>): Promise<I
 }
 
 // For migration compatibility
-export async function saveUsers(users: IUser[]) {
+export async function saveUsers(_users: IUser[]) {
     // No-op or bulk write if needed
     console.warn('saveUsers called - no-op for MongoDB version');
 }

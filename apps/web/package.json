@@ -18,18 +18,20 @@
         "@monaco-editor/react": "^4.6.0",
         "@react-oauth/google": "^0.13.4",
         "@types/dockerode": "^3.3.47",
-        "bcrypt": "^6.0.0",
+        "bcryptjs": "^3.0.3",
         "dockerode": "^4.0.9",
         "jwt-decode": "^4.0.0",
         "lucide-react": "^0.294.0",
         "mongoose": "^9.0.2",
-        "next": "^15.1.5",
+        "next": "^14.2.14",
         "next-themes": "^0.2.1",
         "react": "^18.3.1",
-        "react-dom": "^18.3.1"
+        "react-dom": "^18.3.1",
+        "winston": "^3.19.0"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",
+        "@types/bcryptjs": "^2.4.6",
         "@types/node": "^20.8.0",
         "@types/react": "^18.3.12",
         "@types/react-dom": "^18.3.1",

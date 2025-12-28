@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
         // Find user to get organization ID
         const { findUserByEmail } = await import('@/lib/users-store');
-        const user = findUserByEmail(userEmail);
+        const user = await findUserByEmail(userEmail);
         if (!user || !user.organizationId) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
 // Helper to generate connection strings
 function getConnectionString(db: any): string {
     const { type, username, password, port, database } = db;
-    const host = 'localhost';
+    // In Docker, 'localhost' refers to the container itself. 
+    // We need to connect to the host machine where the database containers are mapped.
+    const host = process.env.DB_CONNECTION_HOST || 'localhost';
 
     switch (type) {
         case 'postgres':

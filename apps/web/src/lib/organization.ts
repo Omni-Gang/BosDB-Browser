@@ -92,10 +92,10 @@ export async function getOrCreateOrgForUser(email: string, accountType: 'individ
             const newOrg = {
                 id: orgId,
                 name: `${userId}'s Workspace`,
-                type: 'individual',
+                type: 'individual' as const,
                 domain: 'personal',
                 adminUserId: userId,
-                subscription: { plan: 'free', isTrial: false },
+                subscription: { plan: 'free' as const, isTrial: false },
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -118,10 +118,10 @@ export async function getOrCreateOrgForUser(email: string, accountType: 'individ
                 const newOrg = {
                     id: orgId,
                     name: `${userId}'s Personal Workspace`,
-                    type: 'individual',
+                    type: 'individual' as const,
                     domain: 'personal',
                     adminUserId: userId,
-                    subscription: { plan: 'free', isTrial: false },
+                    subscription: { plan: 'free' as const, isTrial: false },
                     createdAt: new Date(),
                     updatedAt: new Date()
                 };
@@ -138,10 +138,10 @@ export async function getOrCreateOrgForUser(email: string, accountType: 'individ
                 const newOrg = {
                     id: domain,
                     name: companyName.charAt(0).toUpperCase() + companyName.slice(1),
-                    type: 'enterprise',
+                    type: 'enterprise' as const,
                     domain: domain,
                     adminUserId: null,
-                    subscription: { plan: 'free', isTrial: true, planType: 'trial' },
+                    subscription: { plan: 'free' as const, isTrial: true, planType: 'trial' as const },
                     createdAt: new Date(),
                     updatedAt: new Date()
                 };

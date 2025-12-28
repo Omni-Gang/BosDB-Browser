@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser, promptForUserIfNeeded } from '@/lib/user-context';
 
-export default function VersionControlPage() {
+function VersionControlContent() {
     const searchParams = useSearchParams();
     const connectionId = searchParams?.get('connection');
 
@@ -671,5 +671,12 @@ export default function VersionControlPage() {
                 )}
             </div>
         </div>
+    );
+}
+export default function VersionControlPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading Version Control...</div>}>
+            <VersionControlContent />
+        </Suspense>
     );
 }

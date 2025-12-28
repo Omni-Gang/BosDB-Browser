@@ -2,20 +2,25 @@
 const nextConfig = {
     reactStrictMode: false,
     output: 'standalone', // For Docker deployment
-    transpilePackages: ['@bosdb/core', '@bosdb/db-adapters', '@bosdb/security', '@bosdb/utils', '@bosdb/version-control'],
-    serverExternalPackages: [
-        'pg',
-        'mysql2',
-        'lru.min',
-        'seq-queue',
-        'aws-ssl-profiles',
-        'long',
-        'named-placeholders',
-        'bcrypt',
-        'dockerode',
-        'ssh2',
-        'docker-modem'
-    ],
+    transpilePackages: [], 
+    experimental: {
+        instrumentationHook: true,
+        serverComponentsExternalPackages: [
+            'pg',
+            'mysql2',
+            'lru.min',
+            'seq-queue',
+            'aws-ssl-profiles',
+            'long',
+            'named-placeholders',
+            'named-placeholders',
+            'dockerode',
+            'ssh2',
+            'docker-modem',
+            'mongodb',
+            'mongoose'
+        ],
+    },
     // Remove output setting to allow server-side rendering
     webpack: (config, { isServer }) => {
         if (!isServer) {

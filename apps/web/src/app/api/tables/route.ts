@@ -6,6 +6,8 @@ import { connections, adapterInstances } from '@/lib/store';
 
 const logger = new Logger('TablesAPI');
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
