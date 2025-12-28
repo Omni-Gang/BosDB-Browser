@@ -12,7 +12,8 @@ const ORGS_INDEX = path.join(DATA_DIR, 'organizations.json');
 export type OrganizationType = 'individual' | 'enterprise';
 
 export interface Subscription {
-    plan: 'free' | 'pro';
+    plan: 'free' | 'pro' | 'enterprise';
+    planType?: 'trial' | 'monthly' | 'yearly';
     isTrial: boolean;
     activatedAt?: string;
     expiresAt?: string | null;

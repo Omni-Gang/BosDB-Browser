@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { name, type, host, port, database, username, password, ssl, readOnly } = body;
+        const { name, type, host, port, database, username, password, ssl, readOnly, skipTest } = body;
 
         // Validate required fields
         if (!name || !type || !host || !database || !username || !password) {
@@ -78,15 +78,18 @@ export async function POST(request: NextRequest) {
             readOnly: readOnly || false,
         };
 
-        // Create adapter and test connection
-        const adapter = AdapterFactory.create(type);
-        const testResult = await adapter.testConnection(config);
+        // Skip connection test if requested (for auto-provisioned databases)
+        if (!skipTest) {
+            // Create adapter and test connection
+            const adapter = AdapterFactory.create(type);
+            const testResult = await adapter.testConnection(config);
 
-        if (!testResult.success) {
-            return NextResponse.json(
-                { error: 'Connection test failed', details: testResult.error },
-                { status: 400 }
-            );
+            if (!testResult.success) {
+                return NextResponse.json(
+                    { error: 'Connection test failed', details: testResult.error },
+                    { status: 400 }
+                );
+            }
         }
 
         // Encrypt credentials

@@ -7,7 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=apps/web",
+    "dev": "node scripts/start-with-docker.js",
+    "dev:only": "npm run dev --workspace=apps/web",
     "dev:all": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",

@@ -24,7 +24,7 @@ services:
   demo-postgres:
     image: postgres:15-alpine
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Changed from 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
@@ -37,7 +37,7 @@ services:
   demo-mysql:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"  # Changed from 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: mysql123
       MYSQL_DATABASE: demodb

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pullAndStartDatabase, DatabaseType, checkDockerAvailable } from '@/lib/docker-manager';
+import { pullAndStartDatabase, checkDockerAvailable } from '@/lib/docker-manager';
+import { DatabaseType, VALID_DATABASE_TYPES } from '@/constants/database-types';
 import { getCurrentUser } from '@/lib/auth';
 
 // POST /api/docker/provision - Create and start a new Docker database
@@ -26,8 +27,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Type and name are required' }, { status: 400 });
         }
 
-        const validTypes: DatabaseType[] = ['postgres', 'mysql', 'mongodb', 'redis'];
-        if (!validTypes.includes(type)) {
+        if (!VALID_DATABASE_TYPES.includes(type)) {
             return NextResponse.json({ error: 'Invalid database type' }, { status: 400 });
         }
 
@@ -76,16 +76,108 @@ export async function POST(request: NextRequest) {
 
 // Helper to generate connection strings
 function getConnectionString(db: any): string {
-    switch (db.type) {
+    const { type, username, password, port, database } = db;
+    const host = 'localhost';
+
+    switch (type) {
         case 'postgres':
-            return `postgresql://${db.username}:${db.password}@localhost:${db.port}/${db.database}`;
+        case 'timescaledb':
+        case 'edb':
+        case 'cloudberry':
+        case 'greengage':
+        case 'kingbase':
+        case 'gaussdb':
+        case 'yellowbrick':
+        case 'yugabyte':
+        case 'cockroachdb':
+        case 'greenplum':
+        case 'materialize':
+            return `postgresql://${username}:${password}@${host}:${port}/${database}`;
+
         case 'mysql':
-            return `mysql://${db.username}:${db.password}@localhost:${db.port}/${db.database}`;
+        case 'mariadb':
+        case 'tidb':
+        case 'singlestore':
+        case 'gbase':
+        case 'oceanbase':
+            return `mysql://${username}:${password}@${host}:${port}/${database}`;
+
         case 'mongodb':
-            return `mongodb://${db.username}:${db.password}@localhost:${db.port}/${db.database}?authSource=admin`;
+        case 'documentdb':
+        case 'ferretdb':
+            return `mongodb://${username}:${password}@${host}:${port}/${database}?authSource=admin`;
+
         case 'redis':
-            return `redis://localhost:${db.port}`;
+            return `redis://default:${password}@${host}:${port}`;
+
+        case 'mssql':
+        case 'azuresql':
+        case 'babelfish':
+            return `mssql://sa:${password}@${host}:${port}`;
+
+        case 'oracle':
+        case 'adw':
+        case 'atp':
+        case 'ajd':
+            return `oracle://${username}:${password}@${host}:${port}/XEPDB1`;
+
+        case 'db2':
+        case 'netezza':
+            return `db2://${username}:${password}@${host}:${port}/${database}`;
+
+        case 'cassandra':
+        case 'scylladb':
+        case 'keyspaces':
+            return `cassandra://${host}:${port}`;
+
+        case 'elasticsearch':
+        case 'opensearch':
+        case 'opensearchdistro':
+        case 'solr':
+            return `http://${username}:${password}@${host}:${port}`;
+
+        case 'influxdb':
+        case 'machbase':
+        case 'tdengine':
+            return `http://${username}:${password}@${host}:${port}`;
+
+        case 'neo4j':
+            return `neo4j://${username}:${password}@${host}:${port}`;
+
+        case 'clickhouse':
+        case 'starrocks':
+        case 'duckdb':
+        case 'trino':
+        case 'prestodb':
+        case 'monetdb':
+        case 'cratedb':
+        case 'heavydb':
+            return `http://${username}:${password}@${host}:${port}`;
+
+        case 'sqlite':
+        case 'h2':
+        case 'derby':
+        case 'hsqldb':
+        case 'libsql':
+            return `jdbc:${type}:@${host}:${port}/${database}`;
+
+        case 'rabbitmq':
+            return `amqp://${username}:${password}@${host}:${port}`;
+
+        case 'minio':
+            return `http://${username}:${password}@${host}:${port}`;
+
+        case 'surrealdb':
+            return `http://${username}:${password}@${host}:${port}`;
+
+        case 'snowflake':
+        case 'bigquery':
+            return `https://${username}:${password}@${host}:${port}/${database}`;
+
+        case 'dynamodb':
+            return `http://${host}:${port}`;
+
         default:
-            return '';
+            return `${type}://${username}:${password}@${host}:${port}/${database}`;
     }
 }

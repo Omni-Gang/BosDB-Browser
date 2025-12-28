@@ -97,10 +97,20 @@ export async function POST(request: NextRequest) {
             const accountType = userData.accountType || 'enterprise';
 
             // Get or create organization based on account type
+            // For common domains like gmail.com, force individual accounts to prevent collisions
+            const domain = extractDomain(userData.email);
+            const isCommonDomain = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'].includes(domain);
+
+            let finalAccountType = accountType;
+            if (isCommonDomain && accountType === 'enterprise') {
+                console.log(`[Auth API] Forcing individual account for common domain: ${domain}`);
+                finalAccountType = 'individual';
+            }
+
             const org = getOrCreateOrgForUser(
                 userData.email,
                 userData.name,
-                accountType,
+                finalAccountType,
                 userData.id
             );
 
@@ -121,14 +131,14 @@ export async function POST(request: NextRequest) {
 
             // Individual users are just regular users (no admin needed for solo work)
             // Enterprise users: first user becomes admin, others are regular users
+            // Individual users are always admins of their own workspace
             let role: 'admin' | 'user' = 'user';
-            if (accountType === 'enterprise' && isFirstOrgUser) {
+            if (accountType === 'individual' || (accountType === 'enterprise' && isFirstOrgUser)) {
                 role = 'admin';
             }
 
-            // If it's the first user of the org, auto-approve
-            // Otherwise, needs admin approval
-            const status = isFirstOrgUser ? 'approved' : 'pending';
+            // If it's an individual account or the first user of the org, auto-approve
+            const status = (accountType === 'individual' || isFirstOrgUser) ? 'approved' : 'pending';
 
             const newUser = {
                 ...userData,

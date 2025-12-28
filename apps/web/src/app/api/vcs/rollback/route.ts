@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { connectionId, commitId, targetRevision } = body;
+        const { connectionId, commitId, targetRevision, author } = body;
 
         if (!connectionId) {
             return NextResponse.json({ error: 'Connection ID required' }, { status: 400 });
@@ -52,18 +52,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Target commit not found' }, { status: 404 });
         }
 
+        // Use provided author or default to system
+        const rollbackAuthor = author || {
+            name: 'System',
+            email: 'system@bosdb.com'
+        };
+
         // Create a new commit that reverts to this state
         const currentCommit = commits[0];
-        const revertMessage = `Revert to: ${targetCommit.message} (${targetCommit.id.substring(0, 8)})`;
+        const revertMessage = `Rollback to: ${targetCommit.message} (${targetCommit.id.substring(0, 8)})`;
 
         const revertCommit = await vc.commit(
             revertMessage,
-            { name: 'System', email: 'system@bosdb.com', timestamp: new Date() },
+            {
+                ...rollbackAuthor,
+                timestamp: new Date()
+            },
             [{
                 type: 'DATA' as any,
-                operation: 'REVERT' as any,
+                operation: 'ROLLBACK' as any,
                 target: 'database',
-                description: `Reverted ${Math.abs(targetRevision || 0)} revision(s) back`
+                description: `Rolled back ${Math.abs(targetRevision || 0)} revision(s) by ${rollbackAuthor.name}`
             }] as any[],
             (targetCommit as any).snapshot || { schema: { tables: {} }, data: { tables: {} }, timestamp: new Date() }
         );
@@ -72,12 +81,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to create revert commit' }, { status: 500 });
         }
 
+        // Clear pending changes as they're now invalid after rollback
+        const pendingPath = path.join(vcsPath, 'pending.json');
+        await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+
         return NextResponse.json({
             success: true,
-            message: `Rolled back to revision ${targetRevision || 'unknown'}`,
+            message: `Rolled back to revision ${targetRevision || 'unknown'} by ${rollbackAuthor.name}`,
             targetCommit,
             currentCommit,
-            revertCommit: revertCommit.data
+            revertCommit: revertCommit.data,
+            performedBy: rollbackAuthor
         });
     } catch (error) {
         console.error('Rollback error:', error);

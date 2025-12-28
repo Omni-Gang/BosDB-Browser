@@ -1,0 +1,13 @@
+[
+  {
+    "id": "qwe",
+    "name": "qwe",
+    "email": "qwe@fgh.com",
+    "role": "user",
+    "accountType": "individual",
+    "password": "$2b$10$Q4x8heoBwL7TP55ucTJMzumaKNV.gQRmSbelqQ3ObJmpyOcbxvxhq",
+    "organizationId": "ind-qwe",
+    "status": "approved",
+    "createdAt": "2025-12-28T05:48:51.145Z"
+  }
+]

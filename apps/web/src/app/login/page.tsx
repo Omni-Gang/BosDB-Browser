@@ -40,7 +40,12 @@ export default function LoginPage() {
         const res = await fetch('/api/auth');
         if (res.ok) {
           const data = await res.json();
-          setUsers(data.users || []);
+
+          // Deduplicate users by ID (keep first occurrence)
+          const uniqueUsers = Array.from(
+            new Map((data.users || []).map((user: User) => [user.id, user])).values()
+          ) as User[];
+          setUsers(uniqueUsers);
 
           // If no users exist on server, create default admin via API
           if (data.users && data.users.length === 0) {
@@ -60,7 +65,10 @@ export default function LoginPage() {
             // Refresh
             const retry = await fetch('/api/auth');
             const retryData = await retry.json();
-            setUsers(retryData.users || []);
+            const uniqueRetryUsers = Array.from(
+              new Map((retryData.users || []).map((user: User) => [user.id, user])).values()
+            ) as User[];
+            setUsers(uniqueRetryUsers);
           }
         }
       } catch (err) {
@@ -259,8 +267,8 @@ export default function LoginPage() {
                     : 'border-gray-600 bg-gray-900 text-gray-400 hover:border-gray-500'
                     }`}
                 >
-                  <div className="text-lg mb-1">🏢 Enterprise</div>
-                  <div className="text-xs opacity-70">Company/Team</div>
+                  <div className="text-lg mb-1">🏢 Company/Team</div>
+                  <div className="text-xs opacity-70">For organizations</div>
                 </button>
               </div>
               {newUser.accountType === 'enterprise' && (
@@ -324,19 +332,21 @@ export default function LoginPage() {
                 <p className="text-xs text-gray-500 mt-1">Must be 8+ characters with uppercase, lowercase, and number</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Role *
-                </label>
-                <select
-                  value={newUser.role}
-                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'user' })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
+              {newUser.accountType === 'enterprise' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Role *
+                  </label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'user' })}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <button

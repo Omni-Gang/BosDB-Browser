@@ -66,9 +66,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: result.error || 'Commit failed' }, { status: 500 });
         }
 
-        // Clear pending changes after successful commit
+        // Remove only the committed changes from pending
         const pendingPath = path.join(vcsPath, 'pending.json');
-        await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+        try {
+            const pendingData = await fs.readFile(pendingPath, 'utf-8');
+            const pending = JSON.parse(pendingData);
+
+            // Filter out the changes that were just committed
+            // Match by operation, target, and query for accurate removal
+            const remainingChanges = pending.changes.filter((pendingChange: any) => {
+                return !changes.some((committedChange: any) =>
+                    pendingChange.operation === committedChange.operation &&
+                    pendingChange.target === committedChange.target &&
+                    pendingChange.query === committedChange.query
+                );
+            });
+
+            await fs.writeFile(pendingPath, JSON.stringify({ changes: remainingChanges }, null, 2));
+        } catch (error) {
+            // If pending file doesn't exist or has issues, just create empty one
+            await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+        }
 
         return NextResponse.json({ success: true, commit: result.data });
     } catch (error) {

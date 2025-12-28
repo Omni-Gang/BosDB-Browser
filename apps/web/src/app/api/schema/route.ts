@@ -22,22 +22,34 @@ export async function GET(request: NextRequest) {
 
         // Get or create adapter
         let adapterInfo = adapterInstances.get(connectionId);
+        const credentials = decryptCredentials(connectionInfo.credentials);
 
         if (!adapterInfo) {
             const adapter = AdapterFactory.create(connectionInfo.type);
-            const credentials = decryptCredentials(connectionInfo.credentials);
 
-            const connectResult = await adapter.connect({
-                name: connectionInfo.name,
-                host: connectionInfo.host,
-                port: connectionInfo.port,
-                database: connectionInfo.database,
-                username: credentials.username,
-                password: credentials.password,
-            });
+            // Simple retry logic for cold-start (max 3 attempts)
+            let lastError = null;
+            let connectResult = null;
 
-            if (!connectResult.success) {
-                return NextResponse.json({ error: 'Failed to connect' }, { status: 500 });
+            for (let i = 0; i < 3; i++) {
+                try {
+                    connectResult = await adapter.connect({
+                        name: connectionInfo.name,
+                        host: connectionInfo.host,
+                        port: connectionInfo.port,
+                        database: connectionInfo.database,
+                        username: credentials.username,
+                        password: credentials.password,
+                    });
+                    if (connectResult.success) break;
+                } catch (err: any) {
+                    lastError = err;
+                    await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+                }
+            }
+
+            if (!connectResult || !connectResult.success) {
+                return NextResponse.json({ error: lastError?.message || 'Failed to connect after retries' }, { status: 500 });
             }
 
             adapterInfo = { adapter, adapterConnectionId: connectResult.connectionId };

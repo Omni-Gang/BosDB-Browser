@@ -5,6 +5,7 @@
 let cachedOrgSubscription: {
     isPro: boolean;
     isTrial: boolean;
+    planType?: 'trial' | 'monthly' | 'yearly';
     orgId: string | null;
     orgName: string | null;
 } | null = null;
@@ -13,7 +14,7 @@ let cachedOrgSubscription: {
  * Fetch and cache organization subscription status from server
  * Call this on app load
  */
-export async function fetchOrgSubscription(orgId: string): Promise<{ isPro: boolean; isTrial: boolean }> {
+export async function fetchOrgSubscription(orgId: string): Promise<{ isPro: boolean; isTrial: boolean; planType?: string }> {
     if (!orgId) {
         return { isPro: false, isTrial: false };
     }
@@ -25,10 +26,11 @@ export async function fetchOrgSubscription(orgId: string): Promise<{ isPro: bool
             cachedOrgSubscription = {
                 isPro: data.isPro,
                 isTrial: data.isTrial,
+                planType: data.subscription?.planType,
                 orgId: data.organization?.id || null,
                 orgName: data.organization?.name || null
             };
-            return { isPro: data.isPro, isTrial: data.isTrial };
+            return { isPro: data.isPro, isTrial: data.isTrial, planType: data.subscription?.planType };
         }
     } catch (err) {
         console.error('Failed to fetch subscription:', err);
@@ -39,8 +41,8 @@ export async function fetchOrgSubscription(orgId: string): Promise<{ isPro: bool
 /**
  * Get cached subscription status (synchronous)
  */
-export function getOrgSubscriptionStatus(): { isPro: boolean; isTrial: boolean; orgId: string | null; orgName: string | null } {
-    return cachedOrgSubscription || { isPro: false, isTrial: false, orgId: null, orgName: null };
+export function getOrgSubscriptionStatus(): { isPro: boolean; isTrial: boolean; planType?: string; orgId: string | null; orgName: string | null } {
+    return cachedOrgSubscription || { isPro: false, isTrial: false, planType: undefined, orgId: null, orgName: null };
 }
 
 /**
@@ -60,6 +62,31 @@ export function isTrial(): boolean {
 /**
  * Feature names that require Pro subscription
  */
+// Databases allowed on Free Plan
+export const FREE_DATABASE_TYPES = [
+    'postgres',
+    'mysql',
+    'mssql',
+    'mongodb',
+    'redis'
+] as const;
+
+/**
+ * Check if a database type is allowed for the current subscription
+ */
+export function isDatabaseAllowed(type: string): boolean {
+    // Pro/Trial users can access all databases
+    if (isPro()) {
+        return true;
+    }
+
+    // Free users restricted to specific types
+    return (FREE_DATABASE_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Feature names that require Pro subscription
+ */
 export const PRO_FEATURES = [
     'version_control',
     'commit_history',
@@ -68,14 +95,17 @@ export const PRO_FEATURES = [
     'granular_permissions',
     'unlimited_connections',
     'json_export',
-    'sql_export'
+    'sql_export',
+    'git_access',
+    'pro_databases'
 ] as const;
 
 export const FREE_FEATURES = [
     'basic_query',
     'csv_export',
     'schema_explorer',
-    'query_history_limited' // 50 entries max
+    'query_history_limited', // 50 entries max
+    'basic_git'             // Basic local commits only
 ] as const;
 
 /**
@@ -162,5 +192,81 @@ export const PRICING = {
             'Priority Support',
             'Early Access to New Features'
         ]
+    },
+    enterprise_monthly: {
+        name: 'Enterprise Monthly',
+        price: 99,
+        period: 'month',
+        features: [
+            'Everything in Pro',
+            'SSO / SAML',
+            'Audit Logs',
+            'Dedicated Support',
+            '99.9% SLA',
+            'Advanced Security'
+        ]
+    },
+    enterprise_yearly: {
+        name: 'Enterprise Yearly',
+        price: 999,
+        period: 'year',
+        savings: '16%',
+        features: [
+            'Everything in Enterprise Monthly',
+            '2 Months FREE',
+            'Dedicated Success Manager',
+            'Custom Contracts',
+            'Training Sessions'
+        ]
     }
 };
+
+/**
+ * Coupon configuration
+ */
+export const COUPONS: Record<string, { discount_percent: number, description: string, allowed_plans?: string[] }> = {
+    'bosdb100': {
+        discount_percent: 100,
+        description: '100% OFF Monthly Plan',
+        allowed_plans: ['pro_monthly']
+    },
+    'omnigang100': {
+        discount_percent: 100,
+        description: '100% OFF Yearly Plan',
+        allowed_plans: ['pro_yearly']
+    }
+};
+
+/**
+ * Validate a coupon code for a specific plan
+ */
+export function isValidCoupon(code: string, planId?: string): boolean {
+    const coupon = COUPONS[code];
+    if (!coupon) return false;
+
+    // If planId is provided, check if it's allowed for this coupon
+    if (planId && coupon.allowed_plans) {
+        return coupon.allowed_plans.includes(planId);
+    }
+
+    return true;
+}
+
+/**
+ * Calculate discounted price
+ */
+export function calculateDiscountedPrice(originalPrice: number, couponCode?: string, planId?: string): number {
+    if (!couponCode || !COUPONS[couponCode]) {
+        return originalPrice;
+    }
+
+    const coupon = COUPONS[couponCode];
+
+    // Validate plan restriction
+    if (planId && coupon.allowed_plans && !coupon.allowed_plans.includes(planId)) {
+        return originalPrice;
+    }
+
+    const discount = coupon.discount_percent;
+    return Math.max(0, originalPrice * (1 - discount / 100));
+}

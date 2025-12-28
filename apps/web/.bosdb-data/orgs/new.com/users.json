@@ -1,0 +1,13 @@
+[
+  {
+    "id": "arushi",
+    "name": "arushi",
+    "email": "arushi@new.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$CX4aqA1PsNmnHNkG6gLgyOHoqia8ETlloNEwu/HV.PY89yUpyCM.S",
+    "organizationId": "new.com",
+    "status": "approved",
+    "createdAt": "2025-12-28T02:01:22.370Z"
+  }
+]

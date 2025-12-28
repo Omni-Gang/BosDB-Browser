@@ -38,11 +38,12 @@ export default function HomePage() {
                     <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400">
                         BosDB
                     </h1>
-                    <p className="text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">
+                    <p className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto">
                         Browser-based Database Management with Git-like Version Control
                     </p>
                     <p className="text-lg text-gray-400 mb-8 max-w-xl mx-auto">
-                        Connect, Query, Edit, and Version Control your PostgreSQL, MySQL, and MongoDB databases from anywhere.
+                        Connect to <strong>100+ databases</strong> including PostgreSQL, MySQL, MongoDB, Redis, and more.
+                        Start for free or try Pro features!
                     </p>
                     <div className="flex gap-4 justify-center flex-wrap">
                         <Link
@@ -66,8 +67,8 @@ export default function HomePage() {
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <FeatureCard
                             icon={<Database className="w-8 h-8" />}
-                            title="Multi-Database"
-                            description="PostgreSQL, MySQL, MongoDB support with unified interface"
+                            title="100+ Database Types"
+                            description="PostgreSQL, MySQL, MongoDB, Redis, Cassandra, and 95+ more supported"
                         />
                         <FeatureCard
                             icon={<GitBranch className="w-8 h-8" />}
@@ -163,6 +164,20 @@ export default function HomePage() {
                         <p className="text-gray-300 text-lg mb-8 max-w-xl mx-auto">
                             Join developers who trust BosDB for database management with version control.
                         </p>
+                        <div className="mb-8 p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/50 inline-block">
+                            <p className="text-yellow-300 font-bold mb-2 text-lg animate-pulse">🔥 CRAZY FREE LIMITED TIME OFFER! 🔥</p>
+                            <div className="flex flex-col md:flex-row gap-6 text-sm text-gray-200">
+                                <div className="text-left">
+                                    <span className="block text-purple-300 text-xs font-bold uppercase">Monthly Plan</span>
+                                    Code: <strong className="text-white text-lg">bosdb100</strong> (100% OFF)
+                                </div>
+                                <div className="hidden md:block w-px bg-white/20"></div>
+                                <div className="text-left">
+                                    <span className="block text-pink-300 text-xs font-bold uppercase">Yearly Plan</span>
+                                    Code: <strong className="text-white text-lg">omnigang100</strong> (100% OFF)
+                                </div>
+                            </div>
+                        </div>
                         <div className="flex gap-4 justify-center flex-wrap">
                             <Link
                                 href="/dashboard"
@@ -182,7 +197,7 @@ export default function HomePage() {
 
                 {/* Footer */}
                 <footer className="mt-20 pt-8 border-t border-white/10 text-center text-gray-500 text-sm">
-                    <p>© 2024 BosDB. Built with ❤️ for developers.</p>
+                    <p>© 2025 BosDb Built with ❤️</p>
                 </footer>
             </div>
         </div>

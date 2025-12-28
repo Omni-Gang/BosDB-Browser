@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Database, Plus, Play, History, Save, LogOut, User, Shield, Zap, Star, Building } from 'lucide-react';
+import { Database, Plus, Play, History, Save, LogOut, User, Shield, Zap, Star, Building, Lock } from 'lucide-react';
+import { VALID_DATABASE_TYPES } from '@/constants/database-types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, logout } from '@/lib/auth';
-import { fetchOrgSubscription, getOrgSubscriptionStatus } from '@/lib/subscription';
+import { fetchOrgSubscription, getOrgSubscriptionStatus, isDatabaseAllowed, isPro } from '@/lib/subscription';
 
 interface Connection {
     id: string;
@@ -96,7 +97,7 @@ export default function DashboardPage() {
                                     Settings
                                 </button>
                             </Link>
-                            {currentUser?.role === 'admin' && (
+                            {currentUser?.role === 'admin' && currentUser?.accountType === 'enterprise' && (
                                 <Link href="/admin">
                                     <button className="px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 transition flex items-center gap-1">
                                         <Shield className="w-4 h-4" />
@@ -322,6 +323,187 @@ function NewConnectionModal({
     const [provisioning, setProvisioning] = useState(false);
     const [progress, setProgress] = useState('');
     const [error, setError] = useState('');
+    const [showManualForm, setShowManualForm] = useState(false);
+    const [manualConnection, setManualConnection] = useState({
+        name: '',
+        type: 'postgres',
+        host: 'localhost',
+        port: 5432,
+        database: '',
+        username: '',
+        password: '',
+        ssl: false,
+        readOnly: false,
+    });
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('all');
+
+    const categories = [
+        { id: 'all', name: 'All' },
+        { id: 'relational', name: 'Relational' },
+        { id: 'analytical', name: 'Analytical' },
+        { id: 'nosql', name: 'NoSQL' },
+        { id: 'cloud', name: 'Cloud' },
+        { id: 'bigdata', name: 'Big Data' },
+        { id: 'specialized', name: 'Specialized' },
+        { id: 'embedded', name: 'Embedded' },
+    ];
+
+    const allDatabases = [
+        // Relational
+        { id: 'postgres', name: 'PostgreSQL', icon: '🐘', category: 'relational', desc: 'Advanced open-source object-relational database' },
+        { id: 'mysql', name: 'MySQL', icon: '🐬', category: 'relational', desc: 'Most popular open-source database' },
+        { id: 'mariadb', name: 'MariaDB', icon: '🦭', category: 'relational', desc: 'Open source fork of MySQL' },
+        { id: 'mssql', name: 'SQL Server', icon: '🏢', category: 'relational', desc: 'Microsoft enterprise database' },
+        { id: 'oracle', name: 'Oracle', icon: '🔴', category: 'relational', desc: 'Enterprise multi-model database' },
+        { id: 'db2', name: 'IBM DB2', icon: '🔵', category: 'relational', desc: 'IBM enterprise database' },
+        { id: 'sqlite', name: 'SQLite', icon: '💾', category: 'embedded', desc: 'Self-contained, serverless database' },
+        { id: 'firebird', name: 'Firebird', icon: '🔥', category: 'relational', desc: 'True universal open source database' },
+        { id: 'cubrid', name: 'CUBRID', icon: '🧊', category: 'relational', desc: 'Open source optimized for web' },
+        { id: 'cockroachdb', name: 'CockroachDB', icon: '🪳', category: 'relational', desc: 'Distributed SQL database' },
+        { id: 'yugabyte', name: 'YugabyteDB', icon: '🚀', category: 'relational', desc: 'High-performance distributed SQL' },
+        { id: 'tidb', name: 'TiDB', icon: '📐', category: 'relational', desc: 'Open source distributed HTAP' },
+        { id: 'spanner', name: 'Spanner', icon: '🌐', category: 'cloud', desc: 'Google Cloud distributed database' },
+        { id: 'informix', name: 'Informix', icon: 'ℹ️', category: 'relational', desc: 'IBM securable embedded database' },
+        { id: 'sybase', name: 'Sybase', icon: '⚡', category: 'relational', desc: 'Enterprise relational database' },
+        { id: 'maxdb', name: 'SAP MaxDB', icon: '💠', category: 'relational', desc: 'SAP enterprise database' },
+        { id: 'hana', name: 'SAP HANA', icon: '🍃', category: 'analytical', desc: 'In-memory, column-oriented RDBMS' },
+        { id: 'ingres', name: 'Ingres', icon: '🚪', category: 'relational', desc: 'Commercial open source database' },
+        { id: 'interbase', name: 'InterBase', icon: '⚾', category: 'relational', desc: 'Embeddable SQL database' },
+        { id: 'derby', name: 'Apache Derby', icon: '🐎', category: 'embedded', desc: 'Java relational database' },
+        { id: 'h2', name: 'H2', icon: '🧪', category: 'embedded', desc: 'Fast Java SQL database' },
+        { id: 'hsqldb', name: 'HSQLDB', icon: '📝', category: 'embedded', desc: 'Leading Java SQL database' },
+        { id: 'access', name: 'MS Access', icon: '🔑', category: 'embedded', desc: 'Desktop database management' },
+        { id: 'snowflake', name: 'Snowflake', icon: '❄️', category: 'cloud', desc: 'Cloud data platform' },
+        { id: 'redshift', name: 'Redshift', icon: '🟥', category: 'cloud', desc: 'AWS data warehouse' },
+        { id: 'bigquery', name: 'BigQuery', icon: '🔎', category: 'cloud', desc: 'Google serverless warehouse' },
+        { id: 'teradata', name: 'Teradata', icon: '📊', category: 'analytical', desc: 'Enterprise data analytics' },
+        { id: 'vertica', name: 'Vertica', icon: '📈', category: 'analytical', desc: 'Unified analytics warehouse' },
+        { id: 'greenplum', name: 'Greenplum', icon: '🍏', category: 'analytical', desc: 'Massively parallel Postgres' },
+        { id: 'netezza', name: 'Netezza', icon: '🕸️', category: 'analytical', desc: 'High-performance analytics' },
+        { id: 'exasol', name: 'Exasol', icon: '⚡', category: 'analytical', desc: 'In-memory analytics database' },
+        { id: 'monetdb', name: 'MonetDB', icon: '🎨', category: 'analytical', desc: 'Column-store database' },
+        { id: 'clickhouse', name: 'ClickHouse', icon: '🏠', category: 'analytical', desc: 'Real-time analytics DBMS' },
+        { id: 'duckdb', name: 'DuckDB', icon: '🦆', category: 'analytical', desc: 'In-process SQL OLAP' },
+        { id: 'trino', name: 'Trino', icon: '🐰', category: 'analytical', desc: 'Distributed SQL query engine' },
+        { id: 'presto', name: 'Presto', icon: '🏃', category: 'analytical', desc: 'Distributed SQL query engine' },
+        { id: 'hive', name: 'Hive', icon: '🐝', category: 'bigdata', desc: 'Data warehouse software' },
+        { id: 'impala', name: 'Impala', icon: '🦌', category: 'bigdata', desc: 'Native analytic database' },
+        { id: 'spark', name: 'Spark SQL', icon: '✨', category: 'bigdata', desc: 'Large-scale data processing' },
+        { id: 'drill', name: 'Apache Drill', icon: '🔩', category: 'bigdata', desc: 'Schema-free SQL engine' },
+        { id: 'phoenix', name: 'Phoenix', icon: '🔥', category: 'bigdata', desc: 'OLTP for Hadoop' },
+        { id: 'kyuubi', name: 'Kyuubi', icon: '🦊', category: 'bigdata', desc: 'Distributed JDBC driver' },
+        { id: 'athena', name: 'Athena', icon: '🦉', category: 'cloud', desc: 'Serverless query service' },
+        { id: 'mongodb', name: 'MongoDB', icon: '🍃', category: 'nosql', desc: 'Document-oriented database' },
+        { id: 'couchbase', name: 'Couchbase', icon: '🛋️', category: 'nosql', desc: 'Distributed NoSQL cloud db' },
+        { id: 'couchdb', name: 'CouchDB', icon: '🛋️', category: 'nosql', desc: 'Seamless multi-master sync' },
+        { id: 'cosmosdb', name: 'Cosmos DB', icon: '🪐', category: 'cloud', desc: 'Microsoft NoSQL database' },
+        { id: 'dynamodb', name: 'DynamoDB', icon: '⚡', category: 'cloud', desc: 'AWS key-value database' },
+        { id: 'cassandra', name: 'Cassandra', icon: '👁️', category: 'nosql', desc: 'Wide-column store' },
+        { id: 'scylladb', name: 'ScyllaDB', icon: '👹', category: 'nosql', desc: 'High-performance NoSQL' },
+        { id: 'hbase', name: 'HBase', icon: '🐘', category: 'bigdata', desc: 'Distributed scalable big data' },
+        { id: 'redis', name: 'Redis', icon: '🥡', category: 'nosql', desc: 'In-memory data structure store' },
+        { id: 'memcached', name: 'Memcached', icon: '🧠', category: 'nosql', desc: 'Distributed memory caching' },
+        { id: 'neo4j', name: 'Neo4j', icon: '🕸️', category: 'specialized', desc: 'Graph database platform' },
+        { id: 'orientdb', name: 'OrientDB', icon: '🧭', category: 'specialized', desc: 'Multi-model NoSQL' },
+        { id: 'arangodb', name: 'ArangoDB', icon: '🥑', category: 'nosql', desc: 'Multi-model graph database' },
+        { id: 'timescaledb', name: 'Timescale', icon: '🐯', category: 'specialized', desc: 'Time-series SQL' },
+        { id: 'influxdb', name: 'InfluxDB', icon: '📉', category: 'specialized', desc: 'Time-series platform' },
+        { id: 'elasticsearch', name: 'Elasticsearch', icon: '🔍', category: 'specialized', desc: 'Search and analytics engine' },
+        { id: 'solr', name: 'Solr', icon: '☀️', category: 'specialized', desc: 'Open source search platform' },
+        { id: 'opensearch', name: 'OpenSearch', icon: '🔎', category: 'specialized', desc: 'Community-driven search' },
+        { id: 'mimer', name: 'Mimer SQL', icon: '🧩', category: 'relational', desc: 'Embedded SQL database' },
+        { id: 'cache', name: 'InterSystems Cache', icon: '💾', category: 'relational', desc: 'High-performance object' },
+        { id: 'iris', name: 'InterSystems IRIS', icon: '🌷', category: 'relational', desc: 'Data platform' },
+        { id: 'yellowbrick', name: 'Yellowbrick', icon: '🧱', category: 'analytical', desc: 'Data warehouse' },
+        { id: 'babelfish', name: 'Babelfish', icon: '🐟', category: 'relational', desc: 'PostgreSQL for SQL Server' },
+        { id: 'virtuoso', name: 'Virtuoso', icon: '🎻', category: 'relational', desc: 'Universal Server' },
+        { id: 'calcite', name: 'Apache Calcite', icon: '💎', category: 'relational', desc: 'Dynamic data management' },
+        { id: 'kylin', name: 'Apache Kylin', icon: '🦁', category: 'analytical', desc: 'Distributed Analytics Engine' },
+        { id: 'risingwave', name: 'RisingWave', icon: '🌊', category: 'analytical', desc: 'Distributed SQL Streaming' },
+        { id: 'denodo', name: 'Denodo', icon: '🧬', category: 'relational', desc: 'Data virtualization' },
+        { id: 'dremio', name: 'Dremio', icon: '🦈', category: 'analytical', desc: 'Data lakehouse platform' },
+        { id: 'edb', name: 'EDB Postgres', icon: '🐘', category: 'relational', desc: 'Enterprise Postgres' },
+        { id: 'h2gis', name: 'H2GIS', icon: '🗺️', category: 'specialized', desc: 'Spatial database' },
+        { id: 'cratedb', name: 'CrateDB', icon: '📦', category: 'relational', desc: 'Distributed SQL database' },
+        { id: 'oceanbase', name: 'OceanBase', icon: '🌊', category: 'relational', desc: 'Distributed relational' },
+        { id: 'heavydb', name: 'HeavyDB', icon: '🏋️', category: 'analytical', desc: 'GPU-accelerated analytics' },
+        { id: 'openedge', name: 'OpenEdge', icon: '🔓', category: 'relational', desc: 'Business application platform' },
+        { id: 'pervasive', name: 'Pervasive', icon: '🌫️', category: 'relational', desc: 'Embeddable database' },
+        { id: 'salesforce', name: 'Salesforce', icon: '☁️', category: 'cloud', desc: 'CRM database' },
+        { id: 'sqream', name: 'SQream', icon: '🍦', category: 'analytical', desc: 'GPU-accelerated warehouse' },
+        { id: 'fujitsu', name: 'Fujitsu', icon: '🗻', category: 'relational', desc: 'Enterprise Postgres' },
+        { id: 'materialize', name: 'Materialize', icon: '⚡', category: 'analytical', desc: 'Streaming database' },
+        { id: 'ksqldb', name: 'ksqlDB', icon: '🔄', category: 'specialized', desc: 'Stream processing' },
+        { id: 'dameng', name: 'Dameng', icon: '🧱', category: 'relational', desc: 'Database management system' },
+        { id: 'altibase', name: 'Altibase', icon: '🚀', category: 'relational', desc: 'Hybrid in-memory database' },
+        { id: 'gaussdb', name: 'GaussDB', icon: '🧮', category: 'relational', desc: 'AI-native database' },
+        { id: 'cloudberry', name: 'Cloudberry', icon: '🫐', category: 'analytical', desc: 'MPP database' },
+        { id: 'gbase', name: 'GBase', icon: '🏛️', category: 'relational', desc: 'Database management system' },
+        { id: 'dsql', name: 'Aurora DSQL', icon: '🌌', category: 'cloud', desc: 'Distributed SQL' },
+        { id: 'kingbase', name: 'Kingbase', icon: '👑', category: 'relational', desc: 'Database system' },
+        { id: 'greengage', name: 'Greengage', icon: '🟢', category: 'relational', desc: 'Database solution' },
+        { id: 'databricks', name: 'Databricks', icon: '🧱', category: 'analytical', desc: 'Lakehouse platform' },
+        { id: 'ocient', name: 'Ocient', icon: '🌊', category: 'analytical', desc: 'Hyperscale data warehouse' },
+        { id: 'prestodb', name: 'PrestoDB', icon: '🐰', category: 'analytical', desc: 'Distributed SQL query' },
+        { id: 'starrocks', name: 'StarRocks', icon: '⭐', category: 'analytical', desc: 'MPP database' },
+        { id: 'arrow', name: 'Arrow', icon: '🏹', category: 'analytical', desc: 'In-memory analytics' },
+        { id: 'ferretdb', name: 'FerretDB', icon: '🦦', category: 'nosql', desc: 'MongoDB compatibility' },
+        { id: 'documentdb', name: 'DocumentDB', icon: '📄', category: 'cloud', desc: 'AWS document database' },
+        { id: 'keyspaces', name: 'Keyspaces', icon: '🔑', category: 'cloud', desc: 'AWS Cassandra compatible' },
+        { id: 'timestream', name: 'Timestream', icon: '⏳', category: 'cloud', desc: 'AWS time series' },
+        { id: 'bigtable', name: 'Bigtable', icon: '🧊', category: 'cloud', desc: 'Google NoSQL wide-column' },
+        { id: 'neptune', name: 'Neptune', icon: '🔱', category: 'cloud', desc: 'AWS graph database' },
+        { id: 'azuresql', name: 'Azure SQL', icon: '🔷', category: 'cloud', desc: 'Managed SQL database' },
+        { id: 'singlestore', name: 'SingleStore', icon: '🚀', category: 'cloud', desc: 'Real-time distributed SQL' },
+        { id: 'nuodb', name: 'NuoDB', icon: '🐦', category: 'cloud', desc: 'Distributed SQL database' },
+        { id: 'netsuite', name: 'NetSuite', icon: '👔', category: 'cloud', desc: 'SuiteAnalytics Connect' },
+        { id: 'adw', name: 'Oracle ADW', icon: '🏭', category: 'cloud', desc: 'Autonomous Data Warehouse' },
+        { id: 'atp', name: 'Oracle ATP', icon: '⚡', category: 'cloud', desc: 'Autonomous Transaction' },
+        { id: 'ajd', name: 'Oracle AJD', icon: '📝', category: 'cloud', desc: 'Autonomous JSON' },
+        { id: 'cloudsql', name: 'Cloud SQL', icon: '☁️', category: 'cloud', desc: 'Google managed database' },
+        { id: 'alloydb', name: 'AlloyDB', icon: '🛡️', category: 'cloud', desc: 'PG-compatible for AI' },
+        { id: 'firestore', name: 'Firestore', icon: '🔥', category: 'cloud', desc: 'Serverless document db' },
+        { id: 'databend', name: 'Databend', icon: '🧊', category: 'cloud', desc: 'Cloud data warehouse' },
+        { id: 'teiid', name: 'Teiid', icon: '🔗', category: 'cloud', desc: 'Data virtualization' },
+        { id: 'sparkhive', name: 'Spark Hive', icon: '🐝', category: 'bigdata', desc: 'Hive on Spark' },
+        { id: 'gemfire', name: 'GemFire', icon: '💎', category: 'bigdata', desc: 'In-memory data grid' },
+        { id: 'ignite', name: 'Ignite', icon: '🔥', category: 'bigdata', desc: 'In-memory computing' },
+        { id: 'cloudera', name: 'Cloudera', icon: '☁️', category: 'bigdata', desc: 'Data platform' },
+        { id: 'snappydata', name: 'SnappyData', icon: '🐊', category: 'bigdata', desc: 'Spark + In-memory DB' },
+        { id: 'rabbitmq', name: 'RabbitMQ', icon: '🐰', category: 'nosql', desc: 'Message broker' },
+        { id: 'minio', name: 'MinIO', icon: '🦅', category: 'nosql', desc: 'Object storage' },
+        { id: 'dgraph', name: 'Dgraph', icon: '🕸️', category: 'nosql', desc: 'Distributed graph db' },
+        { id: 'machbase', name: 'Machbase', icon: '🚀', category: 'specialized', desc: 'Time series database' },
+        { id: 'tdengine', name: 'TDengine', icon: '🚂', category: 'specialized', desc: 'Time series platform' },
+        { id: 'timecho', name: 'IoTDB', icon: '⌚', category: 'specialized', desc: 'Time series for IoT' },
+        { id: 'dolphindb', name: 'DolphinDB', icon: '🐬', category: 'specialized', desc: 'Time series analytics' },
+        { id: 'csv', name: 'CSV', icon: '📄', category: 'embedded', desc: 'Comma-separated values' },
+        { id: 'wmi', name: 'WMI', icon: '🪟', category: 'embedded', desc: 'Windows Management' },
+        { id: 'dbf', name: 'DBF', icon: '💾', category: 'embedded', desc: 'dBASE database file' },
+        { id: 'raima', name: 'Raima', icon: '⚡', category: 'embedded', desc: 'In-memory embedded' },
+        { id: 'libsql', name: 'libSQL', icon: '📚', category: 'embedded', desc: 'SQLite fork' },
+        { id: 'surrealdb', name: 'SurrealDB', icon: '🚀', category: 'nosql', desc: 'Multi-model cloud db' }
+    ];
+
+    const permissionCheck = (type: string) => {
+        if (isDatabaseAllowed(type)) {
+            provisionDatabase(type);
+        } else {
+            // Optional: You could show a specialized modal here instead of redirecting
+            if (confirm('This database requires a Pro plan. Upgrade now to access 100+ databases?')) {
+                router.push('/pricing');
+            }
+        }
+    };
+
+    const filteredDatabases = allDatabases.filter(db => {
+        const matchesSearch = db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            db.id.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = activeCategory === 'all' || db.category === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     const provisionDatabase = async (type: string) => {
         setProvisioning(true);
@@ -354,9 +536,9 @@ function NewConnectionModal({
                 throw new Error(data.error || 'Failed to create database');
             }
 
-            setProgress('Database created! Setting up connection...');
+            setProgress('Saving connection...');
 
-            // Auto-save connection
+            // Save connection instantly (skipTest=true means no connection test needed)
             const connRes = await fetch('/api/connections', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -370,6 +552,7 @@ function NewConnectionModal({
                     password: data.database.password,
                     ssl: false,
                     readOnly: false,
+                    skipTest: true, // Skip test for auto-provisioned - credentials are trusted
                 }),
             });
 
@@ -379,12 +562,10 @@ function NewConnectionModal({
                 throw new Error(connData.error || 'Failed to save connection');
             }
 
-            setProgress('✅ Ready! Redirecting to query editor...');
+            setProgress('✅ Ready!');
 
-            // Redirect to query page
-            setTimeout(() => {
-                router.push(`/query?connection=${connData.id}`);
-            }, 1000);
+            // Instant redirect
+            router.push(`/query?connection=${connData.id}`);
 
         } catch (err: any) {
             setError(err.message || 'Failed to create database');
@@ -392,20 +573,206 @@ function NewConnectionModal({
         }
     };
 
+    const handleManualSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setProvisioning(true);
+        setError('');
+
+        try {
+            const res = await fetch('/api/connections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(manualConnection),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to create connection');
+            }
+
+            onSuccess();
+        } catch (err: any) {
+            setError(err.message || 'Failed to create connection');
+            setProvisioning(false);
+        }
+    };
+
+    if (showManualForm) {
+        return (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <div className="bg-card border border-border rounded-xl max-w-2xl w-full p-8 my-8">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold mb-2">Connect to External Database</h2>
+                            <p className="text-muted-foreground">
+                                Enter your database connection details
+                            </p>
+                        </div>
+                        {!provisioning && (
+                            <button
+                                onClick={onClose}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500 text-red-400 rounded-lg">
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleManualSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Connection Name</label>
+                            <input
+                                type="text"
+                                value={manualConnection.name}
+                                onChange={(e) => setManualConnection({ ...manualConnection, name: e.target.value })}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                placeholder="My Database"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Database Type</label>
+                            <select
+                                value={manualConnection.type}
+                                onChange={(e) => {
+                                    const type = e.target.value;
+                                    setManualConnection({ ...manualConnection, type });
+                                }}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                            >
+                                {VALID_DATABASE_TYPES.map(type => (
+                                    <option key={type} value={type}>
+                                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Host</label>
+                                <input
+                                    type="text"
+                                    value={manualConnection.host}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, host: e.target.value })}
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                    placeholder="localhost"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Port</label>
+                                <input
+                                    type="number"
+                                    value={manualConnection.port}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, port: parseInt(e.target.value) })}
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Database Name</label>
+                            <input
+                                type="text"
+                                value={manualConnection.database}
+                                onChange={(e) => setManualConnection({ ...manualConnection, database: e.target.value })}
+                                className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                placeholder="demodb"
+                                required
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Username</label>
+                                <input
+                                    type="text"
+                                    value={manualConnection.username}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, username: e.target.value })}
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    value={manualConnection.password}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, password: e.target.value })}
+                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={manualConnection.ssl}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, ssl: e.target.checked })}
+                                    className="rounded"
+                                />
+                                Use SSL
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={manualConnection.readOnly}
+                                    onChange={(e) => setManualConnection({ ...manualConnection, readOnly: e.target.checked })}
+                                    className="rounded"
+                                />
+                                Read-only mode
+                            </label>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button
+                                type="submit"
+                                disabled={provisioning}
+                                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
+                            >
+                                {provisioning ? 'Connecting...' : 'Connect'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowManualForm(false)}
+                                disabled={provisioning}
+                                className="px-4 py-3 border border-border rounded-lg hover:bg-muted transition disabled:opacity-50"
+                            >
+                                Back
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card border border-border rounded-xl max-w-2xl w-full p-8">
-                <div className="flex justify-between items-start mb-6">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+                <div className="p-6 border-b border-border flex justify-between items-start">
                     <div>
                         <h2 className="text-2xl font-bold mb-2">Create Database</h2>
                         <p className="text-muted-foreground">
-                            Select a database type to get started instantly
+                            Select from 100+ database types to provision instantly
                         </p>
                     </div>
                     {!provisioning && (
                         <button
                             onClick={onClose}
-                            className="text-muted-foreground hover:text-foreground"
+                            className="text-muted-foreground hover:text-foreground p-2"
                         >
                             ✕
                         </button>
@@ -413,93 +780,118 @@ function NewConnectionModal({
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500 text-red-400 rounded-lg">
+                    <div className="mx-6 mt-6 p-4 bg-red-500/10 border border-red-500 text-red-400 rounded-lg">
                         {error}
                     </div>
                 )}
 
-                {provisioning ? (
-                    <div className="text-center py-12">
-                        <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-lg font-medium mb-2">{progress}</p>
-                        <p className="text-sm text-muted-foreground">
-                            This may take up to 30 seconds...
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* PostgreSQL */}
-                        <button
-                            onClick={() => provisionDatabase('postgres')}
-                            className="p-6 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                        >
-                            <div className="text-4xl mb-3">🐘</div>
-                            <h3 className="text-lg font-semibold mb-1">PostgreSQL</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Advanced open-source database
-                            </p>
-                            <div className="mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition">
-                                Click to create →
+                {!provisioning && !isPro() && (
+                    <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-border px-6 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-1 rounded-full">
+                                <Star className="w-3 h-3" fill="currentColor" />
                             </div>
-                        </button>
-
-                        {/* MySQL */}
-                        <button
-                            onClick={() => provisionDatabase('mysql')}
-                            className="p-6 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                        >
-                            <div className="text-4xl mb-3">🐬</div>
-                            <h3 className="text-lg font-semibold mb-1">MySQL</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Popular relational database
+                            <p className="text-xs font-medium text-purple-300">
+                                Free Plan limited to 5 core databases. Upgrade to access 100+ more types!
                             </p>
-                            <div className="mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition">
-                                Click to create →
-                            </div>
-                        </button>
-
-                        {/* MongoDB */}
-                        <button
-                            onClick={() => provisionDatabase('mongodb')}
-                            className="p-6 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                        >
-                            <div className="text-4xl mb-3">🍃</div>
-                            <h3 className="text-lg font-semibold mb-1">MongoDB</h3>
-                            <p className="text-sm text-muted-foreground">
-                                NoSQL document database
-                            </p>
-                            <div className="mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition">
-                                Click to create →
-                            </div>
-                        </button>
-
-                        {/* Redis */}
-                        <button
-                            onClick={() => provisionDatabase('redis')}
-                            className="p-6 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                        >
-                            <div className="text-4xl mb-3">⚡</div>
-                            <h3 className="text-lg font-semibold mb-1">Redis</h3>
-                            <p className="text-sm text-muted-foreground">
-                                In-memory data store
-                            </p>
-                            <div className="mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition">
-                                Click to create →
-                            </div>
-                        </button>
+                        </div>
+                        <Link href="/pricing" className="text-xs font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 rounded-full hover:opacity-90 transition shadow-lg shadow-purple-500/20">
+                            Upgrade Now
+                        </Link>
                     </div>
                 )}
 
                 {!provisioning && (
-                    <div className="mt-6 pt-6 border-t border-border">
-                        <p className="text-sm text-muted-foreground text-center mb-3">
-                            Need to connect to an external database?
-                        </p>
+                    <div className="px-6 py-4 flex flex-col md:flex-row gap-4 border-b border-border bg-muted/30">
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                placeholder="Search all databases..."
+                                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <div className="absolute left-3 top-2.5 text-muted-foreground">🔍</div>
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setActiveCategory(cat.id)}
+                                    className={`px-4 py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${activeCategory === cat.id
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-border text-muted-foreground'
+                                        }`}
+                                >
+                                    {cat.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    {provisioning ? (
+                        <div className="text-center py-20">
+                            <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-6"></div>
+                            <p className="text-xl font-medium mb-3">{progress}</p>
+                            <p className="text-muted-foreground">
+                                Setting up your database instance...
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {filteredDatabases.length > 0 ? (
+                                filteredDatabases.map(db => {
+                                    const allowed = isDatabaseAllowed(db.id);
+                                    return (
+                                        <button
+                                            key={db.id}
+                                            onClick={() => permissionCheck(db.id)}
+                                            className={`relative p-3 border-2 border-border rounded-xl transition-all group text-center flex flex-col items-center justify-center overflow-hidden
+                                                ${allowed
+                                                    ? 'hover:border-primary hover:bg-primary/5 cursor-pointer'
+                                                    : 'opacity-60 cursor-not-allowed bg-muted/20'
+                                                }`}
+                                        >
+                                            {!allowed && (
+                                                <div className="absolute top-2 right-2 text-muted-foreground/50">
+                                                    <Lock className="w-3 h-3" />
+                                                </div>
+                                            )}
+
+                                            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+                                                {db.icon}
+                                            </div>
+
+                                            <h3 className="text-xs font-bold truncate w-full flex items-center justify-center gap-1">
+                                                {db.name}
+                                            </h3>
+
+                                            <div className={`mt-2 text-[10px] transition font-medium
+                                                ${allowed ? 'text-primary opacity-0 group-hover:opacity-100' : 'text-muted-foreground'}`}>
+                                                {allowed ? 'Create →' : 'Pro Only'}
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <div className="col-span-full py-20 text-center text-muted-foreground">
+                                    No databases found matching your search.
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {!provisioning && (
+                    <div className="p-6 border-t border-border bg-muted/30">
                         <button
-                            onClick={() => {/* TODO: Show external connection form */ }}
-                            className="w-full px-4 py-2 border border-border rounded-lg hover:bg-muted transition text-sm"
+                            onClick={() => setShowManualForm(true)}
+                            className="w-full px-4 py-3 border border-border rounded-xl hover:bg-background transition text-sm font-medium flex items-center justify-center gap-2"
                         >
-                            Use External Database Instead
+                            <span>🌐</span>
+                            Have an existing database? Use External Connection Instead
                         </button>
                     </div>
                 )}
@@ -507,4 +899,3 @@ function NewConnectionModal({
         </div>
     );
 }
-

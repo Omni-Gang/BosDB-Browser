@@ -144,9 +144,12 @@ export default function VersionControlPage() {
     };
 
     const rollbackToCommit = async (targetRevision: number) => {
-        if (!confirm(`Are you sure you want to rollback ${Math.abs(targetRevision)} revision(s)? This will create a new commit that reverts to that state.`)) {
+        if (!confirm(`Are you sure you want to rollback ${Math.abs(targetRevision)} revision(s)? This will directly rollback the database to that state.`)) {
             return;
         }
+
+        // Get current user for tracking who performed the rollback
+        const user = promptForUserIfNeeded();
 
         try {
             const res = await fetch('/api/vcs/rollback', {
@@ -154,13 +157,18 @@ export default function VersionControlPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     connectionId,
-                    targetRevision
+                    targetRevision,
+                    author: {
+                        name: user.name,
+                        email: user.email,
+                        userId: (user as any).userId || (user as any).id
+                    }
                 })
             });
 
             if (res.ok) {
                 const result = await res.json();
-                alert(`✅ Rolled back to revision ${targetRevision}!\n\nReverted to: ${result.targetCommit?.message}`);
+                alert(`✅ Rolled back to revision ${targetRevision} by ${user.name}!\n\nReverted to: ${result.targetCommit?.message}`);
                 await loadAllData();
             } else {
                 const error = await res.json();

@@ -22,6 +22,12 @@ const nextConfig = {
             config.resolve.fallback = {
                 ...config.resolve.fallback,
                 fs: false,
+                tls: false,
+                net: false,
+                child_process: false,
+                crypto: false,
+                stream: false,
+                path: false,
             };
         }
         return config;
