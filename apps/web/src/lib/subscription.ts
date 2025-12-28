@@ -20,9 +20,11 @@ export async function fetchOrgSubscription(orgId: string): Promise<{ isPro: bool
     }
 
     try {
-        const res = await fetch(`/api/subscription?orgId=${encodeURIComponent(orgId)}`);
+        console.log('[Subscription] Fetching status for:', orgId);
+        const res = await fetch(`/api/subscription?orgId=${encodeURIComponent(orgId)}`, { cache: 'no-store' });
         if (res.ok) {
             const data = await res.json();
+            console.log('[Subscription] API Response:', data);
             cachedOrgSubscription = {
                 isPro: data.isPro,
                 isTrial: data.isTrial,

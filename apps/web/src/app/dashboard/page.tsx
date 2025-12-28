@@ -210,6 +210,7 @@ export default function DashboardPage() {
             {showNewConnection && (
                 <NewConnectionModal
                     onClose={() => setShowNewConnection(false)}
+                    isPro={subscriptionStatus.isPro}
                     onSuccess={() => {
                         setShowNewConnection(false);
                         fetchConnections();
@@ -316,9 +317,11 @@ function ConnectionCard({ connection }: { connection: Connection }) {
 function NewConnectionModal({
     onClose,
     onSuccess,
+    isPro,
 }: {
     onClose: () => void;
     onSuccess: () => void;
+    isPro: boolean;
 }) {
     const router = useRouter();
     const [provisioning, setProvisioning] = useState(false);
@@ -786,7 +789,7 @@ function NewConnectionModal({
                     </div>
                 )}
 
-                {!provisioning && !isPro() && (
+                {!provisioning && !isPro && (
                     <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-border px-6 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-1 rounded-full">

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findOrganizationById, updateOrgSubscription, saveOrganization, IOrganization } from '@/lib/organization';
+import { findOrganizationById, updateOrgSubscription, saveOrganization, Organization as IOrganization } from '@/lib/organization';
 import { findUserById } from '@/lib/users-store';
 import { COUPONS } from '@/lib/subscription';
 
@@ -41,7 +41,12 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const isPro = org.subscription.plan === 'pro';
+        // Ensure subscription exists (handle legacy data)
+        if (!org.subscription) {
+            org.subscription = { plan: 'free', isTrial: false };
+        }
+
+        const isPro = org.subscription.plan === 'pro' || org.subscription.plan === 'enterprise';
         const isExpired = org.subscription.expiresAt
             ? new Date(org.subscription.expiresAt) < new Date()
             : false;
