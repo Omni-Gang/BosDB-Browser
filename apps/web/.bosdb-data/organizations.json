@@ -203,10 +203,38 @@
     "type": "individual",
     "adminUserId": "mko",
     "subscription": {
+      "plan": "pro",
+      "isTrial": true,
+      "planType": "trial",
+      "activatedAt": "2025-12-28T06:37:07.289Z",
+      "expiresAt": "2026-01-27T06:37:07.289Z"
+    },
+    "createdAt": "2025-12-28T05:59:21.998Z",
+    "updatedAt": "2025-12-28T06:37:07.292Z"
+  },
+  {
+    "id": "q1we.com",
+    "name": "Q1we",
+    "type": "enterprise",
+    "domain": "q1we.com",
+    "adminUserId": "qwe",
+    "subscription": {
       "plan": "free",
       "isTrial": false
     },
-    "createdAt": "2025-12-28T05:59:21.998Z",
-    "updatedAt": "2025-12-28T05:59:21.998Z"
+    "createdAt": "2025-12-28T06:43:01.728Z",
+    "updatedAt": "2025-12-28T06:43:01.728Z"
+  },
+  {
+    "id": "ind-nji",
+    "name": "nji's Workspace",
+    "type": "individual",
+    "adminUserId": "nji",
+    "subscription": {
+      "plan": "free",
+      "isTrial": false
+    },
+    "createdAt": "2025-12-28T06:46:50.848Z",
+    "updatedAt": "2025-12-28T06:46:50.848Z"
   }
 ]

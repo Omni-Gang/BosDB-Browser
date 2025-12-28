@@ -6,7 +6,16 @@ import { getOrCreateOrgForUser, findOrganizationById, findOrganizationByDomain, 
 export async function GET() {
     // Public endpoint to list simple user info (for login page dropdown)
     const users = getUsers();
-    const publicUsers = users.map(u => ({ id: u.id, name: u.name, role: u.role }));
+
+    // Deduplicate users by ID to prevent React key errors in frontend
+    const uniqueUsersMap = new Map();
+    users.forEach(u => {
+        if (!uniqueUsersMap.has(u.id)) {
+            uniqueUsersMap.set(u.id, { id: u.id, name: u.name, role: u.role });
+        }
+    });
+
+    const publicUsers = Array.from(uniqueUsersMap.values());
     return NextResponse.json({ users: publicUsers });
 }
 
@@ -120,6 +129,9 @@ export async function POST(request: NextRequest) {
             // Different organizations can have the same User ID
             const orgUsers = getUsersByOrg(org.id);
             if (orgUsers.some(u => u.id === userData.id)) {
+                if (finalAccountType === 'individual') {
+                    return NextResponse.json({ error: 'Username is not available. Please choose another.' }, { status: 409 });
+                }
                 return NextResponse.json({ error: 'User ID already exists in your organization. Please choose a different one.' }, { status: 409 });
             }
 

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "7a4aadf0-f10e-410a-9759-e0bf09c02097",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "organizationId": "ind-nji",
+    "containerName": "bosdb-ind-nji-postgres-1766904659492",
+    "port": 5432,
+    "username": "bosdb_c20202f6",
+    "password": "XyiQoF6+fP2VMruOc8ti",
+    "database": "bosdb",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2025-12-28T06:50:59.494Z",
+    "updatedAt": "2025-12-28T06:51:12.872Z",
+    "containerId": "ae902fe3ca6a14284bfad308d53d209de96127ee7fef15aca7fb3471cf2c834d"
+  }
+]

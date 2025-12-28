@@ -1,0 +1,13 @@
+[
+  {
+    "id": "qwe",
+    "name": "qwe",
+    "email": "qwe@q1we.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$g4KeR0UhJiabq/kZAW3izeU7eV6SLzSUQobZvq/5TJGWJL8kpJQGu",
+    "organizationId": "q1we.com",
+    "status": "approved",
+    "createdAt": "2025-12-28T06:43:01.732Z"
+  }
+]

@@ -104,7 +104,8 @@ export default function DashboardPage() {
                                         Admin Panel
                                     </button>
                                 </Link>
-                            )}                     {!subscriptionStatus.isPro && (
+                            )}
+                            {!subscriptionStatus.isPro && (
                                 <Link href="/pricing">
                                     <button className="px-4 py-2 text-sm font-medium text-purple-400 hover:text-purple-300 transition flex items-center gap-1">
                                         <Zap className="w-4 h-4" />
