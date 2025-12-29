@@ -1,0 +1,53 @@
+services:
+  # BosDB Web Application
+  - type: web
+    name: bosdb-browser
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    repo: https://github.com/Omni-Gang/BosDB-Browser
+    region: oregon
+    plan: free
+    branch: main
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ENCRYPTION_MASTER_KEY
+        generateValue: true
+      - key: PORT
+        value: 3000
+    # Note: Free tier limitations
+    # - 750 hours/month compute
+    # - Services spin down after 15 min of inactivity
+    # - 512 MB RAM, 0.5 CPU
+
+  # Demo PostgreSQL Database
+  - type: pserv
+    name: bosdb-demo-postgres
+    runtime: docker
+    dockerfilePath: ./Dockerfile.postgres
+    dockerContext: ./
+    repo: https://github.com/Omni-Gang/BosDB-Browser
+    region: oregon
+    plan: free
+    branch: main
+    envVars:
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: demodb
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+databases:
+  # Optional: Use Render's managed PostgreSQL instead of self-hosted
+  # - name: bosdb-postgres
+  #   databaseName: bosdb
+  #   user: bosdb_user
+  #   plan: free
+  #   region: oregon
