@@ -15,6 +15,7 @@ export async function getConnectedAdapter(connectionId: string) {
         const credentials = decryptCredentials(connectionInfo.credentials);
 
         const connectResult = await adapter.connect({
+            id: connectionId,
             name: connectionInfo.name,
             host: connectionInfo.host,
             port: connectionInfo.port,

@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
 
                 // Execute
                 // We reuse the executeQuery method from the adapter
-                await adapter.executeQuery(sql);
+                await adapter.executeQuery({
+                    connectionId,
+                    query: sql
+                });
 
                 results.push({ success: true, primaryKey });
             } catch (err: any) {

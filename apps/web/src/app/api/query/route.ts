@@ -55,39 +55,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get or create adapter instance
-        let adapter = adapterInstances.get(connectionId);
+        // Get adapter instance
+        let adapter;
         let adapterConnectionId = connectionId;
 
-        if (!adapter) {
-            adapter = AdapterFactory.create(connectionInfo.type);
-
-            // Decrypt credentials
-            const credentials = decryptCredentials(connectionInfo.credentials);
-
-            // Connect to database
-            const connectResult = await adapter.connect({
-                host: connectionInfo.host,
-                port: connectionInfo.port,
-                database: connectionInfo.database,
-                username: credentials.username,
-                password: credentials.password,
-                ssl: connectionInfo.ssl,
-                readOnly: connectionInfo.readOnly,
-            });
-
-            if (!connectResult.success) {
-                return NextResponse.json(
-                    { error: 'Failed to connect to database' },
-                    { status: 500 }
-                );
-            }
-
-            adapterConnectionId = connectResult.connectionId;
-            adapterInstances.set(connectionId, { adapter, adapterConnectionId });
-        } else {
-            adapterConnectionId = adapter.adapterConnectionId;
-            adapter = adapter.adapter;
+        try {
+            // Use shared helper to get connected adapter
+            // This ensures consistent connection state across all API routes
+            // and properly passes the connectionId to the adapter
+            const connectedAdapter = await import('@/lib/db-utils').then(m => m.getConnectedAdapter(connectionId));
+            adapter = connectedAdapter;
+            
+            // NOTE: db-utils now ensures the adapter uses the same ID as connectionId
+            adapterConnectionId = connectionId;
+        } catch (connError: any) {
+             logger.error(`Failed to connect to database: ${connError.message}`);
+             return NextResponse.json(
+                { error: `Failed to connect to database: ${connError.message}` },
+                { status: 500 }
+            );
         }
 
         // Execute query
