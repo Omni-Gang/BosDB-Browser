@@ -4,6 +4,7 @@ import { getConnectedAdapter } from '@/lib/db-utils';
 import { generateUpdateStatement } from '@/lib/sql-helper';
 
 export async function POST(request: NextRequest) {
+    // Fix for table_catalog error
     try {
         const body = await request.json();
         const { connectionId, schema, table, updates } = body;
