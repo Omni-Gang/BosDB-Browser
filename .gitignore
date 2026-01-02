@@ -1,1 +1,14 @@
 node_modules
+.turbo
+apps/web/data/docker-databases
+apps/web/.bosdb-data
+apps/web/.bosdb-vcs
+.env
+.env.local
+.env.local.example
+apps/web/data
+
+
+
+
+
