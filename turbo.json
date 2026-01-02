@@ -3,6 +3,12 @@
     "globalDependencies": [
         "**/.env.*local"
     ],
+    "globalEnv": [
+        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "ENCRYPTION_MASTER_KEY",
+        "MONGODB_URI",
+        "NODE_ENV"
+    ],
     "pipeline": {
         "build": {
             "dependsOn": [

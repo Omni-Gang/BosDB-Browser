@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: false,
-    output: 'standalone', // For Docker deployment
+    output: process.env.VERCEL ? undefined : 'standalone', // Standalone for Docker, Standard for Vercel
     transpilePackages: [],
     onDemandEntries: {
         // Suppress lockfile patching warnings
