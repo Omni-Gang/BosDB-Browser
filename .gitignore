@@ -12,12 +12,18 @@ npm-debug.log*
 .yarn-error.log*
 .pnpm-debug.log*
 .idea/
-.vscode/
-*.sublime-workspace
-*.sublime-project
-Dockerfile
-Dockerfile.dev
-Dockerfile.prod
-docker-compose.yml
-docker-compose.deploy.yml
-docker-compose.prod.yml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Debug
+*.cpuprofile
+apps/web/.bosdb-vcs/
+apps/web/.bosdb-vcs/
