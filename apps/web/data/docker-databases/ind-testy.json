@@ -157,10 +157,10 @@
     "username": "postgres",
     "password": "My Postgres Database_rsrr0ged",
     "database": "my_postgres_database",
-    "status": "running",
+    "status": "stopped",
     "autoStart": true,
     "createdAt": "2026-01-01T18:40:44.462Z",
-    "lastUsedAt": "2026-01-01T21:21:28.152Z",
+    "lastUsedAt": "2026-01-02T06:23:48.008Z",
     "organizationId": "ind-testy",
     "containerId": "71990f92b73331f748b21af3349d991f557f4de262d470909d644b6c69724486"
   }

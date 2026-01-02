@@ -15,6 +15,7 @@ export interface QueryHistoryEntry {
     success: boolean;
     error?: string;
     userEmail?: string; // OPTIONAL: User who executed the query
+    orgId?: string;     // OPTIONAL: Organization context
 }
 
 export interface SavedQuery {
@@ -26,6 +27,7 @@ export interface SavedQuery {
     createdAt: string;
     updatedAt: string;
     userEmail?: string; // OPTIONAL: User who created the query
+    orgId?: string;     // OPTIONAL: Organization context
 }
 
 // Query History Management
@@ -86,10 +88,16 @@ export function getQueryHistory(connectionId?: string, limit = 50): QueryHistory
     return filtered.slice(-limit).reverse();
 }
 
-export function getUserQueryHistory(userEmail: string, connectionId?: string, limit = 50): QueryHistoryEntry[] {
+export function getUserQueryHistory(userEmail: string, orgId?: string, connectionId?: string, limit = 50): QueryHistoryEntry[] {
     const history = loadQueryHistory();
 
     let filtered = history.filter(entry => entry.userEmail === userEmail);
+
+    // If orgId provided, ensure data matches org (strict isolation)
+    if (orgId) {
+        filtered = filtered.filter(entry => entry.orgId === orgId);
+    }
+
     if (connectionId) {
         filtered = filtered.filter(entry => entry.connectionId === connectionId);
     }
@@ -178,10 +186,16 @@ export function getSavedQueries(connectionId?: string): SavedQuery[] {
     return queries;
 }
 
-export function getUserSavedQueries(userEmail: string, connectionId?: string): SavedQuery[] {
+export function getUserSavedQueries(userEmail: string, orgId?: string, connectionId?: string): SavedQuery[] {
     const queries = loadSavedQueries();
 
     let filtered = queries.filter(q => q.userEmail === userEmail);
+
+    // If orgId provided, strict isolation
+    if (orgId) {
+        filtered = filtered.filter(q => q.orgId === orgId);
+    }
+
     if (connectionId) {
         filtered = filtered.filter(q => !q.connectionId || q.connectionId === connectionId);
     }

@@ -60,14 +60,23 @@ export async function createUser(user: Partial<IUser>): Promise<IUser> {
 
     // Check if user exists (by email mostly, id might be duplicate across orgs if we used simple usernames, but schema says id is required/unique-ish)
     // Schema has 'id' as field.
-    const existing = await User.findOne({
-        $or: [{ email: user.email }, { id: user.id }]
+    // Check for existing user
+    // 1. Email must be globally unique
+    const existingEmail = await User.findOne({ email: user.email });
+    if (existingEmail) {
+        throw new Error('Email already exists');
+    }
+
+    // 2. User ID must be unique ONLY within the organization
+    const existingId = await User.findOne({
+        id: user.id,
+        organizationId: user.organizationId
     });
 
-    if (existing) {
-        // If it's the exact same user, return it? No, throw error for create.
-        throw new Error('User already exists');
+    if (existingId) {
+        throw new Error(`User ID "${user.id}" already exists in this organization`);
     }
+
 
     const newUser = await User.create(user);
     return newUser.toObject();

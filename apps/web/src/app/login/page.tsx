@@ -22,9 +22,9 @@ export default function LoginPage() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showRegister, setShowRegister] = useState(false);
-  const [showOTPVerify, setShowOTPVerify] = useState(false);
-  const [otpData, setOtpData] = useState<{ email: string; otp: string; organizationName: string } | null>(null);
-  const [otpInput, setOtpInput] = useState('');
+  const [showTOTPVerify, setShowTOTPVerify] = useState(false);
+  const [totpData, setTotpData] = useState<{ email: string; qrCode: string; secret: string; organizationName: string } | null>(null);
+  const [totpInput, setTotpInput] = useState('');
   const [newUser, setNewUser] = useState({
     id: '',
     name: '',
@@ -132,16 +132,17 @@ export default function LoginPage() {
 
       if (!res.ok) throw new Error(data.error || 'Registration failed');
 
-      // Check if OTP verification is required
-      if (data.requiresOTP) {
-        setOtpData({
+      // Check if TOTP verification is required
+      if (data.requiresTOTP) {
+        setTotpData({
           email: data.email,
-          otp: data.otp,
+          qrCode: data.qrCode,
+          secret: data.secret,
           organizationName: data.organizationName
         });
         setShowRegister(false);
-        setShowOTPVerify(true);
-        setSuccessMessage(data.message || 'OTP sent!');
+        setShowTOTPVerify(true);
+        setSuccessMessage(data.message || 'Scan QR Code required');
         return;
       }
 
@@ -165,12 +166,12 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyTOTP = async () => {
     setError('');
     setSuccessMessage('');
 
-    if (!otpInput.trim()) {
-      setError('Please enter the OTP');
+    if (!totpInput.trim() || totpInput.length !== 6) {
+      setError('Please enter the 6-digit code');
       return;
     }
 
@@ -179,9 +180,9 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'verify_otp',
-          email: otpData?.email,
-          otp: otpInput.trim()
+          action: 'verify_totp',
+          email: totpData?.email,
+          token: totpInput.trim()
         })
       });
 
@@ -191,9 +192,9 @@ export default function LoginPage() {
 
       // Success! User is now admin
       setSuccessMessage(data.message || 'Verification successful! You are now the Admin.');
-      setShowOTPVerify(false);
-      setOtpData(null);
-      setOtpInput('');
+      setShowTOTPVerify(false);
+      setTotpData(null);
+      setTotpInput('');
       setNewUser({ id: '', name: '', email: '', password: '', role: 'user', accountType: 'enterprise' });
 
       // Refresh user list
@@ -218,35 +219,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6">
 
-      {/* Floating OTP Display - Top Right Corner */}
-      {showOTPVerify && otpData && (
-        <div className="fixed top-6 right-6 z-50 animate-slideInRight">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-6 rounded-2xl shadow-2xl border-2 border-blue-400 max-w-sm">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🔑</span>
-                <div>
-                  <p className="text-white font-bold text-sm uppercase tracking-wide">Your OTP</p>
-                  <p className="text-blue-100 text-xs">Testing Mode</p>
-                </div>
-              </div>
-              <div className="bg-white/20 px-2 py-1 rounded-full">
-                <p className="text-white text-xs font-semibold">10 min</p>
-              </div>
+      {/* Floating TOTP Instruction - Top Right */}
+      {showTOTPVerify && totpData && (
+        <div className="fixed top-6 right-6 z-50 animate-slideInRight max-w-sm">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl border-2 border-purple-500 text-center">
+            <h3 className="text-gray-900 font-bold mb-2">Scan with Authenticator App</h3>
+            <p className="text-gray-500 text-xs mb-4">Microsoft Authenticator, Google Authenticator, etc.</p>
+
+            <div className="bg-white p-2 rounded-lg inline-block mb-2 border border-gray-200">
+              <img src={totpData.qrCode} alt="TOTP QR Code" className="w-48 h-48" />
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl mb-3">
-              <p className="text-white text-4xl font-mono font-bold tracking-[0.3em] text-center select-all">
-                {otpData.otp}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 text-blue-100 text-xs">
-              <span className="truncate">📧 {otpData.email}</span>
-            </div>
-
-            <p className="text-blue-200 text-xs mt-3 text-center italic">
-              Enter this code below to verify
+            <p className="text-xs text-gray-400 font-mono mt-2 break-all">
+              Secret: {totpData.secret}
             </p>
           </div>
         </div>
@@ -272,12 +257,12 @@ export default function LoginPage() {
           </div>
         )}
 
-        {showOTPVerify ? (
-          // OTP Verification Form
+        {showTOTPVerify ? (
+          // TOTP Verification Form
           <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
-            <h2 className="text-2xl font-bold text-white mb-4">🔐 Verify Your Email</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">🔐 Two-Factor Authentication</h2>
             <p className="text-gray-400 text-sm mb-6">
-              You're about to become the Admin of <span className="text-purple-400 font-semibold">{otpData?.organizationName}</span>. Please enter the OTP to verify your email.
+              To secure the organization <span className="text-purple-400 font-semibold">{totpData?.organizationName}</span>, please scan the QR code and enter the 6-digit code.
             </p>
 
             {error && (
@@ -288,13 +273,13 @@ export default function LoginPage() {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Enter OTP *
+                Authenticator Code *
               </label>
               <input
                 type="text"
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
+                value={totpInput}
+                onChange={(e) => setTotpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onKeyPress={(e) => e.key === 'Enter' && handleVerifyTOTP()}
                 placeholder="000000"
                 maxLength={6}
                 className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white text-center text-2xl font-mono tracking-widest placeholder-gray-500 focus:outline-none focus:border-purple-500"
@@ -302,17 +287,17 @@ export default function LoginPage() {
             </div>
 
             <button
-              onClick={handleVerifyOTP}
+              onClick={handleVerifyTOTP}
               className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition mb-3"
             >
-              Verify & Become Admin
+              Verify & Register
             </button>
 
             <button
               onClick={() => {
-                setShowOTPVerify(false);
-                setOtpData(null);
-                setOtpInput('');
+                setShowTOTPVerify(false);
+                setTotpData(null);
+                setTotpInput('');
                 setShowRegister(true);
               }}
               className="w-full px-4 py-3 border border-gray-600 hover:bg-gray-700 text-gray-300 rounded-lg transition"
@@ -480,6 +465,42 @@ export default function LoginPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Must be 8+ characters with uppercase, lowercase, and number</p>
               </div>
+
+              {/* Role Selection for Enterprise */}
+              {newUser.accountType === 'enterprise' && (
+                <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    Requested Role
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewUser({ ...newUser, role: 'user' })}
+                      className={`px-4 py-2 rounded-md border transition-all text-sm ${newUser.role === 'user'
+                        ? 'bg-purple-600 border-purple-400 text-white'
+                        : 'bg-gray-900 border-gray-600 text-gray-400 hover:border-gray-500'
+                        }`}
+                    >
+                      Member (User)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewUser({ ...newUser, role: 'admin' })}
+                      className={`px-4 py-2 rounded-md border transition-all text-sm ${newUser.role === 'admin'
+                        ? 'bg-purple-600 border-purple-400 text-white'
+                        : 'bg-gray-900 border-gray-600 text-gray-400 hover:border-gray-500'
+                        }`}
+                    >
+                      Organization Admin
+                    </button>
+                  </div>
+                  <p className="mt-2 text-[10px] text-gray-500 italic">
+                    {newUser.role === 'admin'
+                      ? "⚠️ Admin requests for existing teams require approval from a current Admin."
+                      : "✅ Membership is usually approved automatically by domain."}
+                  </p>
+                </div>
+              )}
 
             </div>
 

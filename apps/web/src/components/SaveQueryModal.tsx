@@ -24,6 +24,7 @@ export function SaveQueryModal({ query, connectionId, onClose, onSuccess }: Save
             const user = getCurrentUser();
             const headers: HeadersInit = { 'Content-Type': 'application/json' };
             if (user?.email) headers['x-user-email'] = user.email;
+            if (user?.organizationId) headers['x-org-id'] = user.organizationId;
 
             const res = await fetch('/api/saved-queries', {
                 method: 'POST',

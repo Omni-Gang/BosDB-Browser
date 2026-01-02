@@ -6,6 +6,13 @@ import Link from 'next/link';
 import { Check, X, Zap, ArrowLeft, CreditCard, Shield, Star, Loader2, Lock, Landmark } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchOrgSubscription, PRICING, isValidCoupon, calculateDiscountedPrice, COUPONS } from '@/lib/subscription';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import StripeCheckout from '@/components/StripeCheckout';
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    : null;
 
 export default function PricingPage() {
     const router = useRouter();
@@ -24,6 +31,7 @@ export default function PricingPage() {
     const [discount, setDiscount] = useState(0);
     const [isPaid, setIsPaid] = useState(false);
     const [paymentProcessing, setPaymentProcessing] = useState(false);
+    const [clientSecret, setClientSecret] = useState('');
 
     useEffect(() => {
         // Safe access to window/localStorage on client
@@ -82,6 +90,44 @@ export default function PricingPage() {
         }
     };
 
+    useEffect(() => {
+        if (showPayment && selectedPlan !== 'pro_trial' && user) {
+            const createIntent = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/subscription', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'create_intent',
+                            plan: selectedPlan,
+                            orgId: user?.organizationId,
+                            userId: user?.id,
+                            coupon: appliedCoupon
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (data.clientSecret) {
+                        setClientSecret(data.clientSecret);
+                    } else {
+                        setClientSecret('');
+                        // If error (and not free plan result), log it
+                        if (data.error && data.error !== 'Stripe not configured') {
+                            console.error('Stripe init failed:', data.error);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to init payment', e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            createIntent();
+        }
+    }, [showPayment, selectedPlan, appliedCoupon, user]);
+
     const handleFreeTrial = async () => {
         setLoading(true);
         setError('');
@@ -112,7 +158,8 @@ export default function PricingPage() {
 
     const handlePayment = async () => {
         setError('');
-        const isFreeWithCoupon = appliedCoupon === 'omnigang100';
+        const finalPrice = calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon);
+        const isFreeWithCoupon = finalPrice === 0;
 
         // Basic validation - skip if 100% off coupon
         if (!isFreeWithCoupon) {
@@ -304,7 +351,7 @@ export default function PricingPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="text-4xl font-bold text-white mb-1">${viewMode === 'individual' ? '29' : '99'}</div>
+                        <div className="text-4xl font-bold text-white mb-1">${viewMode === 'individual' ? '29' : '49'}</div>
                         <p className="text-gray-400 mb-6">per {viewMode === 'individual' ? 'month' : 'org/month'}</p>
 
                         <ul className="space-y-3 mb-8">
@@ -317,7 +364,7 @@ export default function PricingPage() {
                         </ul>
 
                         <button
-                            onClick={() => handleUpgrade(viewMode === 'individual' ? 'pro_monthly' : 'enterprise_monthly' as any)} // Cast for now, logic needs update if we support enterprise upgrade
+                            onClick={() => handleUpgrade(viewMode === 'individual' ? 'pro_monthly' : 'enterprise_monthly')}
                             disabled={planType === 'monthly' || planType === 'yearly'} // Simplified check
                             className={`w-full py-3 bg-gradient-to-r ${viewMode === 'individual' ? 'from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : 'from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700'} text-white font-semibold rounded-lg transition disabled:opacity-50`}
                         >
@@ -335,7 +382,7 @@ export default function PricingPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="text-4xl font-bold text-white mb-1">${viewMode === 'individual' ? '249' : '999'}</div>
+                        <div className="text-4xl font-bold text-white mb-1">${viewMode === 'individual' ? '249' : '499'}</div>
                         <p className="text-gray-400 mb-1">per year</p>
                         <p className="text-green-400 text-sm mb-6">Save {viewMode === 'individual' ? '29%' : '16%'} (2 months free!)</p>
 
@@ -349,11 +396,11 @@ export default function PricingPage() {
                         </ul>
 
                         <button
-                            onClick={() => handleUpgrade(viewMode === 'individual' ? 'pro_yearly' : 'enterprise_yearly' as any)}
+                            onClick={() => handleUpgrade(viewMode === 'individual' ? 'pro_yearly' : 'enterprise_yearly')}
                             disabled={planType === 'yearly'}
                             className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition disabled:opacity-50"
                         >
-                            {planType === 'yearly' && viewMode === 'individual' ? 'Current Plan' : (planType === 'monthly' && viewMode === 'individual' ? 'Upgrade to Yearly' : 'Upgrade Now')}
+                            {planType === 'yearly' && (viewMode === 'individual' || viewMode === 'enterprise') ? 'Current Plan' : 'Upgrade Now'}
                         </button>
                     </div>
                 </div>
@@ -389,7 +436,7 @@ export default function PricingPage() {
 
             {showPayment && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+                    <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl">
                         {isPaid ? (
                             <div className="p-12 text-center animate-in fade-in zoom-in duration-500">
                                 <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -426,7 +473,7 @@ export default function PricingPage() {
                                     </button>
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-0">
+                                <div className="grid md:grid-cols-[2fr_3fr] gap-0">
                                     {/* Order Summary */}
                                     <div className="p-8 bg-black/20 border-r border-white/5">
                                         <div className="mb-8">
@@ -446,7 +493,7 @@ export default function PricingPage() {
 
                                         <div className="space-y-4">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-400">Pro Subscription</span>
+                                                <span className="text-gray-400">{selectedPlan.includes('enterprise') ? 'Enterprise' : 'Pro'} Subscription</span>
                                                 <span className="text-white">${(PRICING as any)[selectedPlan].price.toFixed(2)}</span>
                                             </div>
                                             {discount > 0 && (
@@ -464,7 +511,7 @@ export default function PricingPage() {
                                     </div>
 
                                     {/* Payment Form */}
-                                    <div className="p-8 bg-[#1c1c1c]">
+                                    <div className="p-8 bg-[#1c1c1c] h-full overflow-y-auto max-h-[600px]">
                                         {/* Coupon Section */}
                                         <div className="mb-8">
                                             <label className="block text-[11px] font-bold text-gray-500 uppercase mb-2">Promotion Code</label>
@@ -496,10 +543,10 @@ export default function PricingPage() {
                                                 <div className="mt-2 text-xs text-purple-400">
                                                     <p className="font-bold animate-pulse">🔥 Crazy Free Limited Time Offer!</p>
                                                     <button
-                                                        onClick={() => setCoupon(selectedPlan === 'pro_yearly' ? 'omnigang100' : 'bosdb100')}
+                                                        onClick={() => setCoupon(selectedPlan.includes('yearly') ? 'omnigang100' : 'bosdb100')}
                                                         className="hover:text-purple-300 underline mt-1"
                                                     >
-                                                        Use <strong>{selectedPlan === 'pro_yearly' ? 'omnigang100' : 'bosdb100'}</strong> for 100% OFF!
+                                                        Use <strong>{selectedPlan.includes('yearly') ? 'omnigang100' : 'bosdb100'}</strong> for 100% OFF!
                                                     </button>
                                                 </div>
                                             )}
@@ -508,87 +555,126 @@ export default function PricingPage() {
                                             )}
                                         </div>
 
-                                        {/* Card Section */}
-                                        <div className="mb-8">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="block text-[11px] font-bold text-gray-500 uppercase">Card Information</label>
-                                                <div className="flex gap-1">
-                                                    <div className="w-6 h-4 bg-gray-800 rounded-sm" />
-                                                    <div className="w-6 h-4 bg-gray-800 rounded-sm" />
-                                                    <div className="w-6 h-4 bg-gray-800 rounded-sm" />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-0 border border-white/10 rounded-xl overflow-hidden shadow-inner bg-[#2a2a2a]">
-                                                <div className="relative">
-                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                                                        <CreditCard className="w-4 h-4" />
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        value={cardNumber}
-                                                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                                                        placeholder="1234 5678 9123 0000"
-                                                        maxLength={19}
-                                                        disabled={appliedCoupon === 'omnigang100' || loading}
-                                                        className="w-full pl-11 pr-4 py-3 bg-transparent border-b border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2">
-                                                    <input
-                                                        type="text"
-                                                        value={expiry}
-                                                        onChange={(e) => setExpiry(e.target.value)}
-                                                        placeholder="MM / YY"
-                                                        maxLength={5}
-                                                        disabled={appliedCoupon === 'omnigang100' || loading}
-                                                        className="w-full px-4 py-3 bg-transparent border-r border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
-                                                    />
-                                                    <div className="relative">
-                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
-                                                            <Lock className="w-3 h-3" />
+                                        {/* STRIPE OR CARD SECTION */}
+                                        {clientSecret && stripePromise ? (
+                                            <Elements stripe={stripePromise} options={{ clientSecret, theme: 'night' }}>
+                                                <StripeCheckout
+                                                    amount={calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon)}
+                                                    onSuccess={async (paymentId) => {
+                                                        // Confirm with API
+                                                        setPaymentProcessing(true);
+                                                        try {
+                                                            const res = await fetch('/api/subscription', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    action: 'confirm_payment',
+                                                                    paymentIntentId: paymentId,
+                                                                    plan: selectedPlan,
+                                                                    orgId: user?.organizationId
+                                                                })
+                                                            });
+                                                            const data = await res.json();
+                                                            if (data.success) {
+                                                                setIsPaid(true);
+                                                                setTimeout(() => { router.push('/dashboard'); }, 2000);
+                                                            } else {
+                                                                setError(data.error || 'Confirmation failed');
+                                                            }
+                                                        } catch (e) {
+                                                            setError('Failed to confirm payment');
+                                                        } finally {
+                                                            setPaymentProcessing(false);
+                                                        }
+                                                    }}
+                                                    onError={(err) => setError(err)}
+                                                />
+                                            </Elements>
+                                        ) : (
+                                            <>
+                                                {/* Card Section */}
+                                                <div className="mb-8">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <label className="block text-[11px] font-bold text-gray-500 uppercase">Card Information</label>
+                                                        <div className="flex gap-1">
+                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
+                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
+                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
                                                         </div>
-                                                        <input
-                                                            type="text"
-                                                            value={cvv}
-                                                            onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                                                            placeholder="CVC"
-                                                            maxLength={3}
-                                                            disabled={appliedCoupon === 'omnigang100' || loading}
-                                                            className="w-full px-4 py-3 bg-transparent text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
-                                                        />
                                                     </div>
-                                                </div>
-                                            </div>
-                                            {error && !error.includes('coupon') && (
-                                                <p className="text-red-400 text-[10px] mt-2 flex items-center gap-1">
-                                                    <X className="w-3 h-3" /> {error}
-                                                </p>
-                                            )}
-                                        </div>
 
-                                        <button
-                                            onClick={handlePayment}
-                                            disabled={loading}
-                                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group"
-                                        >
-                                            {loading ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    {appliedCoupon === 'omnigang100' ? (
-                                                        <>Activate Pro Free <Star className="w-4 h-4 fill-white animate-pulse" /></>
-                                                    ) : (
-                                                        <>Pay ${calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon)} <Zap className="w-4 h-4 group-hover:scale-110 transition" /></>
+                                                    <div className="space-y-0 border border-white/10 rounded-xl overflow-hidden shadow-inner bg-[#2a2a2a]">
+                                                        <div className="relative">
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                                                                <CreditCard className="w-4 h-4" />
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                value={cardNumber}
+                                                                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                                                                placeholder="1234 5678 9123 0000"
+                                                                maxLength={19}
+                                                                disabled={calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) === 0 || loading}
+                                                                className="w-full pl-11 pr-4 py-3 bg-transparent border-b border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-2">
+                                                            <input
+                                                                type="text"
+                                                                value={expiry}
+                                                                onChange={(e) => setExpiry(e.target.value)}
+                                                                placeholder="MM / YY"
+                                                                maxLength={5}
+                                                                disabled={calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) === 0 || loading}
+                                                                className="w-full px-4 py-3 bg-transparent border-r border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                            />
+                                                            <div className="relative">
+                                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
+                                                                    <Lock className="w-3 h-3" />
+                                                                </div>
+                                                                <input
+                                                                    type="text"
+                                                                    value={cvv}
+                                                                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                                                                    placeholder="CVC"
+                                                                    maxLength={3}
+                                                                    disabled={calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) === 0 || loading}
+                                                                    className="w-full px-4 py-3 bg-transparent text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {error && !error.includes('coupon') && (
+                                                        <p className="text-red-400 text-[10px] mt-2 flex items-center gap-1">
+                                                            <X className="w-3 h-3" /> {error}
+                                                        </p>
                                                     )}
-                                                </>
-                                            )}
-                                        </button>
+                                                </div>
 
-                                        <div className="mt-6 flex items-center justify-center gap-2 grayscale opacity-50">
-                                            <Landmark className="w-3 h-3 text-gray-400" />
-                                            <span className="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Powered by Stripe</span>
-                                        </div>
+                                                <button
+                                                    onClick={handlePayment}
+                                                    disabled={loading}
+                                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group"
+                                                >
+                                                    {loading ? (
+                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            {calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) === 0 ? (
+                                                                <>Activate Pro Free <Star className="w-4 h-4 fill-white animate-pulse" /></>
+                                                            ) : (
+                                                                <>Pay ${calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon)} <Zap className="w-4 h-4 group-hover:scale-110 transition" /></>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </button>
+
+                                                <div className="mt-6 flex items-center justify-center gap-2 grayscale opacity-50">
+                                                    <Landmark className="w-3 h-3 text-gray-400" />
+                                                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Powered by Stripe</span>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>

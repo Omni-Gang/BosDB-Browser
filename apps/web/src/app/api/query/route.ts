@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
                 rowCount: result.rowCount,
                 success: true,
                 userEmail: userEmail || undefined,
+                orgId: request.headers.get('x-org-id') || undefined,
             });
         } catch (historyError) {
             // Don't fail query if history fails
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
             // body is already parsed at the top of POST
             const connInfo = await getConnection(body.connectionId);
             const userEmail = request.headers.get('x-user-email');
+            const orgId = request.headers.get('x-org-id');
 
             if (connInfo) {
                 addQueryToHistory({
@@ -131,6 +133,7 @@ export async function POST(request: NextRequest) {
                     success: false,
                     error: error.message,
                     userEmail: userEmail || undefined,
+                    orgId: orgId || undefined,
                 });
             }
         } catch (historyError) {

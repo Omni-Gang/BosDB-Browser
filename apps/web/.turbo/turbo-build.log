@@ -2,79 +2,28 @@
 > @bosdb/web@0.1.0 build
 > next build
 
-  ▲ Next.js 14.2.35
+  ▲ Next.js 14.2.14
+  - Environments: .env
 
    Creating an optimized production build ...
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: EPERM: operation not permitted, rename 'C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\cache\webpack\client-production\0.pack_' -> 'C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\cache\webpack\client-production\0.pack'
  ✓ Compiled successfully
    Linting and checking validity of types ...
-   Collecting page data ...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-   Generating static pages (0/34) ...
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-   Generating static pages (8/34) 
-   Generating static pages (16/34) 
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-   Generating static pages (25/34) 
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
- ✓ Generating static pages (34/34)
-   Finalizing page optimization ...
-   Collecting build traces ...
+Failed to compile.
 
-Route (app)                              Size     First Load JS
-┌ ○ /                                    176 B          96.2 kB
-├ ○ /_not-found                          142 B          87.4 kB
-├ ○ /admin                               4.66 kB         101 kB
-├ ƒ /api/admin/assign                    0 B                0 B
-├ ƒ /api/admin/users                     0 B                0 B
-├ ƒ /api/ai/generate-sql                 0 B                0 B
-├ ƒ /api/auth                            0 B                0 B
-├ ƒ /api/auth/change-password            0 B                0 B
-├ ƒ /api/connections                     0 B                0 B
-├ ƒ /api/data/update                     0 B                0 B
-├ ƒ /api/docker/[id]                     0 B                0 B
-├ ƒ /api/docker/containers               0 B                0 B
-├ ƒ /api/docker/provision                0 B                0 B
-├ ƒ /api/history                         0 B                0 B
-├ ƒ /api/payment                         0 B                0 B
-├ ƒ /api/procedures                      0 B                0 B
-├ ƒ /api/query                           0 B                0 B
-├ ƒ /api/saved-queries                   0 B                0 B
-├ ƒ /api/schema                          0 B                0 B
-├ ƒ /api/schema/table                    0 B                0 B
-├ ƒ /api/subscription                    0 B                0 B
-├ ƒ /api/tables                          0 B                0 B
-├ ƒ /api/vcs/branches                    0 B                0 B
-├ ƒ /api/vcs/commit                      0 B                0 B
-├ ƒ /api/vcs/pending                     0 B                0 B
-├ ƒ /api/vcs/rollback                    0 B                0 B
-├ ƒ /api/vcs/rollback/diff               0 B                0 B
-├ ○ /dashboard                           11.1 kB         107 kB
-├ ○ /docs                                2.38 kB        98.4 kB
-├ ○ /history                             2.56 kB        98.5 kB
-├ ○ /login                               3.58 kB        99.6 kB
-├ ○ /pricing                             7.1 kB          103 kB
-├ ○ /query                               190 kB          286 kB
-├ ○ /saved-queries                       3.01 kB          99 kB
-├ ○ /settings                            4.23 kB         100 kB
-├ ○ /vcs-test                            876 B          88.2 kB
-└ ○ /version-control                     4.97 kB         101 kB
-+ First Load JS shared by all            87.3 kB
-  ├ chunks/117-6e5484d1a83a55e3.js       31.7 kB
-  ├ chunks/fd9d1056-0d19444e3e44d8fd.js  53.6 kB
-  └ other shared chunks (total)          1.92 kB
+./src/app/api/schema/table/route.ts:32:23
+Type error: Property 'executeQuery' does not exist on type '{ adapter: any; adapterConnectionId: any; }'.
 
-
-○  (Static)   prerendered as static content
-ƒ  (Dynamic)  server-rendered on demand
-
+[0m [90m 30 |[39m[0m
+[0m [90m 31 |[39m         [90m// Execute SQL[39m[0m
+[0m[31m[1m>[22m[39m[90m 32 |[39m         [36mawait[39m adapter[33m.[39mexecuteQuery(sql)[33m;[39m[0m
+[0m [90m    |[39m                       [31m[1m^[22m[39m[0m
+[0m [90m 33 |[39m[0m
+[0m [90m 34 |[39m         [90m// Track in VCS[39m[0m
+[0m [90m 35 |[39m         [36mtry[39m {[0m
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
+npm error workspace @bosdb/web@0.1.0
+npm error location C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build

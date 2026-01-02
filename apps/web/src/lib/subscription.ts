@@ -197,7 +197,7 @@ export const PRICING = {
     },
     enterprise_monthly: {
         name: 'Enterprise Monthly',
-        price: 99,
+        price: 49,
         period: 'month',
         features: [
             'Everything in Pro',
@@ -210,7 +210,7 @@ export const PRICING = {
     },
     enterprise_yearly: {
         name: 'Enterprise Yearly',
-        price: 999,
+        price: 499,
         period: 'year',
         savings: '16%',
         features: [
@@ -230,17 +230,17 @@ export const COUPONS: Record<string, { discount_percent: number, description: st
     'bosdb100': {
         discount_percent: 100,
         description: '100% OFF Monthly Plan',
-        allowed_plans: ['pro_monthly']
+        allowed_plans: ['pro_monthly', 'enterprise_monthly']
     },
     'omnigang10': {
         discount_percent: 100,
         description: '100% OFF Monthly Plan',
-        allowed_plans: ['pro_monthly']
+        allowed_plans: ['pro_monthly', 'enterprise_monthly']
     },
     'omnigang100': {
         discount_percent: 100,
         description: '100% OFF Yearly Plan',
-        allowed_plans: ['pro_yearly']
+        allowed_plans: ['pro_yearly', 'enterprise_yearly']
     }
 };
 

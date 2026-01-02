@@ -1,5 +1,7 @@
 'use client';
 
+import { getCurrentUser } from '@/lib/auth';
+
 import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Editor from '@monaco-editor/react';
@@ -7,7 +9,7 @@ import { useTheme } from 'next-themes';
 import { Play, Save, Download, Clock, Table as TableIcon, Database, ChevronRight, ChevronDown, GitBranch, Plus as PlusIcon, FileCode, Wand2, FileSearch, FileStack, Upload, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { trackChange, parseQueryForChanges, getPendingChanges, generateRollbackSQL } from '@/lib/vcs-helper';
-import { extractTableName } from '@/lib/sql-helper';
+import { extractTableName, getCurrentStatement } from '@/lib/sql-helper';
 import { formatSQL, getDialectFromDbType, getExplainPrefix } from '@/lib/sql-formatter';
 import TableDesigner from '@/components/schema/TableDesigner';
 import { SaveQueryModal } from '@/components/SaveQueryModal';
@@ -19,6 +21,7 @@ import { QueryPlanViewer } from '@/components/QueryPlanViewer';
 import { ResultsToolbar } from '@/components/ResultsToolbar';
 import { DataEditor } from '@/components/DataEditor';
 import { AIAssistantPanel } from '@/components/AIAssistantPanel';
+import { QueryHistory } from '@/components/QueryHistory';
 
 // Define QueryResult interface
 interface QueryResult {
@@ -203,10 +206,14 @@ function QueryPageContent() {
     } | null>(null);
     const [importTable, setImportTable] = useState<{ name: string; schema: string } | null>(null);
     const [exportingIndex, setExportingIndex] = useState<number>(0);
+    const [activeTab, setActiveTab] = useState<number>(0);
 
     // Loading states map: schemaName -> { tables: boolean, procedures: boolean }
     const [loadingResources, setLoadingResources] = useState<Map<string, { tables: boolean; procedures: boolean }>>(new Map());
     const [resourceErrors, setResourceErrors] = useState<Map<string, string>>(new Map());
+    const [history, setHistory] = useState<any[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [monacoInstance, setMonacoInstance] = useState<any>(null);
 
     // Memoize columns for the first result (fallback)
     const columns = useMemo(() => results.length > 0 ? results[0].fields.map(f => f.name) : [], [results]);
@@ -220,6 +227,14 @@ function QueryPageContent() {
         });
     };
 
+    const getHeaders = () => {
+        const currentUser = getCurrentUser();
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (currentUser?.email) headers['x-user-email'] = currentUser.email;
+        if (currentUser?.organizationId) headers['x-org-id'] = currentUser.organizationId;
+        return headers;
+    };
+
     const handleRefresh = async () => {
         setSchemas([]);
         setSchemaTables(new Map());
@@ -227,8 +242,10 @@ function QueryPageContent() {
         setExpandedSchemas(new Set());
         setLoadingResources(new Map());
         setResourceErrors(new Map());
+        setResourceErrors(new Map());
         await fetchSchemas();
         await loadPendingChanges();
+        await fetchHistory();
     };
 
     // Format SQL handler
@@ -252,7 +269,7 @@ function QueryPageContent() {
 
             const res = await fetch('/api/query', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({
                     connectionId,
                     query: explainQuery,
@@ -295,8 +312,54 @@ function QueryPageContent() {
             fetchConnectionInfo();
             fetchSchemas();
             loadPendingChanges();
+            fetchHistory();
         }
     }, [connectionId]);
+
+    // Register Autocomplete
+    useEffect(() => {
+        if (!monacoInstance || schemas.length === 0) return;
+
+        const tableNames = Array.from(schemaTables.values()).flat().map(t => t.name);
+        const schemaNames = schemas.map(s => s.name);
+
+        const provider = monacoInstance.languages.registerCompletionItemProvider('sql', {
+            provideCompletionItems: (model: any, position: any) => {
+                const word = model.getWordUntilPosition(position);
+                const range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                };
+
+                const suggestions = [
+                    ...['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'LIMIT', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'ON', 'AS', 'IN', 'IS', 'NULL', 'NOT', 'EXISTS', 'CREATE', 'TABLE', 'DROP', 'ALTER', 'TRUNCATE'].map(k => ({
+                        label: k,
+                        kind: monacoInstance.languages.CompletionItemKind.Keyword,
+                        insertText: k,
+                        range: range,
+                    })),
+                    ...schemaNames.map(s => ({
+                        label: s,
+                        kind: monacoInstance.languages.CompletionItemKind.Module,
+                        insertText: s,
+                        range: range,
+                    })),
+                    ...tableNames.map(t => ({
+                        label: t,
+                        kind: monacoInstance.languages.CompletionItemKind.Class,
+                        insertText: t,
+                        range: range,
+                    })),
+                ];
+
+                return { suggestions };
+            },
+        });
+
+        return () => provider.dispose();
+    }, [monacoInstance, schemas, schemaTables]);
 
     const loadPendingChanges = async () => {
         if (!connectionId) return;
@@ -304,9 +367,28 @@ function QueryPageContent() {
         setPendingChanges(changes.length);
     };
 
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch(`/api/history?connectionId=${connectionId}`, { headers: getHeaders() });
+            const data = await res.json();
+            if (data.history) {
+                // Map server history format to frontend format if needed
+                setHistory(data.history.map((h: any) => ({
+                    id: h.id,
+                    sql: h.query,
+                    timestamp: new Date(h.executedAt),
+                    duration: h.executionTime,
+                    status: h.success ? 'success' : 'error'
+                })));
+            }
+        } catch (err) {
+            console.error('Failed to fetch history:', err);
+        }
+    };
+
     const fetchConnectionInfo = async () => {
         try {
-            const res = await fetch('/api/connections');
+            const res = await fetch('/api/connections', { headers: getHeaders() });
             const data = await res.json();
             const conn = data.connections?.find((c: any) => c.id === connectionId);
             setConnectionInfo(conn);
@@ -317,7 +399,7 @@ function QueryPageContent() {
 
     const fetchSchemas = async () => {
         try {
-            const res = await fetch(`/api/schema?connectionId=${connectionId}`);
+            const res = await fetch(`/api/schema?connectionId=${connectionId}`, { headers: getHeaders() });
             const data = await res.json();
             setSchemas(data.schemas || []);
         } catch (err) {
@@ -325,25 +407,10 @@ function QueryPageContent() {
         }
     };
 
-    const fetchTables = async (schemaName: string) => {
-        updateLoading(schemaName, 'tables', true);
-        try {
-            const res = await fetch(`/api/tables?connectionId=${connectionId}&schema=${schemaName}`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to fetch tables');
-            setSchemaTables(prev => new Map(prev).set(schemaName, data.tables || []));
-        } catch (err: any) {
-            console.error('Failed to fetch tables:', err);
-            setResourceErrors(prev => new Map(prev).set(`${schemaName}:tables`, err.message));
-        } finally {
-            updateLoading(schemaName, 'tables', false);
-        }
-    };
-
     const fetchProcedures = async (schemaName: string) => {
         updateLoading(schemaName, 'procedures', true);
         try {
-            const res = await fetch(`/api/procedures?connectionId=${connectionId}&schema=${schemaName}`);
+            const res = await fetch(`/api/procedures?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to fetch procedures');
             setSchemaProcedures(prev => new Map(prev).set(schemaName, data.procedures || []));
@@ -352,6 +419,21 @@ function QueryPageContent() {
             setResourceErrors(prev => new Map(prev).set(`${schemaName}:procedures`, err.message));
         } finally {
             updateLoading(schemaName, 'procedures', false);
+        }
+    };
+
+    const fetchTables = async (schemaName: string) => {
+        updateLoading(schemaName, 'tables', true);
+        try {
+            const res = await fetch(`/api/tables?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch tables');
+            setSchemaTables(prev => new Map(prev).set(schemaName, data.tables || []));
+        } catch (err: any) {
+            console.error('Failed to fetch tables:', err);
+            setResourceErrors(prev => new Map(prev).set(`${schemaName}:tables`, err.message));
+        } finally {
+            updateLoading(schemaName, 'tables', false);
         }
     };
 
@@ -430,7 +512,7 @@ function QueryPageContent() {
                             // Capture rows BEFORE they are changed/deleted
                             const snapshotRes = await fetch('/api/query', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: getHeaders(),
                                 body: JSON.stringify({
                                     connectionId,
                                     query: `SELECT * FROM ${tableName} ${whereClause}`,
@@ -456,7 +538,7 @@ function QueryPageContent() {
 
                 const res = await fetch('/api/query', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getHeaders(),
                     body: JSON.stringify({
                         connectionId,
                         query: q,
@@ -486,13 +568,35 @@ function QueryPageContent() {
                     change.rollbackSQL = generateRollbackSQL(q, metadata);
                     await trackChange(connectionId, change);
                 }
+
+                // Add to history
+                const historyItem = {
+                    id: crypto.randomUUID(),
+                    sql: q,
+                    timestamp: new Date(),
+                    duration: data.executionTime,
+                    status: 'success'
+                };
+                setHistory(prev => [historyItem, ...prev].slice(0, 50));
             }
 
             setResults(allResults);
-            if (finalError) setError(finalError);
+            if (finalError) {
+                setError(finalError);
+                // Add error to history
+                const errorHistoryItem = {
+                    id: crypto.randomUUID(),
+                    sql: queries[allResults.length] || rawQuery,
+                    timestamp: new Date(),
+                    duration: 0,
+                    status: 'error'
+                };
+                setHistory(prev => [errorHistoryItem, ...prev].slice(0, 50));
+            }
 
             // Reload pending changes once after all queries
             await loadPendingChanges();
+            setActiveTab(0); // Show first result set
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -500,12 +604,34 @@ function QueryPageContent() {
         }
     }, [connectionId, query, editorRef, connectionInfo]);
 
+    const executeByCursor = useCallback(async () => {
+        if (!editorRef || !connectionId) return;
+
+        const position = editorRef.getPosition();
+        if (!position) return;
+
+        const model = editorRef.getModel();
+        if (!model) return;
+
+        const offset = model.getOffsetAt(position);
+        const fullSql = model.getValue();
+        const statement = getCurrentStatement(fullSql, offset);
+
+        if (statement) {
+            await executeQuery(statement);
+        }
+    }, [editorRef, connectionId, executeQuery]);
+
     // Handle Ctrl+E shortcut
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                 e.preventDefault();
                 executeQuery();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeByCursor();
             }
         };
 
@@ -709,6 +835,16 @@ function QueryPageContent() {
                         </button>
 
                         <button
+                            onClick={executeByCursor}
+                            disabled={executing || !query.trim()}
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            title="Execute Statement Under Cursor (Ctrl+Enter)"
+                        >
+                            <Play className="w-4 h-4 text-green-500" />
+                            Statement
+                        </button>
+
+                        <button
                             onClick={handleExplainQuery}
                             disabled={executing || !query.trim()}
                             className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
@@ -773,6 +909,15 @@ function QueryPageContent() {
                             )}
                         </Link>
 
+                        <button
+                            onClick={() => setShowHistory(!showHistory)}
+                            className={`px-3 py-2 border border-border rounded-lg transition flex items-center gap-2 ${showHistory ? 'bg-accent border-primary' : 'hover:bg-accent'}`}
+                            title="Query History"
+                        >
+                            <Clock className="w-4 h-4" />
+                            History
+                        </button>
+
                         <div className="flex-1" />
 
                         {results.length > 0 && (
@@ -794,7 +939,10 @@ function QueryPageContent() {
                             theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
                             value={query}
                             onChange={(value: string | undefined) => setQuery(value || '')}
-                            onMount={(editor: any) => setEditorRef(editor)}
+                            onMount={(editor: any, monaco: any) => {
+                                setEditorRef(editor);
+                                setMonacoInstance(monaco);
+                            }}
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -820,44 +968,61 @@ function QueryPageContent() {
                                 {warning}
                             </div>
                         )}
-                        {results.map((res, idx) => (
-                            <div key={idx} className="mb-8 last:mb-0">
+                        {/* Result Tabs */}
+                        {results.length > 0 && (
+                            <div className="flex border-b border-border mb-4 overflow-x-auto">
+                                {results.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveTab(idx)}
+                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === idx
+                                            ? 'border-primary text-primary'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        Result {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {results.length > 0 && results[activeTab] && (
+                            <div className="animate-fadeIn">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
-                                        Result Set #{idx + 1} ({res.rowCount} rows)
+                                        Result Set #{activeTab + 1} ({results[activeTab].rowCount} rows)
                                     </div>
                                     <div className="text-xs text-muted-foreground">
-                                        Executed in {res.executionTime}ms
+                                        Executed in {results[activeTab].executionTime}ms
                                     </div>
                                 </div>
 
-                                {res.rows.length === 0 ? (
+                                {results[activeTab].rows.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
                                         Query executed successfully but returned no rows
                                     </div>
                                 ) : (
                                     <div className="border border-border rounded-lg overflow-hidden">
                                         <ResultsToolbar
-                                            data={res.rows}
-                                            columns={res.columnNames}
+                                            data={results[activeTab].rows}
+                                            columns={results[activeTab].columnNames}
                                             onFilteredDataChange={(data) => {
                                                 setFilteredResults(prev => {
                                                     const next = new Map(prev);
-                                                    next.set(idx, data);
+                                                    next.set(activeTab, data);
                                                     return next;
                                                 });
                                             }}
                                             onExport={() => {
-                                                setExportingIndex(idx);
+                                                setExportingIndex(activeTab);
                                                 setShowExportModal(true);
                                             }}
                                         />
                                         <div className="h-[400px]">
                                             <DataEditor
-                                                rows={res.rows}
-                                                fields={res.fields}
+                                                rows={results[activeTab].rows}
+                                                fields={results[activeTab].fields}
                                                 onSave={async () => {
-                                                    // This might need more logic for multiple results, but for now we keep it basic
                                                     alert("Inline editing is currently limited to the first result set in multi-query mode.");
                                                 }}
                                             />
@@ -865,7 +1030,7 @@ function QueryPageContent() {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                        )}
 
                         {results.length === 0 && !error && (
                             <div className="text-center py-12 text-muted-foreground">
@@ -874,6 +1039,20 @@ function QueryPageContent() {
                         )}
                     </div>
                 </div>
+
+                {/* History Sidebar */}
+                {showHistory && (
+                    <QueryHistory
+                        history={history}
+                        onSelect={(sql) => setQuery(sql)}
+                        onRun={(sql) => {
+                            setQuery(sql);
+                            setTimeout(() => executeQuery(sql), 100);
+                        }}
+                        onClear={() => setHistory([])}
+                        onRemove={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                    />
+                )}
             </div>
             {/* Table Designer Modal */}
             {showTableDesigner && connectionId && (

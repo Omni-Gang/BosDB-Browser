@@ -15,10 +15,11 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const connectionId = searchParams.get('connectionId');
         const userEmail = request.headers.get('x-user-email');
+        const orgId = request.headers.get('x-org-id');
 
         let queries;
         if (userEmail) {
-            queries = getUserSavedQueries(userEmail, connectionId || undefined);
+            queries = getUserSavedQueries(userEmail, orgId || undefined, connectionId || undefined);
         } else {
             queries = getSavedQueries(connectionId || undefined);
         }
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { name, description, query, connectionId } = body;
         const userEmail = request.headers.get('x-user-email');
+        const orgId = request.headers.get('x-org-id');
 
         if (!name || !query) {
             return NextResponse.json(
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
             query,
             connectionId,
             userEmail: userEmail || undefined,
+            orgId: orgId || undefined,
         });
 
         return NextResponse.json({ query: savedQuery });

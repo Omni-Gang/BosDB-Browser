@@ -17,7 +17,7 @@ export interface IUser {
 }
 
 const UserSchema = new Schema<IUser>({
-    id: { type: String, required: true }, // Not unique globally due to org scoping potential, but unique per email usually
+    id: { type: String, required: true }, // Unique scoped to organizationId
     email: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     password: { type: String },
@@ -30,6 +30,9 @@ const UserSchema = new Schema<IUser>({
     subscription: { type: Schema.Types.Mixed },
     createdAt: { type: Date, default: Date.now },
 });
+
+// Compound unique index: User ID must be unique ONLY within the same organization
+UserSchema.index({ id: 1, organizationId: 1 }, { unique: true });
 
 const User: Model<IUser> = mongoose.models.User || mongoose.model('User', UserSchema);
 
