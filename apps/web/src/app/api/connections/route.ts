@@ -3,20 +3,37 @@ import { AdapterFactory } from '@bosdb/db-adapters';
 import { encryptCredentials } from '@bosdb/security';
 import { Logger } from '@bosdb/utils';
 import type { ConnectionConfig } from '@bosdb/core';
-import { connections, saveConnections } from '@/lib/store';
+import { connections, saveConnections, getConnection } from '@/lib/store';
 
 const logger = new Logger('ConnectionsAPI');
 
 // Active connection tracking
 const activeConnections = new Map<string, string>(); // connectionId -> adapterId
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
-        // In production, filter by user ID from session
-        const allConnections = Array.from(connections.values());
+        // Get user email and org ID from headers (optional for backward compatibility)
+        const userEmail = request.headers.get('x-user-email');
+        const orgId = request.headers.get('x-org-id');
+
+        let visibleConnections;
+
+        if (userEmail || orgId) {
+            // Filter connections: 
+            // 1. Owned by user (userEmail matches)
+            // 2. Shared with organization (organizationId matches)
+            visibleConnections = Array.from(connections.values()).filter(conn => {
+                const isOwner = userEmail && conn.userEmail === userEmail;
+                const isOrgShared = orgId && conn.organizationId === orgId;
+                return isOwner || isOrgShared;
+            });
+        } else {
+            // Backward compatibility: show all connections if no context provided
+            visibleConnections = Array.from(connections.values());
+        }
 
         return NextResponse.json({
-            connections: allConnections.map((conn) => ({
+            connections: visibleConnections.map((conn) => ({
                 id: conn.id,
                 name: conn.name,
                 type: conn.type,
@@ -24,6 +41,8 @@ export async function GET(_request: NextRequest) {
                 port: conn.port,
                 database: conn.database,
                 readOnly: conn.readOnly,
+                userEmail: conn.userEmail,
+                organizationId: conn.organizationId,
                 status: activeConnections.has(conn.id) ? 'connected' : 'disconnected',
             })),
         });
@@ -35,8 +54,11 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const userEmail = request.headers.get('x-user-email') || 'guest';
+        const orgId = request.headers.get('x-org-id');
+
         const body = await request.json();
-        const { name, type, host, port, database, username, password, ssl, readOnly } = body;
+        const { name, type, host, port, database, username, password, ssl, readOnly, skipTest } = body;
 
         // Validate required fields
         if (!name || !type || !host || !database || !username || !password) {
@@ -54,15 +76,18 @@ export async function POST(request: NextRequest) {
             readOnly: readOnly || false,
         };
 
-        // Create adapter and test connection
-        const adapter = AdapterFactory.create(type);
-        const testResult = await adapter.testConnection(config);
+        // Skip connection test if requested (for auto-provisioned databases)
+        if (!skipTest) {
+            // Create adapter and test connection
+            const adapter = AdapterFactory.create(type);
+            const testResult = await adapter.testConnection(config);
 
-        if (!testResult.success) {
-            return NextResponse.json(
-                { error: 'Connection test failed', details: testResult.error },
-                { status: 400 }
-            );
+            if (!testResult.success) {
+                return NextResponse.json(
+                    { error: 'Connection test failed', details: testResult.error },
+                    { status: 400 }
+                );
+            }
         }
 
         // Encrypt credentials
@@ -84,6 +109,8 @@ export async function POST(request: NextRequest) {
             database,
             credentials: encryptedCredentials,
             readOnly: config.readOnly,
+            userEmail: userEmail, // Store user email as owner
+            organizationId: orgId, // Store organization ID for sharing
             createdAt: new Date().toISOString(),
         };
 
@@ -92,7 +119,7 @@ export async function POST(request: NextRequest) {
         // Persist to file
         saveConnections();
 
-        logger.info(`Connection created: ${connectionId} (${type}://${host}:${port}/${database})`);
+        logger.info(`Connection created: ${connectionId} (${type}://${host}:${port}/${database}) by ${userEmail}`);
 
         // Return connection without credentials
         return NextResponse.json({
@@ -109,6 +136,55 @@ export async function POST(request: NextRequest) {
         logger.error('Failed to create connection', error);
         return NextResponse.json(
             { error: 'Failed to create connection', message: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const userEmail = request.headers.get('x-user-email');
+
+        if (!userEmail) {
+            return NextResponse.json({ error: 'User email required' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const connectionId = searchParams.get('id');
+
+        if (!connectionId) {
+            return NextResponse.json({ error: 'Connection ID required' }, { status: 400 });
+        }
+
+        const connection = await getConnection(connectionId);
+
+        if (!connection) {
+            return NextResponse.json({ error: `Connection not found: ${connectionId}` }, { status: 404 });
+        }
+
+        // Verify user owns this connection
+        if (connection.userEmail !== userEmail) {
+            return NextResponse.json({ error: 'Not authorized to delete this connection' }, { status: 403 });
+        }
+
+        // Delete the connection
+        connections.delete(connectionId);
+
+        // Close active connection if exists
+        if (activeConnections.has(connectionId)) {
+            activeConnections.delete(connectionId);
+        }
+
+        // Persist changes
+        saveConnections();
+
+        logger.info(`Connection deleted: ${connectionId} by ${userEmail}`);
+
+        return NextResponse.json({ success: true, message: 'Connection deleted successfully' });
+    } catch (error: any) {
+        logger.error('Failed to delete connection', error);
+        return NextResponse.json(
+            { error: 'Failed to delete connection', message: error.message },
             { status: 500 }
         );
     }

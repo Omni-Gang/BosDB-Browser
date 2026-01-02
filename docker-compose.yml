@@ -1,57 +1,58 @@
+# BosDB - Docker Compose Setup
+# This deploys BosDB with a demo PostgreSQL database
+
 version: '3.8'
 
 services:
-  # Example PostgreSQL database for testing
-  postgres:
-    image: postgres:16-alpine
-    container_name: bosdb-postgres-test
-    environment:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpass
-      POSTGRES_DB: testdb
+  # BosDB Web Application (Frontend + Backend API)
+  bosdb:
+    build: .
     ports:
-      - "5432:5432"
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - ENCRYPTION_MASTER_KEY=your-super-secret-key-change-this
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Persist user data and subscriptions
+      - bosdb-data:/app/apps/web/.bosdb-data
+    depends_on:
+      - demo-postgres
+      - demo-mysql
+    restart: unless-stopped
 
-  # Redis for caching (production)
-  redis:
+  # Demo PostgreSQL Database (for testing)
+  demo-postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"  # Changed from 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: demodb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Demo MySQL Database (for testing)
+  demo-mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"  # Changed from 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql123
+      MYSQL_DATABASE: demodb
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+  # Demo Redis (for testing)
+  demo-redis:
     image: redis:7-alpine
-    container_name: bosdb-redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  # MySQL for testing MySQL adapter
-  mysql:
-    image: mysql:8.0
-    container_name: bosdb-mysql-test
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: testpass
-    ports:
-      - '3306:3306'
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  # MongoDB for testing MongoDB adapter
-  mongodb:
-    image: mongo:7
-    container_name: bosdb-mongodb-test
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpass
-      MONGO_INITDB_DATABASE: testdb
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongodb_data:/data/db
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
-  mysql_data:
-  mongodb_data:
+  bosdb-data:
+  postgres-data:
+  mysql-data:

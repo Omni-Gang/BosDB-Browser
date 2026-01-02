@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createVersionControl } from '@bosdb/version-control';
-import { FileStorage } from '@bosdb/version-control/dist/storage/FileStorage';
+import { createVersionControl, FileStorage } from '@bosdb/version-control';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { generateRollbackSQL } from '@/lib/vcs-helper';
+import { connections, adapterInstances, getConnection } from '@/lib/store';
+import { AdapterFactory } from '@bosdb/db-adapters';
+import { decryptCredentials } from '@bosdb/security';
+import { Logger } from '@bosdb/utils';
+import { getConnectedAdapter } from '@/lib/db-utils';
+
+const logger = new Logger('RollbackAPI');
 
 // POST /api/vcs/rollback - Rollback to a specific commit
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { connectionId, commitId, targetRevision } = body;
+        const { connectionId, commitId, targetRevision, author, isRevert } = body;
 
         if (!connectionId) {
             return NextResponse.json({ error: 'Connection ID required' }, { status: 400 });
+        }
+
+        // Get connection info
+        const connectionInfo = await getConnection(connectionId);
+        if (!connectionInfo) {
+            return NextResponse.json({ error: `Connection not found: ${connectionId}` }, { status: 404 });
         }
 
         // Initialize VCS
@@ -23,11 +36,9 @@ export async function POST(request: NextRequest) {
 
         const vc = createVersionControl(connectionId, storage);
 
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await (vc as any).loadHEAD();
 
         // Get all commits
         const logResult = await vc.log({ maxCount: 1000 });
@@ -39,32 +50,109 @@ export async function POST(request: NextRequest) {
 
         // Find target commit
         let targetCommit;
-        if (targetRevision !== undefined) {
+        let commitsToUndo: any[] = [];
+
+        if (isRevert && commitId) {
+            // Revert a single specific commit
+            targetCommit = commits.find((c: any) => c.id === commitId);
+            if (targetCommit) {
+                commitsToUndo = [targetCommit];
+            }
+        } else if (targetRevision !== undefined) {
             // Rollback by revision number (e.g., -2 for 2nd previous)
             const targetIndex = Math.abs(targetRevision);
             targetCommit = commits[targetIndex];
+            // Collect all commits between HEAD and target (exclusive of target's state)
+            commitsToUndo = commits.slice(0, targetIndex);
         } else if (commitId) {
             // Rollback by commit ID
-            targetCommit = commits.find((c: any) => c.id === commitId);
+            const targetIndex = commits.findIndex((c: any) => c.id === commitId);
+            if (targetIndex !== -1) {
+                targetCommit = commits[targetIndex];
+                commitsToUndo = commits.slice(0, targetIndex);
+            }
         }
 
         if (!targetCommit) {
             return NextResponse.json({ error: 'Target commit not found' }, { status: 404 });
         }
 
-        // Create a new commit that reverts to this state
-        const currentCommit = commits[0];
-        const revertMessage = `Revert to: ${targetCommit.message} (${targetCommit.id.substring(0, 8)})`;
+        // Check if already reverted
+        const isAlreadyReverted = commits.some((c: any) =>
+            c.message.includes(`Revert:`) && c.message.includes(targetCommit.id.substring(0, 8))
+        );
+
+        if (isRevert && isAlreadyReverted) {
+            return NextResponse.json({ error: `Commit ${targetCommit.id.substring(0, 8)} has already been reverted.` }, { status: 400 });
+        }
+
+        // --- PHYSICAL ROLLBACK ---
+        // Generate inverse SQL for all changes being undone
+        const undoSQLs: string[] = [];
+        // Rollback commits in reverse order (Log is already HEAD first, so it depends on how we slice)
+        // If commitsToUndo is HEAD to target, we should follow it.
+        // But for a SINGLE REVERT, we just need that commit's changes in REVERSE.
+
+        for (const commit of commitsToUndo) {
+            // Un-apply changes in REVERSE order within the commit
+            const reversedChanges = [...commit.changes].reverse();
+            for (const change of reversedChanges) {
+                if (change.status === 'REVERTED') continue; // Skip already reverted
+
+                const sql = change.rollbackSQL || generateRollbackSQL(change.query, change.metadata);
+                if (sql && sql !== 'MANUAL') {
+                    undoSQLs.push(sql);
+                }
+            }
+        }
+
+        logger.info(`Rollback initiated for ${connectionId}. ${undoSQLs.length} undo operations found.`);
+
+        // Execute SQL on database if there are changes to undo
+        if (undoSQLs.length > 0) {
+            // Get adapter instance using shared helper
+            const { adapter, adapterConnectionId } = await getConnectedAdapter(connectionId);
+
+            // Execute each undo SQL
+            for (const sql of undoSQLs) {
+                try {
+                    // Skip execution for comments or hints
+                    logger.info(`Executing undo SQL: ${sql}`);
+                    await adapter.executeQuery({
+                        connectionId: adapterConnectionId,
+                        query: sql,
+                        timeout: 30000,
+                    });
+                } catch (sqlError) {
+                    logger.error(`Failed to execute undo SQL: ${sql}`, sqlError);
+                    // We continue for now, but ideally we should handle partial failures
+                }
+            }
+        }
+
+        // --- VCS SNAPSHOT UPDATE ---
+        // Use provided author or default to system
+        const rollbackAuthor = author || {
+            name: 'System',
+            email: 'system@bosdb.com'
+        };
+
+        // Create a new commit that reflects the rollback/revert
+        const revertMessage = isRevert
+            ? `Revert: ${targetCommit.message} (${targetCommit.id.substring(0, 8)})`
+            : `Rollback to: ${targetCommit.message} (${targetCommit.id.substring(0, 8)})`;
 
         const revertCommit = await vc.commit(
             revertMessage,
-            { name: 'System', email: 'system@bosdb.com', timestamp: new Date() },
-            [{
-                type: 'DATA' as any,
-                operation: 'REVERT' as any,
-                target: 'database',
-                description: `Reverted ${Math.abs(targetRevision || 0)} revision(s) back`
-            }] as any[],
+            {
+                ...rollbackAuthor,
+                timestamp: new Date()
+            },
+            commitsToUndo.flatMap(c => c.changes).map(change => ({
+                ...change,
+                operation: 'ROLLBACK' as any,
+                description: `Undone: ${change.description}`
+            })),
             (targetCommit as any).snapshot || { schema: { tables: {} }, data: { tables: {} }, timestamp: new Date() }
         );
 
@@ -72,15 +160,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to create revert commit' }, { status: 500 });
         }
 
+        // Clear pending changes as they're now invalid after rollback
+        const pendingPath = path.join(vcsPath, 'pending.json');
+        await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+
         return NextResponse.json({
             success: true,
-            message: `Rolled back to revision ${targetRevision || 'unknown'}`,
+            message: isRevert ? `Reverted commit ${targetCommit.id.substring(0, 8)}` : `Rolled back to revision ${targetRevision || 'unknown'}`,
             targetCommit,
-            currentCommit,
-            revertCommit: revertCommit.data
+            revertCommit: revertCommit.data,
+            performedBy: rollbackAuthor
         });
     } catch (error) {
-        console.error('Rollback error:', error);
+        logger.error('Rollback error:', error);
         return NextResponse.json({ error: String(error) }, { status: 500 });
     }
 }
@@ -106,11 +198,9 @@ export async function GET(request: NextRequest) {
 
         const vc = createVersionControl(connectionId, storage);
 
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await (vc as any).loadHEAD();
 
         // Get commits
         const logResult = await vc.log({ maxCount: 1000 });
@@ -161,7 +251,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(differences);
     } catch (error) {
-        console.error('Diff error:', error);
+        logger.error('Diff error:', error);
         return NextResponse.json({ error: String(error) }, { status: 500 });
     }
 }

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "admin1",
+    "name": "admin1",
+    "email": "admin1@gmail.com",
+    "role": "admin",
+    "accountType": "individual",
+    "password": "$2b$10$Ocvn6.kiPWbrFuzaa/MKZeegLRKOD89QSss3AuFt1fxI1npHzjpL2",
+    "organizationId": "ind-admin1",
+    "status": "approved",
+    "createdAt": "2025-12-27T17:45:16.632Z"
+  }
+]

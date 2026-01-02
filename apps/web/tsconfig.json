@@ -8,6 +8,9 @@
       "dom.iterable",
       "esnext"
     ],
+    "types": [
+      "node"
+    ],
     "jsx": "preserve",
     "module": "esnext",
     "moduleResolution": "node",
@@ -19,6 +22,18 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@bosdb/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@bosdb/db-adapters": [
+        "../../packages/db-adapters/src/index.ts"
+      ],
+      "@bosdb/security": [
+        "../../packages/security/src/index.ts"
+      ],
+      "@bosdb/utils": [
+        "../../packages/utils/src/index.ts"
       ]
     },
     "incremental": true,
@@ -27,10 +42,11 @@
     "noEmit": true
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -1,0 +1,41 @@
+{
+  "conn_1767286537209_past0p3m2": {
+    "id": "conn_1767286537209_past0p3m2",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5449,
+    "database": "my_postgres_database",
+    "credentials": "/9LpwdCrUnKYKsxBgJO/mHwtmvLAdYaAb9it7UoQ+LjLpplAW8CQuZ7gONKY06Zm73eU3LTmaOq5rU/6Gli7IdRmhamkuy1Z/XWI9LBEEqOk0fNacfgjV93bWRNhlHDLU6c=",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-01T16:55:37.209Z"
+  },
+  "conn_1767288174317_wyfg0mkln": {
+    "id": "conn_1767288174317_wyfg0mkln",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5450,
+    "database": "my_postgres_database",
+    "credentials": "5XKbVi63j7voMV1bx3u6Cg944oW2EQ0xLowAbeoOQ2MbM4Lwb4gV1JYlC0RphYe44vev8j1bP1fQ/FfxIrGiK5dU6iotbS5+i9Gvyzr6wVYL1uLDnr2fepPhW/KqM7sGPJc=",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-01T17:22:54.317Z"
+  },
+  "conn_1767289281877_w0i826wpq": {
+    "id": "conn_1767289281877_w0i826wpq",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5451,
+    "database": "my_postgres_database",
+    "credentials": "AxM5u5KmXZZthGNWZAZbXo4Cdi0Jbk+a90aPrmqD8CYYT4in/oTVva0JnmF2p5b/WQE+yOL1UaY4DWDcZ0Hn9KiNENjwtiIdipKB3Z/Ou/V7Mw0cGWppf1Og8zLM6I4xYD0=",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-01T17:41:21.881Z"
+  }
+}

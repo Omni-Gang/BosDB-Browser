@@ -1,0 +1,18 @@
+[
+  {
+    "id": "38af7d0c-26bf-4816-a8f6-b048c3d1c92c",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "organizationId": "asdf.com",
+    "containerName": "bosdb-asdf.com-postgres-1766864146955",
+    "port": 5436,
+    "username": "bosdb_57216865",
+    "password": "uK2XKOJShUmT7H9xZrPc",
+    "database": "bosdb",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2025-12-27T19:35:46.955Z",
+    "updatedAt": "2025-12-27T19:35:49.343Z",
+    "containerId": "1c216fec8aae593e7357127f2c8d957c37d1b583f0aefc76d484a64cb0de3e21"
+  }
+]

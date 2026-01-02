@@ -1,0 +1,13 @@
+[
+  {
+    "id": "system",
+    "name": "system",
+    "email": "systemm@gmail.com",
+    "role": "user",
+    "accountType": "individual",
+    "password": "$2b$10$YQtlHB404JvepXeEB2IDJ.dwxPF7/a3hsEhIDiVP6X5iLHEc7qYZK",
+    "organizationId": "ind-system",
+    "status": "approved",
+    "createdAt": "2025-12-27T19:55:56.115Z"
+  }
+]

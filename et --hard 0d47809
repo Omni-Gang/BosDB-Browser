@@ -1,0 +1,30 @@
+[33ma1aaca8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{Mon Dec 29 21:32:22 2025}: commit: Remove Docker-in-Docker dependencies for cloud deployment
+[33mbf5e84c[m HEAD@{Mon Dec 29 20:50:30 2025}: commit: Add Fly.io deployment configuration and guide
+[33m0acd96d[m HEAD@{Mon Dec 29 20:41:50 2025}: commit: Fix Dockerfile to use npm start instead of server.js for monorepo
+[33ma1151d9[m HEAD@{Mon Dec 29 20:32:44 2025}: commit: Add /healthz endpoint for Render health check
+[33mb9af1b6[m HEAD@{Mon Dec 29 20:31:02 2025}: commit: Add health check endpoint and update render config
+[33m5968b1c[m HEAD@{Mon Dec 29 20:30:16 2025}: commit: Add startup script with explicit hostname binding
+[33m3b1f5b7[m HEAD@{Mon Dec 29 20:20:09 2025}: commit: Fix Dockerfile server.js path and add HOSTNAME env for Render
+[33m0d47809[m HEAD@{Mon Dec 29 20:07:44 2025}: commit: Add Render deployment configuration and guide
+[33mb755d77[m HEAD@{Mon Dec 29 02:10:07 2025}: commit: Fix Railway deployment: add correct start command
+[33m552a9e3[m HEAD@{Mon Dec 29 01:59:17 2025}: commit: Add Railway deployment configuration
+[33m9001e77[m HEAD@{Mon Dec 29 01:30:01 2025}: pull: Fast-forward
+[33m3b09638[m HEAD@{Sun Dec 28 23:52:12 2025}: pull: Fast-forward
+[33m29dc046[m HEAD@{Sun Dec 28 23:50:50 2025}: reset: moving to HEAD
+[33m29dc046[m HEAD@{Sun Dec 28 22:51:41 2025}: commit: mongo
+[33m2aa8667[m HEAD@{Sun Dec 28 15:07:54 2025}: commit: json to mongo
+[33ma204132[m HEAD@{Sun Dec 28 12:23:27 2025}: commit: update coupon
+[33m686a221[m HEAD@{Sun Dec 28 12:01:54 2025}: commit (merge): Merge recovery-local-work into main (overwrite)
+[33m21a3fc7[m HEAD@{Sun Dec 28 12:00:31 2025}: checkout: moving from recovery-local-work to main
+[33mc1bf0e4[m[33m ([m[1;31morigin/recovery-local-work[m[33m, [m[1;32mrecovery-local-work[m[33m)[m HEAD@{Sun Dec 28 11:54:51 2025}: checkout: moving from main to recovery-local-work
+[33m21a3fc7[m HEAD@{Sun Dec 28 11:53:00 2025}: checkout: moving from recovery-local-work to main
+[33mc1bf0e4[m[33m ([m[1;31morigin/recovery-local-work[m[33m, [m[1;32mrecovery-local-work[m[33m)[m HEAD@{Sun Dec 28 11:48:41 2025}: commit: 100+ Db integration
+[33md7b3cae[m HEAD@{Sun Dec 28 11:01:22 2025}: checkout: moving from d7b3cae8f7145a22ce1147aea0a7f47521f4be5d to recovery-local-work
+[33md7b3cae[m HEAD@{Sun Dec 28 11:01:02 2025}: checkout: moving from main to d7b3cae
+[33m21a3fc7[m HEAD@{Sun Dec 28 11:00:49 2025}: reset: moving to HEAD
+[33m21a3fc7[m HEAD@{Sun Dec 28 10:54:51 2025}: reset: moving to origin/main
+[33m21a3fc7[m HEAD@{Sun Dec 28 10:53:54 2025}: reset: moving to origin/main
+[33md7b3cae[m HEAD@{Sun Dec 28 10:53:49 2025}: rebase (abort): returning to refs/heads/main
+[33m21a3fc7[m HEAD@{Sun Dec 28 10:52:32 2025}: pull origin main --rebase (start): checkout 21a3fc7d0ad21de260e9a14029ab3c957f0cd6ab
+[33md7b3cae[m HEAD@{Sun Dec 28 10:52:02 2025}: Branch: renamed refs/heads/main to refs/heads/main
+[33md7b3cae[m HEAD@{Sun Dec 28 10:51:57 2025}: commit (initial): initial commit

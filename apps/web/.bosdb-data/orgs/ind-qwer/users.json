@@ -1,0 +1,13 @@
+[
+  {
+    "id": "qwer",
+    "name": "qwer",
+    "email": "qwer@mlp.com",
+    "role": "user",
+    "accountType": "individual",
+    "password": "$2b$10$DINmRRQCvcahenV9PW.Xy.mFQDbWACd4dAdvyxfj52.mNG1iCrs3.",
+    "organizationId": "ind-qwer",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:43:03.102Z"
+  }
+]

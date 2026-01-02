@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { History, Clock, RefreshCw, Trash2, Database } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
 
 interface QueryHistoryEntry {
     id: string;
@@ -28,7 +29,12 @@ export default function QueryHistoryPage() {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('/api/history');
+            const user = getCurrentUser();
+            const headers: HeadersInit = {};
+            if (user?.email) {
+                headers['x-user-email'] = user.email;
+            }
+            const res = await fetch('/api/history', { headers });
             const data = await res.json();
             setHistory(data.history || []);
         } catch (error) {
@@ -42,7 +48,12 @@ export default function QueryHistoryPage() {
         if (!confirm('Clear all query history?')) return;
 
         try {
-            await fetch('/api/history', { method: 'DELETE' });
+            const user = getCurrentUser();
+            const headers: HeadersInit = {};
+            if (user?.email) {
+                headers['x-user-email'] = user.email;
+            }
+            await fetch('/api/history', { method: 'DELETE', headers });
             setHistory([]);
         } catch (error) {
             console.error('Failed to clear history:', error);
@@ -125,8 +136,8 @@ export default function QueryHistoryPage() {
                                             <span className="font-semibold">{entry.connectionName}</span>
                                             <span
                                                 className={`px-2 py-0.5 text-xs rounded-full ${entry.success
-                                                        ? 'bg-green-500/10 text-green-500'
-                                                        : 'bg-destructive/10 text-destructive'
+                                                    ? 'bg-green-500/10 text-green-500'
+                                                    : 'bg-destructive/10 text-destructive'
                                                     }`}
                                             >
                                                 {entry.success ? 'Success' : 'Failed'}

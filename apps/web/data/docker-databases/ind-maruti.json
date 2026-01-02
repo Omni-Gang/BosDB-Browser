@@ -1,0 +1,32 @@
+[
+  {
+    "id": "postgres_my_postgres_database_1767030030206",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5436,
+    "username": "postgres",
+    "password": "My Postgres Database_t900n4vy",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2025-12-29T17:40:37.283Z",
+    "organizationId": "ind-maruti",
+    "containerId": "0104f728d8e21fb8ca18e05f081bf525bc69b3c01bf4e490ed13aa57c20ac85d",
+    "lastUsedAt": "2026-01-01T18:41:35.373Z"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767105296893",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5440,
+    "username": "postgres",
+    "password": "My Postgres Database_o2mf16vu",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2025-12-30T14:35:00.913Z",
+    "organizationId": "ind-maruti",
+    "containerId": "6c1a9eea5cfbd6e8249a3cb78d67e0267109e5f919991c4c64b0c0c28087d0ac",
+    "lastUsedAt": "2026-01-01T18:41:35.374Z"
+  }
+]

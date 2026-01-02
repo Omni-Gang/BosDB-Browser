@@ -1,0 +1,13 @@
+[
+  {
+    "id": "arush",
+    "name": "arush",
+    "email": "arush@aa.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$x2vGUP.96vwp7sY9HnJxF.vbaR0wBFfYz8JF4ZAo0nL8mv0iYlNk.",
+    "organizationId": "aa.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:34:41.016Z"
+  }
+]

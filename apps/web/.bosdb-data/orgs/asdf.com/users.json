@@ -1,0 +1,35 @@
+[
+  {
+    "id": "asdf",
+    "name": "asdf",
+    "email": "asdf@asdf.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$Bf6NpYLQNK0AMm9FWZwsquawMB5Bs8EthrslEBLshsjX9Qs87nglu",
+    "organizationId": "asdf.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:40:12.752Z"
+  },
+  {
+    "id": "aa",
+    "name": "aa",
+    "email": "as@asdf.com",
+    "role": "user",
+    "accountType": "enterprise",
+    "password": "$2b$10$QdNx.r6CHayihOgclLa.eene66cs7d4REIOpPswRjobga73BoBJN2",
+    "organizationId": "asdf.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:40:54.709Z"
+  },
+  {
+    "id": "asdf1",
+    "name": "asdf1",
+    "email": "asdf11@asdf.com",
+    "role": "user",
+    "accountType": "enterprise",
+    "password": "$2b$10$69EUslVaQxDVoj8Z9OfptuA1iqCnuExYamPjyQUSubAqvITL/q.RC",
+    "organizationId": "asdf.com",
+    "status": "pending",
+    "createdAt": "2025-12-27T18:49:23.444Z"
+  }
+]

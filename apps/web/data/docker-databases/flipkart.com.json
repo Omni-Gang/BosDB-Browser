@@ -1,0 +1,47 @@
+[
+  {
+    "id": "postgres_my_postgres_database_1767347596040",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5453,
+    "username": "postgres",
+    "password": "My Postgres Database_0soyzeh8",
+    "database": "my_postgres_database",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2026-01-02T09:53:19.038Z",
+    "lastUsedAt": "2026-01-02T09:53:19.038Z",
+    "organizationId": "flipkart.com",
+    "containerId": "b1fe1d6cbc8c1b15698cbad354ee3fe21782c8ef1fbba8952203e3066ee568f1"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767347601752",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5454,
+    "username": "postgres",
+    "password": "My Postgres Database_93f8ircb",
+    "database": "my_postgres_database",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2026-01-02T09:53:23.611Z",
+    "lastUsedAt": "2026-01-02T09:53:23.612Z",
+    "organizationId": "flipkart.com",
+    "containerId": "956510a5d6285a5dff7ca05d61fa5ac99083a7b02ecf7a816001db8b69de5ca1"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767347614216",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5455,
+    "username": "postgres",
+    "password": "My Postgres Database_p6zje73o",
+    "database": "my_postgres_database",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2026-01-02T09:53:35.475Z",
+    "lastUsedAt": "2026-01-02T09:53:35.475Z",
+    "organizationId": "flipkart.com",
+    "containerId": "b1a0c9440b27760a22328dd5191e5028ef326c127d19a1c90f428faf64e58a31"
+  }
+]

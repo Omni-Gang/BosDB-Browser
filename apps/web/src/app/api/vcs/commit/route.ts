@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createVersionControl } from '@bosdb/version-control';
-import { FileStorage } from '@bosdb/version-control/dist/storage/FileStorage';
+import { FileStorage } from '@bosdb/version-control';
 import path from 'path';
 import { promises as fs } from 'fs';
 
@@ -16,35 +16,14 @@ export async function POST(request: NextRequest) {
 
         // Initialize VCS
         const vcsPath = path.join(process.cwd(), '.bosdb-vcs', connectionId);
-        await fs.mkdir(vcsPath, { recursive: true });
-
         const storage = new FileStorage(vcsPath);
         await storage.initialize();
 
         const vc = createVersionControl(connectionId, storage);
 
-        // Check if initialized, if not initialize
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
-
-        // Ensure branches directory exists and main branch is created
-        const branchesDir = path.join(vcsPath, 'branches');
-        await fs.mkdir(branchesDir, { recursive: true });
-
-        const mainBranchPath = path.join(branchesDir, 'main.json');
-        try {
-            await fs.access(mainBranchPath);
-        } catch {
-            // Create main branch if it doesn't exist
-            await fs.writeFile(mainBranchPath, JSON.stringify({
-                name: 'main',
-                commitId: '',
-                protected: true
-            }));
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await (vc as any).loadHEAD();
 
         // Use provided author or default
         const commitAuthor = author || {
@@ -66,9 +45,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: result.error || 'Commit failed' }, { status: 500 });
         }
 
-        // Clear pending changes after successful commit
+        // Remove only the committed changes from pending
         const pendingPath = path.join(vcsPath, 'pending.json');
-        await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+        try {
+            const pendingData = await fs.readFile(pendingPath, 'utf-8');
+            const pending = JSON.parse(pendingData);
+
+            // Filter out the changes that were just committed
+            // Match by operation, target, and query for accurate removal
+            const remainingChanges = pending.changes.filter((pendingChange: any) => {
+                return !changes.some((committedChange: any) =>
+                    pendingChange.operation === committedChange.operation &&
+                    pendingChange.target === committedChange.target &&
+                    pendingChange.query === committedChange.query
+                );
+            });
+
+            await fs.writeFile(pendingPath, JSON.stringify({ changes: remainingChanges }, null, 2));
+        } catch (error) {
+            // If pending file doesn't exist or has issues, just create empty one
+            await fs.writeFile(pendingPath, JSON.stringify({ changes: [] }));
+        }
 
         return NextResponse.json({ success: true, commit: result.data });
     } catch (error) {
@@ -100,11 +97,9 @@ export async function GET(request: NextRequest) {
 
         const vc = createVersionControl(connectionId, storage);
 
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await (vc as any).loadHEAD();
 
         const result = await vc.log({ maxCount: 50 });
 

@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdapterFactory } from '@bosdb/db-adapters';
 import { decryptCredentials } from '@bosdb/security';
 import { Logger } from '@bosdb/utils';
-import { connections, adapterInstances } from '@/lib/store';
+import { connections, adapterInstances, getConnection } from '@/lib/store';
 
 const logger = new Logger('TablesAPI');
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
@@ -20,46 +22,13 @@ export async function GET(request: NextRequest) {
         }
 
         // Get connection info
-        const connectionInfo = connections.get(connectionId);
+        const connectionInfo = await getConnection(connectionId);
         if (!connectionInfo) {
-            return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
+            return NextResponse.json({ error: `Connection not found: ${connectionId}` }, { status: 404 });
         }
 
-        // Get or create adapter instance
-        let adapter = adapterInstances.get(connectionId);
-        let adapterConnectionId = connectionId;
-
-        if (!adapter) {
-            adapter = AdapterFactory.create(connectionInfo.type);
-
-            // Decrypt credentials
-            const credentials = decryptCredentials(connectionInfo.credentials);
-
-            // Connect to database
-            const connectResult = await adapter.connect({
-                name: connectionInfo.name,
-                host: connectionInfo.host,
-                port: connectionInfo.port,
-                database: connectionInfo.database,
-                username: credentials.username,
-                password: credentials.password,
-                ssl: connectionInfo.ssl,
-                readOnly: connectionInfo.readOnly,
-            });
-
-            if (!connectResult.success) {
-                return NextResponse.json(
-                    { error: 'Failed to connect to database' },
-                    { status: 500 }
-                );
-            }
-
-            adapterConnectionId = connectResult.connectionId;
-            adapterInstances.set(connectionId, { adapter, adapterConnectionId });
-        } else {
-            adapterConnectionId = adapter.adapterConnectionId;
-            adapter = adapter.adapter;
-        }
+        // Get adapter instance using shared helper
+        const { adapter, adapterConnectionId } = await import('@/lib/db-utils').then(m => m.getConnectedAdapter(connectionId));
 
         // Get tables
         const tables = await adapter.listTables(adapterConnectionId, schemaName);

@@ -16,6 +16,9 @@ export { BlameService } from './core/BlameService';
 export { BisectService } from './core/BisectService';
 export { PatchService } from './core/PatchService';
 
+// Export storage implementations
+export { FileStorage } from './storage/FileStorage';
+
 // Re-export default
 export { default as VersionControl } from './core/VersionControlManager';
 

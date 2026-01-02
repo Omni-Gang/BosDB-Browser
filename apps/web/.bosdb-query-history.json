@@ -1,0 +1,22 @@
+[
+  {
+    "connectionId": "conn_1767292847494_6f36r1gat",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-02T06:23:40.805Z",
+    "executionTime": 11,
+    "rowCount": 10,
+    "success": true,
+    "id": "history_1767335020806_6n7x20wpc"
+  },
+  {
+    "connectionId": "conn_1767292847494_6f36r1gat",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM public.countries LIMIT 100",
+    "executedAt": "2026-01-02T06:23:48.014Z",
+    "executionTime": 5,
+    "rowCount": 5,
+    "success": true,
+    "id": "history_1767335028016_w2xbrcary"
+  }
+]

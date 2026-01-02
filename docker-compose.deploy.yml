@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  bosdb:
+    # Build from the current directory using the Dockerfile
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: bosdb-browser:latest
+    container_name: bosdb-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Vital: Tells the app to connect to databases via the host network alias
+      - DB_CONNECTION_HOST=host.docker.internal
+      # Security: Change this in production!
+      - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY:-change-this-to-a-secure-random-string}
+    volumes:
+      # 1. Mount Docker socket to allow spawning sibling containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 2. Persist application data (users, orgs, connection info)
+      - bosdb-data:/app/apps/web/.bosdb-data
+      # 3. separate logs volume
+      - ./apps/web/logs:/app/apps/web/logs
+    # Network configuration to allow communication with host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  bosdb-data:

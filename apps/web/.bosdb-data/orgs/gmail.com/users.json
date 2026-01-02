@@ -1,0 +1,13 @@
+[
+  {
+    "id": "asdf",
+    "name": "asdf",
+    "email": "asdfd@gmail.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$1rIOzbabfOaZRL4CJQl59.pNAPy3r2/pE8IyqPO/wEsczg9AZnAQO",
+    "organizationId": "gmail.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:39:08.752Z"
+  }
+]

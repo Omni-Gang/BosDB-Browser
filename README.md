@@ -2,16 +2,16 @@
 
 <div align="center">
 
-![BosDB](https://img.shields.io/badge/BosDB-v0.2.0-blue)
+![BosDB](https://img.shields.io/badge/BosDB-v0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
 
 **A modern, web-based database management tool with Git-like version control**
 
 Supporting PostgreSQL, MySQL, MariaDB, MongoDB, and Redis
 
-[Features](#features) • [Quick Start](#quick-start) • [Version Control](#version-control) • [Multi-User](#multi-user-system) • [Documentation](#documentation)
+[Features](#features) • [Quick Start](#quick-start) • [Pro Subscription](#-pro-subscription) • [Enterprise](#-enterprise-deployment) • [Documentation](#documentation)
 
 </div>
 
@@ -58,6 +58,8 @@ Unlike DBeaver, TablePlus, or any other database tool - BosDB has **Git-like + S
 ### 🔥 Core Features
 - ✅ **Query Editor** - Monaco editor with syntax highlighting
 - ✅ **Execute Selected** - Run only highlighted SQL
+- ✅ **Data Grid Editing** - Inline editing like a spreadsheet
+- ✅ **Table Designer** - Visual table creation with columns, types, constraints
 - ✅ **Query History** - Automatic tracking of all queries
 - ✅ **Schema Explorer** - Browse databases, schemas, and tables
 - ✅ **Syntax Validation** - Real-time query validation with helpful warnings
@@ -77,18 +79,85 @@ Unlike DBeaver, TablePlus, or any other database tool - BosDB has **Git-like + S
 - ✅ **Individual Commits** - Commit specific changes
 
 ### 👥 Multi-User System
-- ✅ **User Login** - Login with employee ID (e.g., ayush-g, yuval.o)
-- ✅ **User Registration** - Admin can create users
+- ✅ **User Login** - Secure authentication with passwords
+- ✅ **Password Security** - bcrypt hashing, strength validation
+- ✅ **User Registration** - New users request access
+- ✅ **Admin Approval** - Admins approve/reject user requests
 - ✅ **Per-User Commits** - Track who made each change
 - ✅ **Role-Based Access** - Admin and user roles
+- ✅ **Granular Permissions** - Read, Edit, Commit, Manage Schema per connection
 - ✅ **Audit Trail** - Complete history of who did what
 
 ### 🛡️ Security
 - ✅ **Encrypted Credentials** - AES-256 encryption at rest
+- ✅ **Password Hashing** - bcrypt with salt rounds
 - ✅ **SQL Injection Protection** - Built-in query validation
 - ✅ **Query Timeouts** - Prevent long-running queries
 - ✅ **Row Limits** - Automatic result set limiting
-- ✅ **Actual Error Messages** - Real database errors (not generic)
+- ✅ **Permission Enforcement** - Granular access control
+
+---
+
+## 💎 Pro Subscription
+
+BosDB offers a **Free** tier and **Pro** tier with advanced features:
+
+### Free vs Pro Comparison
+
+| Feature | Free | Pro |
+|---------|------|-----|
+| Database Connections | 2 | **Unlimited** |
+| Query History | 50 | **Unlimited** |
+| Version Control | ❌ | ✅ |
+| Table Designer | ❌ | ✅ |
+| Data Grid Editing | Read-only | **Full Edit** |
+| Export Formats | CSV | CSV, JSON, SQL |
+| Granular Permissions | ❌ | ✅ |
+| Priority Support | ❌ | ✅ |
+
+### Pricing
+
+| Plan | Price | Features |
+|------|-------|----------|
+| **Free** | $0 forever | Basic features |
+| **Pro Trial** | **FREE for 1 month** | All Pro features, no card required |
+| **Pro Monthly** | $29/month | All Pro features |
+| **Pro Yearly** | $249/year | Save 29% (2 months free!) |
+
+### How to Upgrade
+
+1. Go to `/pricing` in your BosDB instance
+2. Click **"Start 1 Month Free Trial"** (no credit card!)
+3. Or select Monthly/Yearly and enter payment details
+4. **All users** in your instance get Pro features! 🎉
+
+---
+
+## 🏢 Enterprise Deployment
+
+BosDB uses a **self-hosted model** perfect for enterprise:
+
+### Each Company Gets Their Own Instance
+
+```
+Company A's Server                 Company B's Server
+┌─────────────────────┐           ┌─────────────────────┐
+│  BosDB Instance A   │           │  BosDB Instance B   │
+├─────────────────────┤           ├─────────────────────┤
+│ Subscription: Pro   │           │ Subscription: Free  │
+├─────────────────────┤           ├─────────────────────┤
+│ Users: Alice, Bob   │           │ Users: Carol, Dan   │
+├─────────────────────┤           ├─────────────────────┤
+│ Their Databases     │           │ Their Databases     │
+└─────────────────────┘           └─────────────────────┘
+```
+
+### Benefits
+
+- ✅ **Complete Isolation** - Each company's data stays on their server
+- ✅ **System-Wide Subscription** - When a company buys Pro, all employees get Pro
+- ✅ **No Shared Infrastructure** - Your database credentials never leave your premises
+- ✅ **Compliance Ready** - Perfect for HIPAA, SOC2, GDPR requirements
 
 ---
 
@@ -123,9 +192,10 @@ Open [http://localhost:3001](http://localhost:3001) in your browser.
 
 **First Time Setup:**
 1. Visit `/login`
-2. Default admin user: `admin`
-3. Create employee accounts
-4. Start using!
+2. Default admin: `admin` / password: `Admin@123`
+3. Go to Admin Panel to approve users
+4. Go to `/pricing` to activate Pro trial
+5. Start using!
 
 ---
 
@@ -167,79 +237,30 @@ Version Control → History Tab
 4. All changes are reversible!
 ```
 
-**5. Compare Revisions**
-```
-1. Version Control → Compare Tab
-2. Select "From" revision (e.g., r0)
-3. Select "To" revision (e.g., r-2)
-4. Click "Compare"
-5. See exactly what changed!
-```
-
-### Version Control Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Commit | ✅ | Save database changes |
-| Rollback | ✅ | Revert to previous state |
-| Compare | ✅ | See differences between revisions |
-| Branches | ✅ | Create/switch branches |
-| History | ✅ | Full audit trail |
-| Pending | ✅ | See uncommitted changes |
-| Individual Commit | ✅ | Commit specific changes |
-| User Tracking | ✅ | Who made each change |
-
 ---
 
 ## 👥 Multi-User System
 
 ### Employee Login
 
-**For Administrators:**
-```
-1. Visit /login
-2. Login as "admin" (default user)
-3. Click "Register New User"
-4. Create employee accounts:
-   - User ID: ayush-g
-   - Name: Ayush Gupta
-   - Email: ayush@company.com
-   - Role: user
+**Default Admin:**
+- User ID: `admin`
+- Password: `Admin@123`
+
+**Creating New Users:**
+1. New employee visits `/login`
+2. Clicks "Register New User"
+3. Fills in details (password must be 8+ chars with uppercase, lowercase, number)
+4. Admin approves in Admin Panel (`/admin`)
 5. Employee can now login!
-```
 
-**For Employees:**
-```
-1. Visit /login
-2. Enter your User ID (e.g., ayush-g)
-3. Click "Login"
-4. Start working!
-```
+### Granular Permissions
 
-### Team Collaboration
-
-```
-Employee: ayush-g
-├── Makes changes: CREATE TABLE users...
-├── Commits: "Created users table"
-└── History shows: "Committed by ayush-g"
-
-Employee: yuval.o
-├── Makes changes: INSERT INTO users...
-├── Commits: "Added user data"
-└── History shows: "Committed by yuval.o"
-
-Timeline:
-r0: "Added user data" by yuval.o
-r-1: "Created users table" by ayush-g
-```
-
-**Perfect for:**
-- Team collaboration
-- Audit compliance
-- Change tracking
-- Accountability
-- Code reviews (for SQL!)
+Admins can set per-connection permissions for each user:
+- **Read Data** - Can view table data
+- **Edit Data** - Can INSERT/UPDATE/DELETE
+- **Commit Changes** - Can commit to version control
+- **Manage Schema** - Can CREATE/ALTER/DROP tables
 
 ---
 
@@ -281,13 +302,12 @@ Password: (optional)
 
 ---
 
-## � Documentation
+## 📚 Documentation
 
 - [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
 - [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - Quick deployment steps
 - [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md) - Production deployment
 - [Version Control Guide](packages/version-control/README.md) - VCS documentation
-- [Multi-User Guide](.gemini/antigravity/brain/*/multi_user_walkthrough.md) - User management
 
 ---
 
@@ -296,38 +316,43 @@ Password: (optional)
 ```
 BosDB/
 ├── apps/
-│   └── web/              # Next.js frontend
-│       ├── src/app/      # Pages & API routes
-│       ├── src/lib/      # Utilities & auth
-│       └── .bosdb-vcs/   # Version control data
+│   └── web/                    # Next.js frontend
+│       ├── src/app/            # Pages & API routes
+│       ├── src/components/     # React components
+│       ├── src/lib/            # Utilities & auth
+│       ├── .bosdb-vcs/         # Version control data
+│       ├── .bosdb-users.json   # User data
+│       └── .bosdb-subscription.json  # Subscription data
 ├── packages/
-│   ├── core/             # Core types
-│   ├── db-adapters/      # Database adapters
-│   ├── version-control/  # VCS engine
-│   ├── security/         # Encryption & validation
-│   └── utils/            # Shared utilities
+│   ├── core/                   # Core types
+│   ├── db-adapters/            # Database adapters
+│   ├── version-control/        # VCS engine
+│   ├── security/               # Encryption & validation
+│   └── utils/                  # Shared utilities
 ```
 
 ---
 
 ## 🎯 Roadmap
 
-### ✅ Completed (v0.2.0)
+### ✅ Completed (v0.3.0)
 - Multi-database support (5 databases)
 - Query editor with syntax highlighting
 - Version control system (Git + SVN-like)
-- Multi-user authentication
-- Compare revisions
-- Rollback functionality
-- Per-user commit tracking
+- Multi-user authentication with passwords
+- User approval workflow
+- Granular permissions (per-connection)
+- Table Designer
+- Data Grid with inline editing
+- Pro subscription system
+- Enterprise deployment model
 
 ### 🚧 In Progress
-- Table data browser (click table → see data)
-- Export to CSV/JSON/Excel
+- Export to JSON/Excel
 - Query history panel
 - Multiple query tabs
 
-### � Planned
+### 📋 Planned
 - Auto-complete (tables, columns, keywords)
 - ER diagram generator
 - Query builder (visual)

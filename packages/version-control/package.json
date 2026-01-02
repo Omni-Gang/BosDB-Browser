@@ -4,19 +4,21 @@
     "description": "Advanced Git-like version control for databases",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./storage/FileStorage": {
+            "import": "./dist/storage/FileStorage.js",
+            "types": "./dist/storage/FileStorage.d.ts"
+        }
+    },
     "scripts": {
         "build": "tsc",
         "dev": "tsc --watch",
         "clean": "rm -rf dist"
     },
-    "keywords": [
-        "database",
-        "version-control",
-        "git",
-        "bosdb"
-    ],
-    "author": "OmniGang",
-    "license": "MIT",
     "dependencies": {
         "@bosdb/core": "*"
     },

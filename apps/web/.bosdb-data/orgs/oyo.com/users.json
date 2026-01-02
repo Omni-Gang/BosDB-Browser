@@ -1,0 +1,13 @@
+[
+  {
+    "id": "asdf",
+    "email": "arush@oyo.com",
+    "name": "asdf",
+    "password": "$2b$10$QAOjLmrYCUoH8rDj0eEOluXqDJx6SvMreRQVP3HoAkfA2ivjg9tiy",
+    "accountType": "enterprise",
+    "organizationId": "oyo.com",
+    "role": "admin",
+    "status": "approved",
+    "createdAt": "2025-12-28T07:17:13.719Z"
+  }
+]

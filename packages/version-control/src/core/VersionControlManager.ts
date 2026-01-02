@@ -50,6 +50,13 @@ export class VersionControlManager {
 
     async initialize(): Promise<Result<void>> {
         try {
+            // Check if already initialized by trying to get branches
+            const existingBranches = await this.storage.listBranches();
+            if (existingBranches.length > 0) {
+                await this.loadHEAD();
+                return { success: true, data: undefined };
+            }
+
             // Initialize repository
             const config: VersionControlConfig = {
                 HEAD: 'main',
@@ -70,12 +77,34 @@ export class VersionControlManager {
             };
 
             await this.storage.saveConfig(config);
+
+            // Explicitly save the main branch object to the branches directory
+            await this.storage.saveBranch({
+                name: 'main',
+                commitId: '',
+                protected: true,
+            });
+
+            this.currentBranch = 'main'; // Sync instance state
             return { success: true, data: undefined };
         } catch (error) {
             return {
                 success: false,
                 error: `Failed to initialize repository: ${error}`,
             };
+        }
+    }
+
+    /**
+     * Load the current branch from storage config
+     * Call this after getting an existing repo to sync instance state
+     */
+    async loadHEAD(): Promise<void> {
+        try {
+            const config = await this.storage.getConfig();
+            this.currentBranch = config.HEAD || 'main';
+        } catch {
+            this.currentBranch = 'main';
         }
     }
 
@@ -106,6 +135,7 @@ export class VersionControlManager {
                 parentIds,
                 treeId: commitId, // Simplified: use commitId as treeId
                 changes,
+                branchName: this.currentBranch, // NEW: Record current branch
             };
 
             // Save commit and snapshot
@@ -150,7 +180,7 @@ export class VersionControlManager {
         }
     }
 
-    async checkout(branchName: string): Promise<Result<DatabaseSnapshot>> {
+    async checkout(branchName: string): Promise<Result<DatabaseSnapshot | null>> {
         try {
             const branch = await this.storage.getBranch(branchName);
             if (!branch) {
@@ -167,12 +197,14 @@ export class VersionControlManager {
 
             await this.addReflogEntry('CHECKOUT', branchName, oldCommit, branch.commitId, `checkout: moving from ${oldBranch} to ${branchName}`);
 
-            const snapshot = await this.storage.getSnapshot(branch.commitId);
-            if (!snapshot) {
-                return { success: false, error: 'Snapshot not found' };
+            // Handle branches with no commits yet (empty commitId)
+            if (!branch.commitId) {
+                return { success: true, data: null }; // No snapshot, but checkout succeeded
             }
 
-            return { success: true, data: snapshot };
+            const snapshot = await this.storage.getSnapshot(branch.commitId);
+            // Snapshot might not exist for new branches - that's OK
+            return { success: true, data: snapshot || null };
         } catch (error) {
             return { success: false, error: `Checkout failed: ${error}` };
         }
@@ -649,6 +681,13 @@ export class VersionControlManager {
     }
 
     async getCurrentBranch(): Promise<string> {
+        // Always read from storage to be accurate across requests
+        try {
+            const config = await this.storage.getConfig();
+            this.currentBranch = config.HEAD || 'main';
+        } catch {
+            // Keep current value if storage fails
+        }
         return this.currentBranch;
     }
 

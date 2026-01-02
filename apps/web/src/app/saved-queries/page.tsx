@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Save, Plus, Trash2, Play, Database } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
 
 interface SavedQuery {
     id: string;
@@ -25,9 +26,17 @@ export default function SavedQueriesPage() {
         fetchQueries();
     }, []);
 
+    const getHeaders = () => {
+        const currentUser = getCurrentUser();
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (currentUser?.email) headers['x-user-email'] = currentUser.email;
+        if (currentUser?.organizationId) headers['x-org-id'] = currentUser.organizationId;
+        return headers;
+    };
+
     const fetchQueries = async () => {
         try {
-            const res = await fetch('/api/saved-queries');
+            const res = await fetch('/api/saved-queries', { headers: getHeaders() });
             const data = await res.json();
             setQueries(data.queries || []);
         } catch (error) {
@@ -41,7 +50,10 @@ export default function SavedQueriesPage() {
         if (!confirm('Delete this saved query?')) return;
 
         try {
-            await fetch(`/api/saved-queries?id=${id}`, { method: 'DELETE' });
+            await fetch(`/api/saved-queries?id=${id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
             setQueries(queries.filter(q => q.id !== id));
         } catch (error) {
             console.error('Failed to delete query:', error);
@@ -186,9 +198,14 @@ function SaveQueryModal({
         setError('');
 
         try {
+            const user = getCurrentUser();
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (user?.email) headers['x-user-email'] = user.email;
+            if (user?.organizationId) headers['x-org-id'] = user.organizationId;
+
             const res = await fetch('/api/saved-queries', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(formData),
             });
 

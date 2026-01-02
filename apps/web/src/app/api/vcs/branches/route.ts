@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createVersionControl } from '@bosdb/version-control';
-import { FileStorage } from '@bosdb/version-control/dist/storage/FileStorage';
+import { FileStorage } from '@bosdb/version-control';
 import path from 'path';
 
 // GET /api/vcs/branches?connectionId=xxx - List branches
@@ -19,11 +19,9 @@ export async function GET(request: NextRequest) {
 
         const vc = createVersionControl(connectionId, storage);
 
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await vc.loadHEAD();
 
         const result = await vc.listBranches();
         const currentBranch = await vc.getCurrentBranch();
@@ -54,11 +52,9 @@ export async function POST(request: NextRequest) {
 
         const vc = createVersionControl(connectionId, storage);
 
-        try {
-            await vc.getHEAD();
-        } catch {
-            await vc.initialize();
-        }
+        // Ensure initialized and state is loaded
+        await vc.initialize();
+        await vc.loadHEAD();
 
         let result;
         if (action === 'checkout') {

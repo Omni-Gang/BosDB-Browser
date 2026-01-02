@@ -1,0 +1,13 @@
+[
+  {
+    "id": "test-user1",
+    "name": "Test User One",
+    "email": "test1@company1.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$IK4NJC2L8SEL5BM/mWCR5.ou.XVb.0xsTKl4VOo9LBFKE4CiZNXy.",
+    "organizationId": "company1.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T17:32:05.573Z"
+  }
+]

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createVersionControl } from '@bosdb/version-control';
-import { FileStorage } from '@bosdb/version-control/dist/storage/FileStorage';
+import { FileStorage } from '@bosdb/version-control';
 import path from 'path';
 import { promises as fs } from 'fs';
 

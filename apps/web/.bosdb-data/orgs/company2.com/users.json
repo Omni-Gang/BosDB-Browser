@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ayush",
+    "name": "Ayush",
+    "email": "test2@company2.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$2PUyKH2oOKVxfI6/5bQEAOMIOdNZiKH4ZpGzHLzSA5quW0rdWLTU.",
+    "organizationId": "company2.com",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:12:18.680Z"
+  },
+  {
+    "id": "arush",
+    "name": "arush",
+    "email": "arush@company2.com",
+    "role": "user",
+    "accountType": "enterprise",
+    "password": "$2b$10$ORseIdTaM/rHz44Se2DKnuq6nESQLYvZ4CI3k9NDTSPb/mkVMkB8y",
+    "organizationId": "company2.com",
+    "status": "pending",
+    "createdAt": "2025-12-27T18:13:40.534Z"
+  }
+]

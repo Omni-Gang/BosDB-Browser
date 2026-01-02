@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
     getSavedQueries,
+    getUserSavedQueries,
     createSavedQuery,
     updateSavedQuery,
     deleteSavedQuery,
@@ -13,8 +14,15 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const connectionId = searchParams.get('connectionId');
+        const userEmail = request.headers.get('x-user-email');
+        const orgId = request.headers.get('x-org-id');
 
-        const queries = getSavedQueries(connectionId || undefined);
+        let queries;
+        if (userEmail) {
+            queries = getUserSavedQueries(userEmail, orgId || undefined, connectionId || undefined);
+        } else {
+            queries = getSavedQueries(connectionId || undefined);
+        }
 
         return NextResponse.json({ queries });
     } catch (error: any) {
@@ -30,6 +38,8 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { name, description, query, connectionId } = body;
+        const userEmail = request.headers.get('x-user-email');
+        const orgId = request.headers.get('x-org-id');
 
         if (!name || !query) {
             return NextResponse.json(
@@ -43,6 +53,8 @@ export async function POST(request: NextRequest) {
             description,
             query,
             connectionId,
+            userEmail: userEmail || undefined,
+            orgId: orgId || undefined,
         });
 
         return NextResponse.json({ query: savedQuery });
@@ -59,9 +71,19 @@ export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
         const { id, name, description, query } = body;
+        const userEmail = request.headers.get('x-user-email');
 
         if (!id) {
             return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+        }
+
+        // Verify ownership if userEmail is provided
+        if (userEmail) {
+            const queries = require('@/lib/queryStore').getSavedQueries();
+            const existing = queries.find((q: any) => q.id === id);
+            if (existing && existing.userEmail && existing.userEmail !== userEmail) {
+                return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+            }
         }
 
         const updated = updateSavedQuery(id, { name, description, query });
@@ -84,9 +106,19 @@ export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
+        const userEmail = request.headers.get('x-user-email');
 
         if (!id) {
             return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+        }
+
+        // Verify ownership
+        if (userEmail) {
+            const queries = require('@/lib/queryStore').getSavedQueries();
+            const existing = queries.find((q: any) => q.id === id);
+            if (existing && existing.userEmail && existing.userEmail !== userEmail) {
+                return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+            }
         }
 
         const deleted = deleteSavedQuery(id);

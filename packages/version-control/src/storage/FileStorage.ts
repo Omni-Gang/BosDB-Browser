@@ -45,14 +45,18 @@ export class FileStorage implements VersionControlStorage {
         await fs.mkdir(this.reflogDir, { recursive: true });
         await fs.mkdir(this.snapshotsDir, { recursive: true });
 
-        const defaultConfig: VersionControlConfig = {
-            HEAD: 'main',
-            branches: {},
-            tags: {},
-            config: {},
-        };
-
-        await this.saveConfig(defaultConfig);
+        // Only create default config if it doesn't already exist
+        try {
+            await fs.access(this.configFile);
+        } catch {
+            const defaultConfig: VersionControlConfig = {
+                HEAD: 'main',
+                branches: {},
+                tags: {},
+                config: {},
+            };
+            await this.saveConfig(defaultConfig);
+        }
     }
 
     // Commit operations

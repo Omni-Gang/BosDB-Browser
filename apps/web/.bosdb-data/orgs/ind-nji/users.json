@@ -1,0 +1,13 @@
+[
+  {
+    "id": "nji",
+    "name": "nji",
+    "email": "nji@nji.com",
+    "role": "admin",
+    "accountType": "individual",
+    "password": "$2b$10$LhcFHLt2KnML3b3SCMtRs.BHLrC7atlMyv.KcDDrRYwzSmlfov1K.",
+    "organizationId": "ind-nji",
+    "status": "approved",
+    "createdAt": "2025-12-28T06:46:50.861Z"
+  }
+]

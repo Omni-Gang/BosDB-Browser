@@ -1,17 +1,34 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { getCurrentUser } from '@/lib/auth';
+
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { useTheme } from 'next-themes';
-import { Play, Save, Download, Clock, Table as TableIcon, Database, ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
+import { Play, Save, Download, Clock, Table as TableIcon, Database, ChevronRight, ChevronDown, GitBranch, Plus as PlusIcon, FileCode, Wand2, FileSearch, FileStack, Upload, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { trackChange, parseQueryForChanges, getPendingChanges } from '@/lib/vcs-helper';
+import { trackChange, parseQueryForChanges, getPendingChanges, generateRollbackSQL } from '@/lib/vcs-helper';
+import { extractTableName, getCurrentStatement } from '@/lib/sql-helper';
+import { formatSQL, getDialectFromDbType, getExplainPrefix } from '@/lib/sql-formatter';
+import TableDesigner from '@/components/schema/TableDesigner';
+import { SaveQueryModal } from '@/components/SaveQueryModal';
+import { ExportModal } from '@/components/ExportModal';
+import { ImportModal } from '@/components/ImportModal';
+import { SQLTemplateModal } from '@/components/SQLTemplateModal';
+import { TableContextMenu } from '@/components/TableContextMenu';
+import { QueryPlanViewer } from '@/components/QueryPlanViewer';
+import { ResultsToolbar } from '@/components/ResultsToolbar';
+import { DataEditor } from '@/components/DataEditor';
+import { AIAssistantPanel } from '@/components/AIAssistantPanel';
+import { QueryHistory } from '@/components/QueryHistory';
 
+// Define QueryResult interface
 interface QueryResult {
     success: boolean;
     rows: any[];
     fields: { name: string; dataType: string }[];
+    columnNames: string[]; // Stable list of column names
     rowCount: number;
     executionTime: number;
     hasMore?: boolean;
@@ -156,13 +173,13 @@ function validateQuerySyntax(query: string, dbType: string): string {
     return `⚠️ Syntax Warnings:\n${warnings.map((w, i) => `${i + 1}. ${w}`).join('\n')}`;
 }
 
-export default function QueryPage() {
+function QueryPageContent() {
     const searchParams = useSearchParams();
     const connectionId = searchParams?.get('connection');
     const { theme } = useTheme();
 
     const [query, setQuery] = useState('SELECT * FROM information_schema.tables LIMIT 10;');
-    const [result, setResult] = useState<QueryResult | null>(null);
+    const [results, setResults] = useState<QueryResult[]>([]);
     const [executing, setExecuting] = useState(false);
     const [error, setError] = useState('');
     const [warning, setWarning] = useState('');
@@ -170,8 +187,123 @@ export default function QueryPage() {
     const [schemas, setSchemas] = useState<any[]>([]);
     const [expandedSchemas, setExpandedSchemas] = useState<Set<string>>(new Set(['public']));
     const [schemaTables, setSchemaTables] = useState<Map<string, TableInfo[]>>(new Map());
+    const [schemaProcedures, setSchemaProcedures] = useState<Map<string, any[]>>(new Map());
     const [pendingChanges, setPendingChanges] = useState<number>(0);
     const [editorRef, setEditorRef] = useState<any>(null);
+    const [showTableDesigner, setShowTableDesigner] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(false);
+    const [showQueryPlan, setShowQueryPlan] = useState(false);
+    const [queryPlan, setQueryPlan] = useState<any>(null);
+    const [filteredResults, setFilteredResults] = useState<Map<number, any[]>>(new Map());
+    const [contextMenu, setContextMenu] = useState<{
+        x: number;
+        y: number;
+        tableName: string;
+        schemaName: string;
+    } | null>(null);
+    const [importTable, setImportTable] = useState<{ name: string; schema: string } | null>(null);
+    const [exportingIndex, setExportingIndex] = useState<number>(0);
+    const [activeTab, setActiveTab] = useState<number>(0);
+
+    // Loading states map: schemaName -> { tables: boolean, procedures: boolean }
+    const [loadingResources, setLoadingResources] = useState<Map<string, { tables: boolean; procedures: boolean }>>(new Map());
+    const [resourceErrors, setResourceErrors] = useState<Map<string, string>>(new Map());
+    const [history, setHistory] = useState<any[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [monacoInstance, setMonacoInstance] = useState<any>(null);
+
+    // Memoize columns for the first result (fallback)
+    const columns = useMemo(() => results.length > 0 ? results[0].fields.map(f => f.name) : [], [results]);
+
+    const updateLoading = (schema: string, type: 'tables' | 'procedures', isLoading: boolean) => {
+        setLoadingResources(prev => {
+            const next = new Map(prev);
+            const current = next.get(schema) || { tables: false, procedures: false };
+            next.set(schema, { ...current, [type]: isLoading });
+            return next;
+        });
+    };
+
+    const getHeaders = () => {
+        const currentUser = getCurrentUser();
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (currentUser?.email) headers['x-user-email'] = currentUser.email;
+        if (currentUser?.organizationId) headers['x-org-id'] = currentUser.organizationId;
+        return headers;
+    };
+
+    const handleRefresh = async () => {
+        setSchemas([]);
+        setSchemaTables(new Map());
+        setSchemaProcedures(new Map());
+        setExpandedSchemas(new Set());
+        setLoadingResources(new Map());
+        setResourceErrors(new Map());
+        setResourceErrors(new Map());
+        await fetchSchemas();
+        await loadPendingChanges();
+        await fetchHistory();
+    };
+
+    // Format SQL handler
+    const handleFormatSQL = () => {
+        if (!query.trim() || !connectionInfo) return;
+        const dialect = getDialectFromDbType(connectionInfo.type);
+        const formatted = formatSQL(query, { dialect });
+        setQuery(formatted);
+    };
+
+    // Explain Query handler
+    const handleExplainQuery = async () => {
+        if (!connectionId || !query.trim() || !connectionInfo) return;
+
+        setExecuting(true);
+        setError('');
+
+        try {
+            const explainPrefix = getExplainPrefix(connectionInfo.type);
+            const explainQuery = explainPrefix + query.trim().replace(/;$/, '');
+
+            const res = await fetch('/api/query', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    connectionId,
+                    query: explainQuery,
+                    timeout: 30000,
+                    maxRows: 1000,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'EXPLAIN failed');
+            }
+
+            // Parse the plan from result
+            let plan = data.rows;
+            if (connectionInfo.type === 'postgresql' && data.rows?.[0]?.['QUERY PLAN']) {
+                plan = data.rows[0]['QUERY PLAN'];
+            }
+
+            setQueryPlan(plan);
+            setShowQueryPlan(true);
+        } catch (err: any) {
+            setError(`EXPLAIN failed: ${err.message}`);
+        } finally {
+            setExecuting(false);
+        }
+    };
+
+    // Handle table right-click
+    const handleTableContextMenu = (e: React.MouseEvent, tableName: string, schemaName: string) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY, tableName, schemaName });
+    };
 
 
 
@@ -180,8 +312,54 @@ export default function QueryPage() {
             fetchConnectionInfo();
             fetchSchemas();
             loadPendingChanges();
+            fetchHistory();
         }
     }, [connectionId]);
+
+    // Register Autocomplete
+    useEffect(() => {
+        if (!monacoInstance || schemas.length === 0) return;
+
+        const tableNames = Array.from(schemaTables.values()).flat().map(t => t.name);
+        const schemaNames = schemas.map(s => s.name);
+
+        const provider = monacoInstance.languages.registerCompletionItemProvider('sql', {
+            provideCompletionItems: (model: any, position: any) => {
+                const word = model.getWordUntilPosition(position);
+                const range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                };
+
+                const suggestions = [
+                    ...['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'LIMIT', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'ON', 'AS', 'IN', 'IS', 'NULL', 'NOT', 'EXISTS', 'CREATE', 'TABLE', 'DROP', 'ALTER', 'TRUNCATE'].map(k => ({
+                        label: k,
+                        kind: monacoInstance.languages.CompletionItemKind.Keyword,
+                        insertText: k,
+                        range: range,
+                    })),
+                    ...schemaNames.map(s => ({
+                        label: s,
+                        kind: monacoInstance.languages.CompletionItemKind.Module,
+                        insertText: s,
+                        range: range,
+                    })),
+                    ...tableNames.map(t => ({
+                        label: t,
+                        kind: monacoInstance.languages.CompletionItemKind.Class,
+                        insertText: t,
+                        range: range,
+                    })),
+                ];
+
+                return { suggestions };
+            },
+        });
+
+        return () => provider.dispose();
+    }, [monacoInstance, schemas, schemaTables]);
 
     const loadPendingChanges = async () => {
         if (!connectionId) return;
@@ -189,9 +367,28 @@ export default function QueryPage() {
         setPendingChanges(changes.length);
     };
 
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch(`/api/history?connectionId=${connectionId}`, { headers: getHeaders() });
+            const data = await res.json();
+            if (data.history) {
+                // Map server history format to frontend format if needed
+                setHistory(data.history.map((h: any) => ({
+                    id: h.id,
+                    sql: h.query,
+                    timestamp: new Date(h.executedAt),
+                    duration: h.executionTime,
+                    status: h.success ? 'success' : 'error'
+                })));
+            }
+        } catch (err) {
+            console.error('Failed to fetch history:', err);
+        }
+    };
+
     const fetchConnectionInfo = async () => {
         try {
-            const res = await fetch('/api/connections');
+            const res = await fetch('/api/connections', { headers: getHeaders() });
             const data = await res.json();
             const conn = data.connections?.find((c: any) => c.id === connectionId);
             setConnectionInfo(conn);
@@ -202,7 +399,7 @@ export default function QueryPage() {
 
     const fetchSchemas = async () => {
         try {
-            const res = await fetch(`/api/schema?connectionId=${connectionId}`);
+            const res = await fetch(`/api/schema?connectionId=${connectionId}`, { headers: getHeaders() });
             const data = await res.json();
             setSchemas(data.schemas || []);
         } catch (err) {
@@ -210,13 +407,33 @@ export default function QueryPage() {
         }
     };
 
-    const fetchTables = async (schemaName: string) => {
+    const fetchProcedures = async (schemaName: string) => {
+        updateLoading(schemaName, 'procedures', true);
         try {
-            const res = await fetch(`/api/tables?connectionId=${connectionId}&schema=${schemaName}`);
+            const res = await fetch(`/api/procedures?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
             const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch procedures');
+            setSchemaProcedures(prev => new Map(prev).set(schemaName, data.procedures || []));
+        } catch (err: any) {
+            console.error('Failed to fetch procedures:', err);
+            setResourceErrors(prev => new Map(prev).set(`${schemaName}:procedures`, err.message));
+        } finally {
+            updateLoading(schemaName, 'procedures', false);
+        }
+    };
+
+    const fetchTables = async (schemaName: string) => {
+        updateLoading(schemaName, 'tables', true);
+        try {
+            const res = await fetch(`/api/tables?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch tables');
             setSchemaTables(prev => new Map(prev).set(schemaName, data.tables || []));
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch tables:', err);
+            setResourceErrors(prev => new Map(prev).set(`${schemaName}:tables`, err.message));
+        } finally {
+            updateLoading(schemaName, 'tables', false);
         }
     };
 
@@ -226,89 +443,211 @@ export default function QueryPage() {
             newExpanded.delete(schemaName);
         } else {
             newExpanded.add(schemaName);
-            // Fetch tables if not already loaded
+            // Fetch tables and procedures if not already loaded
             if (!schemaTables.has(schemaName)) {
-                await fetchTables(schemaName);
+                fetchTables(schemaName);
+            }
+            if (!schemaProcedures.has(schemaName)) {
+                fetchProcedures(schemaName);
             }
         }
         setExpandedSchemas(newExpanded);
     };
 
-    const executeQuery = useCallback(async () => {
-        if (!connectionId || !query.trim()) {
-            return;
-        }
+    const executeQuery = useCallback(async (customQuery?: string) => {
+        if (!connectionId) return;
 
-        // Get selected text from editor, or use full query
-        let queryToExecute = query.trim();
-        if (editorRef) {
+        // Use custom query, selected text, or full text
+        let rawQuery = (customQuery || query).trim();
+        if (!customQuery && editorRef) {
             const selection = editorRef.getSelection();
             const selectedText = editorRef.getModel()?.getValueInRange(selection);
             if (selectedText && selectedText.trim()) {
-                queryToExecute = selectedText.trim();
+                rawQuery = selectedText.trim();
             }
         }
 
-        if (!queryToExecute) {
-            return;
-        }
+        if (!rawQuery) return;
 
         setExecuting(true);
         setError('');
         setWarning('');
-        setResult(null);
+        setResults([]);
 
-        // Validate query syntax for database type
-        if (connectionInfo) {
-            const syntaxWarning = validateQuerySyntax(queryToExecute, connectionInfo.type);
-            if (syntaxWarning) {
-                setWarning(syntaxWarning);
-            }
+        // Split queries by semicolon (basic splitting)
+        const queries = rawQuery
+            .split(';')
+            .map(q => q.trim())
+            .filter(q => q.length > 0);
+
+        if (queries.length === 0) {
+            setExecuting(false);
+            return;
         }
 
+        const allResults: QueryResult[] = [];
+        let finalError = '';
+
         try {
-            const res = await fetch('/api/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    connectionId,
-                    query: queryToExecute,
-                    timeout: 30000,
-                    maxRows: 1000,
-                }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Query execution failed');
-            }
-
-            setResult(data);
-
-            // Track database changes for version control
-            if (connectionId && queryToExecute) {
-                const change = parseQueryForChanges(queryToExecute, data.rowCount);
-                if (change) {
-                    await trackChange(connectionId, change);
-                    await loadPendingChanges(); // Refresh pending count
+            for (const q of queries) {
+                // Validate syntax (only show for the first one for brevity, or combine)
+                if (connectionInfo) {
+                    const syntaxWarning = validateQuerySyntax(q, connectionInfo.type);
+                    if (syntaxWarning) setWarning(prev => prev ? `${prev}\n${syntaxWarning}` : syntaxWarning);
                 }
+
+                const qUpper = q.toUpperCase();
+                let metadata: any = {};
+
+                // Capture Metadata for Rollback (Row Snapshots)
+                if (qUpper.startsWith('DELETE FROM') || qUpper.startsWith('UPDATE')) {
+                    try {
+                        const tableNameMatch = q.match(/(?:DELETE\s+FROM|UPDATE)\s+([`"]?)(\w+)\1/i);
+                        const whereMatch = q.match(/WHERE\s+([\s\S]+)$/i);
+
+                        if (tableNameMatch) {
+                            const tableName = tableNameMatch[2];
+                            const whereClause = whereMatch ? whereMatch[0] : '';
+
+                            // Capture rows BEFORE they are changed/deleted
+                            const snapshotRes = await fetch('/api/query', {
+                                method: 'POST',
+                                headers: getHeaders(),
+                                body: JSON.stringify({
+                                    connectionId,
+                                    query: `SELECT * FROM ${tableName} ${whereClause}`,
+                                    timeout: 10000,
+                                    maxRows: 1000
+                                }),
+                            });
+
+                            if (snapshotRes.ok) {
+                                const snapshotData = await snapshotRes.json();
+                                if (qUpper.startsWith('DELETE FROM')) {
+                                    metadata.rows = snapshotData.rows;
+                                } else {
+                                    metadata.oldRows = snapshotData.rows;
+                                    metadata.primaryKeyFields = snapshotData.fields?.map((f: any) => f.name).slice(0, 1); // Heuristic
+                                }
+                            }
+                        }
+                    } catch (snapErr) {
+                        console.error('Failed to capture snapshot for rollback:', snapErr);
+                    }
+                }
+
+                const res = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        connectionId,
+                        query: q,
+                        timeout: 30000,
+                        maxRows: 1000,
+                    }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    finalError = data.error || 'Query execution failed';
+                    // We stop on the first error for safety
+                    break;
+                }
+
+                const resultWithColumns: QueryResult = {
+                    ...data,
+                    columnNames: data.fields?.map((f: any) => f.name) || []
+                };
+                allResults.push(resultWithColumns);
+
+                // Track database changes for version control
+                const change = parseQueryForChanges(q, data.rowCount);
+                if (change) {
+                    // Enrich change with metadata and pre-generated rollback SQL
+                    change.metadata = metadata;
+                    change.rollbackSQL = generateRollbackSQL(q, metadata);
+                    await trackChange(connectionId, change);
+                }
+
+                // Add to history
+                const historyItem = {
+                    id: crypto.randomUUID(),
+                    sql: q,
+                    timestamp: new Date(),
+                    duration: data.executionTime,
+                    status: 'success'
+                };
+                setHistory(prev => [historyItem, ...prev].slice(0, 50));
             }
+
+            setResults(allResults);
+            if (finalError) {
+                setError(finalError);
+                // Add error to history
+                const errorHistoryItem = {
+                    id: crypto.randomUUID(),
+                    sql: queries[allResults.length] || rawQuery,
+                    timestamp: new Date(),
+                    duration: 0,
+                    status: 'error'
+                };
+                setHistory(prev => [errorHistoryItem, ...prev].slice(0, 50));
+            }
+
+            // Reload pending changes once after all queries
+            await loadPendingChanges();
+            setActiveTab(0); // Show first result set
         } catch (err: any) {
             setError(err.message);
         } finally {
             setExecuting(false);
         }
-    }, [connectionId, query]);
+    }, [connectionId, query, editorRef, connectionInfo]);
+
+    const executeByCursor = useCallback(async () => {
+        if (!editorRef || !connectionId) return;
+
+        const position = editorRef.getPosition();
+        if (!position) return;
+
+        const model = editorRef.getModel();
+        if (!model) return;
+
+        const offset = model.getOffsetAt(position);
+        const fullSql = model.getValue();
+        const statement = getCurrentStatement(fullSql, offset);
+
+        if (statement) {
+            await executeQuery(statement);
+        }
+    }, [editorRef, connectionId, executeQuery]);
+
+    // Handle Ctrl+E shortcut
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                executeQuery();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeByCursor();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [executeQuery]);
 
 
 
     const exportToCSV = () => {
-        if (!result || !result.rows.length) return;
+        if (results.length === 0 || !results[0].rows.length) return;
 
-        const headers = result.fields.map((f) => f.name).join(',');
-        const rows = result.rows.map((row) =>
-            result.fields.map((f) => JSON.stringify(row[f.name] || '')).join(',')
+        const res = results[0];
+        const headers = res.fields.map((f: any) => f.name).join(',');
+        const rows = res.rows.map((row: any) =>
+            res.fields.map((f: any) => JSON.stringify(row[f.name] || '')).join(',')
         );
 
         const csv = [headers, ...rows].join('\n');
@@ -361,10 +700,28 @@ export default function QueryPage() {
             <div className="flex-1 flex">
                 {/* Sidebar - Schema Explorer */}
                 <aside className="w-64 border-r border-border p-4 overflow-y-auto">
-                    <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <TableIcon className="w-4 h-4" />
-                        Database Explorer
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold flex items-center gap-2">
+                            <TableIcon className="w-4 h-4" />
+                            Explorer
+                        </h3>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={handleRefresh}
+                                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition"
+                                title="Refresh Explorer"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setShowTableDesigner(true)}
+                                className="p-1 hover:bg-accent rounded text-primary"
+                                title="Create New Table"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
                     <div className="space-y-1">
                         {schemas.length === 0 ? (
                             <p className="text-sm text-muted-foreground">No schemas found</p>
@@ -389,26 +746,55 @@ export default function QueryPage() {
 
                                     {expandedSchemas.has(schema.name) && (
                                         <div className="ml-6 mt-1 space-y-0.5">
-                                            {schemaTables.get(schema.name)?.map((table) => (
-                                                <button
-                                                    key={table.name}
-                                                    onClick={() => setQuery(`SELECT * FROM ${schema.name}.${table.name} LIMIT 100;`)}
-                                                    className="w-full flex items-center gap-1 px-2 py-1 hover:bg-accent rounded transition text-left"
-                                                    title={`Click to query ${table.name}`}
-                                                >
-                                                    <TableIcon className="w-3 h-3 text-muted-foreground" />
-                                                    <span className="text-xs">{table.name}</span>
-                                                    {table.type && (
-                                                        <span className="text-xs text-muted-foreground ml-auto">
-                                                            {table.type === 'BASE TABLE' ? 'T' : 'V'}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            )) || (
-                                                    <div className="px-2 py-1 text-xs text-muted-foreground">
-                                                        Loading tables...
-                                                    </div>
-                                                )}
+                                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 mt-2">Tables</div>
+
+                                            {loadingResources.get(schema.name)?.tables ? (
+                                                <div className="px-2 py-1 text-xs text-muted-foreground">Loading tables...</div>
+                                            ) : resourceErrors.get(`${schema.name}:tables`) ? (
+                                                <div className="px-2 py-1 text-xs text-destructive/80" title={resourceErrors.get(`${schema.name}:tables`)}>Error loading tables</div>
+                                            ) : schemaTables.get(schema.name)?.length === 0 ? (
+                                                <div className="px-2 py-1 text-xs text-muted-foreground italic">No tables</div>
+                                            ) : (
+                                                schemaTables.get(schema.name)?.map((table) => (
+                                                    <button
+                                                        key={table.name}
+                                                        onClick={() => setQuery(`SELECT * FROM ${schema.name}.${table.name} LIMIT 100;`)}
+                                                        onContextMenu={(e) => handleTableContextMenu(e, table.name, schema.name)}
+                                                        className="w-full flex items-center gap-1 px-2 py-1 hover:bg-accent rounded transition text-left"
+                                                        title={`Click to query, right-click for options`}
+                                                    >
+                                                        <TableIcon className="w-3 h-3 text-muted-foreground" />
+                                                        <span className="text-xs">{table.name}</span>
+                                                        {table.type && (
+                                                            <span className="text-xs text-muted-foreground ml-auto">
+                                                                {table.type === 'BASE TABLE' ? 'T' : 'V'}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ))
+                                            )}
+
+                                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 mt-2">Procedures</div>
+
+                                            {loadingResources.get(schema.name)?.procedures ? (
+                                                <div className="px-2 py-1 text-xs text-muted-foreground">Loading procedures...</div>
+                                            ) : resourceErrors.get(`${schema.name}:procedures`) ? (
+                                                <div className="px-2 py-1 text-xs text-destructive/80" title={resourceErrors.get(`${schema.name}:procedures`)}>Error loading procedures</div>
+                                            ) : schemaProcedures.get(schema.name)?.length === 0 ? (
+                                                <div className="px-2 py-1 text-xs text-muted-foreground italic">No procedures</div>
+                                            ) : (
+                                                schemaProcedures.get(schema.name)?.map((proc) => (
+                                                    <button
+                                                        key={proc.name}
+                                                        onClick={() => setQuery(`CALL ${schema.name}.${proc.name}();`)}
+                                                        className="w-full flex items-center gap-1 px-2 py-1 hover:bg-accent rounded transition text-left"
+                                                        title={`Click to call ${proc.name}`}
+                                                    >
+                                                        <FileCode className="w-3 h-3 text-blue-400" />
+                                                        <span className="text-xs">{proc.name}</span>
+                                                    </button>
+                                                ))
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -438,40 +824,84 @@ export default function QueryPage() {
                     )}
 
                     {/* Toolbar */}
-                    <div className="border-b border-border p-4 flex items-center gap-4">
+                    <div className="border-b border-border p-4 flex items-center gap-2 flex-wrap">
                         <button
-                            onClick={executeQuery}
+                            onClick={() => executeQuery()}
                             disabled={executing || !query.trim()}
                             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
                         >
                             <Play className="w-4 h-4" />
-                            {executing ? 'Executing...' : 'Run Query'}
+                            {executing ? 'Executing...' : 'Run'}
                         </button>
 
                         <button
-                            className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
-                            disabled
+                            onClick={executeByCursor}
+                            disabled={executing || !query.trim()}
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            title="Execute Statement Under Cursor (Ctrl+Enter)"
+                        >
+                            <Play className="w-4 h-4 text-green-500" />
+                            Statement
+                        </button>
+
+                        <button
+                            onClick={handleExplainQuery}
+                            disabled={executing || !query.trim()}
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            title="Explain Query Plan"
+                        >
+                            <FileSearch className="w-4 h-4" />
+                            Explain
+                        </button>
+
+                        <div className="w-px h-6 bg-border" />
+
+                        <button
+                            onClick={handleFormatSQL}
+                            disabled={!query.trim()}
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            title="Format SQL"
+                        >
+                            <Wand2 className="w-4 h-4" />
+                            Format
+                        </button>
+
+                        <button
+                            onClick={() => setShowTemplates(true)}
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            title="SQL Templates"
+                        >
+                            <FileStack className="w-4 h-4" />
+                            Templates
+                        </button>
+
+                        <div className="w-px h-6 bg-border" />
+
+                        <button
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            onClick={() => setShowSaveModal(true)}
+                            disabled={!query.trim()}
                         >
                             <Save className="w-4 h-4" />
                             Save
                         </button>
 
-                        {result && result.rows.length > 0 && (
+                        {results.length > 0 && (
                             <button
-                                onClick={exportToCSV}
-                                className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                                onClick={() => setShowExportModal(true)}
+                                className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
                             >
                                 <Download className="w-4 h-4" />
-                                Export CSV
+                                Export
                             </button>
                         )}
 
                         <Link
                             href={`/version-control?connection=${connectionId}`}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 relative"
+                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 relative"
                         >
                             <GitBranch className="w-4 h-4" />
-                            Version Control
+                            VCS
                             {pendingChanges > 0 && (
                                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                     {pendingChanges}
@@ -479,15 +909,24 @@ export default function QueryPage() {
                             )}
                         </Link>
 
+                        <button
+                            onClick={() => setShowHistory(!showHistory)}
+                            className={`px-3 py-2 border border-border rounded-lg transition flex items-center gap-2 ${showHistory ? 'bg-accent border-primary' : 'hover:bg-accent'}`}
+                            title="Query History"
+                        >
+                            <Clock className="w-4 h-4" />
+                            History
+                        </button>
+
                         <div className="flex-1" />
 
-                        {result && (
+                        {results.length > 0 && (
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
-                                    {result.executionTime}ms
+                                    {results.reduce((acc, r) => acc + r.executionTime, 0)}ms
                                 </div>
-                                <div>{result.rowCount} rows</div>
+                                <div>{results.length} result set(s)</div>
                             </div>
                         )}
                     </div>
@@ -499,8 +938,11 @@ export default function QueryPage() {
                             language="sql"
                             theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
                             value={query}
-                            onChange={(value) => setQuery(value || '')}
-                            onMount={(editor) => setEditorRef(editor)}
+                            onChange={(value: string | undefined) => setQuery(value || '')}
+                            onMount={(editor: any, monaco: any) => {
+                                setEditorRef(editor);
+                                setMonacoInstance(monaco);
+                            }}
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -526,70 +968,199 @@ export default function QueryPage() {
                                 {warning}
                             </div>
                         )}
-                        {result && !error && (
-                            <div>
-                                <div className="mb-4 text-sm text-muted-foreground">
-                                    Query executed in {result.executionTime}ms · {result.rowCount} rows returned
-                                    {result.hasMore && ' · More results available'}
+                        {/* Result Tabs */}
+                        {results.length > 0 && (
+                            <div className="flex border-b border-border mb-4 overflow-x-auto">
+                                {results.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveTab(idx)}
+                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === idx
+                                            ? 'border-primary text-primary'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        Result {idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {results.length > 0 && results[activeTab] && (
+                            <div className="animate-fadeIn">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
+                                        Result Set #{activeTab + 1} ({results[activeTab].rowCount} rows)
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Executed in {results[activeTab].executionTime}ms
+                                    </div>
                                 </div>
 
-                                {result.rows.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground">
+                                {results[activeTab].rows.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
                                         Query executed successfully but returned no rows
                                     </div>
                                 ) : (
                                     <div className="border border-border rounded-lg overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">
-                                                <thead className="bg-muted">
-                                                    <tr>
-                                                        {result.fields.map((field) => (
-                                                            <th
-                                                                key={field.name}
-                                                                className="px-4 py-3 text-left text-sm font-semibold"
-                                                            >
-                                                                {field.name}
-                                                                <div className="text-xs font-normal text-muted-foreground mt-1">
-                                                                    {field.dataType}
-                                                                </div>
-                                                            </th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {result.rows.map((row, index) => (
-                                                        <tr key={index} className="border-t border-border hover:bg-accent/50">
-                                                            {result.fields.map((field) => (
-                                                                <td key={field.name} className="px-4 py-3 text-sm font-mono">
-                                                                    {row[field.name] === null ? (
-                                                                        <span className="text-muted-foreground italic">NULL</span>
-                                                                    ) : field.dataType === 'json' || field.dataType === 'jsonb' ? (
-                                                                        <pre className="text-xs">
-                                                                            {JSON.stringify(row[field.name], null, 2)}
-                                                                        </pre>
-                                                                    ) : (
-                                                                        String(row[field.name])
-                                                                    )}
-                                                                </td>
-                                                            ))}
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                        <ResultsToolbar
+                                            data={results[activeTab].rows}
+                                            columns={results[activeTab].columnNames}
+                                            onFilteredDataChange={(data) => {
+                                                setFilteredResults(prev => {
+                                                    const next = new Map(prev);
+                                                    next.set(activeTab, data);
+                                                    return next;
+                                                });
+                                            }}
+                                            onExport={() => {
+                                                setExportingIndex(activeTab);
+                                                setShowExportModal(true);
+                                            }}
+                                        />
+                                        <div className="h-[400px]">
+                                            <DataEditor
+                                                rows={results[activeTab].rows}
+                                                fields={results[activeTab].fields}
+                                                onSave={async () => {
+                                                    alert("Inline editing is currently limited to the first result set in multi-query mode.");
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {!result && !error && (
+                        {results.length === 0 && !error && (
                             <div className="text-center py-12 text-muted-foreground">
-                                Write a query and click "Run Query" to execute
+                                Write a query and click "Run" (or Ctrl+E) to execute
                             </div>
                         )}
                     </div>
                 </div>
+
+                {/* History Sidebar */}
+                {showHistory && (
+                    <QueryHistory
+                        history={history}
+                        onSelect={(sql) => setQuery(sql)}
+                        onRun={(sql) => {
+                            setQuery(sql);
+                            setTimeout(() => executeQuery(sql), 100);
+                        }}
+                        onClear={() => setHistory([])}
+                        onRemove={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                    />
+                )}
             </div>
+            {/* Table Designer Modal */}
+            {showTableDesigner && connectionId && (
+                <TableDesigner
+                    connectionId={connectionId}
+                    onClose={() => setShowTableDesigner(false)}
+                    onSuccess={() => {
+                        setShowTableDesigner(false);
+                        fetchSchemas(); // Refresh schema list
+                    }}
+                />
+            )}
+            {/* Save Query Modal */}
+            {showSaveModal && connectionId && (
+                <SaveQueryModal
+                    query={query}
+                    connectionId={connectionId}
+                    onClose={() => setShowSaveModal(false)}
+                    onSuccess={() => setShowSaveModal(false)}
+                />
+            )}
+
+            {/* Export Modal */}
+            {showExportModal && results[exportingIndex] && (
+                <ExportModal
+                    data={filteredResults.get(exportingIndex) || results[exportingIndex].rows}
+                    columns={results[exportingIndex].columnNames}
+                    tableName={`query-result-${exportingIndex + 1}-${Date.now()}`}
+                    onClose={() => setShowExportModal(false)}
+                />
+            )}
+
+            {/* Import Modal */}
+            {showImportModal && importTable && connectionId && (
+                <ImportModal
+                    tableName={`${importTable.schema}.${importTable.name}`}
+                    connectionId={connectionId}
+                    onClose={() => {
+                        setShowImportModal(false);
+                        setImportTable(null);
+                    }}
+                    onSuccess={() => {
+                        setShowImportModal(false);
+                        setImportTable(null);
+                    }}
+                />
+            )}
+
+            {/* SQL Templates Modal */}
+            {showTemplates && (
+                <SQLTemplateModal
+                    onSelect={(sql) => setQuery(sql)}
+                    onClose={() => setShowTemplates(false)}
+                />
+            )}
+
+            {/* Query Plan Viewer */}
+            {showQueryPlan && queryPlan && connectionInfo && (
+                <QueryPlanViewer
+                    plan={queryPlan}
+                    executionTime={results[0]?.executionTime}
+                    dbType={connectionInfo.type}
+                    onClose={() => setShowQueryPlan(false)}
+                />
+            )}
+
+            {/* Table Context Menu */}
+            {contextMenu && (
+                <TableContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    tableName={contextMenu.tableName}
+                    schemaName={contextMenu.schemaName}
+                    onClose={() => setContextMenu(null)}
+                    onSelectQuery={(sql) => setQuery(sql)}
+                    onImport={() => {
+                        setImportTable({ name: contextMenu.tableName, schema: contextMenu.schemaName });
+                        setShowImportModal(true);
+                        setContextMenu(null);
+                    }}
+                />
+            )}
+
+            {/* AI SQL Assistant */}
+            {connectionId && connectionInfo && (
+                <AIAssistantPanel
+                    connectionId={connectionId}
+                    connectionInfo={connectionInfo}
+                    schemas={schemas.map(s => s.name)}
+                    tables={Array.from(schemaTables.entries()).flatMap(([schema, tables]) =>
+                        tables.map(t => ({ schema, name: t.name }))
+                    )}
+                    onInsertQuery={(sql) => setQuery(sql)}
+                    onRunQuery={(sql) => {
+                        setQuery(sql);
+                        setTimeout(() => executeQuery(), 100);
+                    }}
+                />
+            )}
         </div>
+    );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function QueryPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+            <QueryPageContent />
+        </Suspense>
     );
 }

@@ -4,14 +4,15 @@ import { decryptCredentials } from '@bosdb/security';
 import { validateQuery, isReadOnlyQuery } from '@bosdb/security';
 import { Logger } from '@bosdb/utils';
 import type { QueryRequest } from '@bosdb/core';
-import { connections, adapterInstances } from '@/lib/store';
+import { connections, adapterInstances, getConnection } from '@/lib/store';
 import { addQueryToHistory } from '@/lib/queryStore';
 
 const logger = new Logger('QueryAPI');
 
 export async function POST(request: NextRequest) {
+    let body: any;
     try {
-        const body = await request.json();
+        body = await request.json();
         const { connectionId, query, timeout, maxRows } = body;
 
         if (!connectionId || !query) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
         logger.info(`Total connections in store: ${connections.size}`);
 
         // Get connection info
-        const connectionInfo = connections.get(connectionId);
+        const connectionInfo = await getConnection(connectionId);
         if (!connectionInfo) {
             logger.error(`Connection ${connectionId} not found in store`);
             return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
@@ -55,40 +56,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get or create adapter instance
-        let adapter = adapterInstances.get(connectionId);
-        let adapterConnectionId = connectionId;
+        // Get adapter instance
+        let adapter;
+        let adapterConnectionId;
 
-        if (!adapter) {
-            adapter = AdapterFactory.create(connectionInfo.type);
-
-            // Decrypt credentials
-            const credentials = decryptCredentials(connectionInfo.credentials);
-
-            // Connect to database
-            const connectResult = await adapter.connect({
-                host: connectionInfo.host,
-                port: connectionInfo.port,
-                database: connectionInfo.database,
-                username: credentials.username,
-                password: credentials.password,
-                ssl: connectionInfo.ssl,
-                readOnly: connectionInfo.readOnly,
-            });
-
-            if (!connectResult.success) {
-                return NextResponse.json(
-                    { error: 'Failed to connect to database' },
-                    { status: 500 }
-                );
-            }
-
-            adapterConnectionId = connectResult.connectionId;
-            adapterInstances.set(connectionId, { adapter, adapterConnectionId });
-        } else {
-            adapterConnectionId = adapter.adapterConnectionId;
-            adapter = adapter.adapter;
+        try {
+            // Use shared helper to get connected adapter
+            // This ensures consistent connection state across all API routes
+            const result = await import('@/lib/db-utils').then(m => m.getConnectedAdapter(connectionId));
+            adapter = result.adapter;
+            adapterConnectionId = result.adapterConnectionId;
+        } catch (connError: any) {
+            logger.error(`Failed to connect to database: ${connError.message}`);
+            return NextResponse.json(
+                { error: `Failed to connect to database: ${connError.message}` },
+                { status: 500 }
+            );
         }
+
+        const userEmail = request.headers.get('x-user-email');
 
         // Execute query
         const queryRequest: QueryRequest = {
@@ -114,6 +100,8 @@ export async function POST(request: NextRequest) {
                 executionTime: result.executionTime,
                 rowCount: result.rowCount,
                 success: true,
+                userEmail: userEmail || undefined,
+                orgId: request.headers.get('x-org-id') || undefined,
             });
         } catch (historyError) {
             // Don't fail query if history fails
@@ -129,8 +117,11 @@ export async function POST(request: NextRequest) {
 
         // Add failed query to history (with safe access)
         try {
-            const body = await request.clone().json();
-            const connInfo = connections.get(body.connectionId);
+            // body is already parsed at the top of POST
+            const connInfo = await getConnection(body.connectionId);
+            const userEmail = request.headers.get('x-user-email');
+            const orgId = request.headers.get('x-org-id');
+
             if (connInfo) {
                 addQueryToHistory({
                     connectionId: body.connectionId,
@@ -141,6 +132,8 @@ export async function POST(request: NextRequest) {
                     rowCount: 0,
                     success: false,
                     error: error.message,
+                    userEmail: userEmail || undefined,
+                    orgId: orgId || undefined,
                 });
             }
         } catch (historyError) {

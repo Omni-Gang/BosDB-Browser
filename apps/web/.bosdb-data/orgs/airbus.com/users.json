@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ayush",
+    "name": "ayush",
+    "email": "ayush@airbus.com",
+    "role": "admin",
+    "accountType": "enterprise",
+    "password": "$2b$10$SEEmX8Z4mxyBTrJQTbd.me0HXJFALnv2RhJTNSlybysSskZI6st8G",
+    "organizationId": "airbus.com",
+    "status": "approved",
+    "createdAt": "2025-12-28T04:18:00.824Z"
+  }
+]

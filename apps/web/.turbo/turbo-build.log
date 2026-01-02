@@ -1,0 +1,29 @@
+
+> @bosdb/web@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.14
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/schema/table/route.ts:32:23
+Type error: Property 'executeQuery' does not exist on type '{ adapter: any; adapterConnectionId: any; }'.
+
+[0m [90m 30 |[39m[0m
+[0m [90m 31 |[39m         [90m// Execute SQL[39m[0m
+[0m[31m[1m>[22m[39m[90m 32 |[39m         [36mawait[39m adapter[33m.[39mexecuteQuery(sql)[33m;[39m[0m
+[0m [90m    |[39m                       [31m[1m^[22m[39m[0m
+[0m [90m 33 |[39m[0m
+[0m [90m 34 |[39m         [90m// Track in VCS[39m[0m
+[0m [90m 35 |[39m         [36mtry[39m {[0m
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
+npm error workspace @bosdb/web@0.1.0
+npm error location C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build

@@ -1,0 +1,7 @@
+logs/
+.env
+apps/web/.env
+apps/web/.next/
+.next/
+.turbo/
+node_modules/

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser, promptForUserIfNeeded } from '@/lib/user-context';
 
-export default function VersionControlPage() {
+function VersionControlContent() {
     const searchParams = useSearchParams();
     const connectionId = searchParams?.get('connection');
 
@@ -83,7 +83,8 @@ export default function VersionControlPage() {
 
         const author = {
             name: user.name,
-            email: user.email
+            email: user.email,
+            userId: (user as any).userId || (user as any).id // Include user ID for tracking
         };
 
         const res = await fetch('/api/vcs/commit', {
@@ -99,12 +100,47 @@ export default function VersionControlPage() {
         });
 
         if (res.ok) {
-            alert(`✅ Commit created by ${user.name}!`);
+            alert(`✅ Commit created by ${user.name} on branch ${currentBranch}!`);
             await loadAllData();
         } else {
             const error = await res.json();
             alert(`❌ Failed to create commit: ${error.error || 'Unknown error'}`);
             console.error('Commit error:', error);
+        }
+    };
+
+    const revertCommit = async (commitId: string, message: string) => {
+        if (!confirm(`Are you sure you want to REVERT this specific commit?\n\n"${message}"\n\nThis will generate inverse SQL to undo just these changes.`)) {
+            return;
+        }
+
+        const user = promptForUserIfNeeded();
+
+        try {
+            const res = await fetch('/api/vcs/rollback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    connectionId,
+                    commitId,
+                    isRevert: true,
+                    author: {
+                        name: user.name,
+                        email: user.email,
+                        userId: (user as any).userId || (user as any).id
+                    }
+                })
+            });
+
+            if (res.ok) {
+                alert(`✅ Successfully reverted commit ${commitId.substring(0, 8)}!`);
+                await loadAllData();
+            } else {
+                const error = await res.json();
+                alert(`❌ Revert failed: ${error.error}`);
+            }
+        } catch (error) {
+            alert(`❌ Error during revert: ${error}`);
         }
     };
 
@@ -143,9 +179,12 @@ export default function VersionControlPage() {
     };
 
     const rollbackToCommit = async (targetRevision: number) => {
-        if (!confirm(`Are you sure you want to rollback ${Math.abs(targetRevision)} revision(s)? This will create a new commit that reverts to that state.`)) {
+        if (!confirm(`Are you sure you want to rollback ${Math.abs(targetRevision)} revision(s)? This will directly rollback the database to that state.`)) {
             return;
         }
+
+        // Get current user for tracking who performed the rollback
+        const user = promptForUserIfNeeded();
 
         try {
             const res = await fetch('/api/vcs/rollback', {
@@ -153,13 +192,18 @@ export default function VersionControlPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     connectionId,
-                    targetRevision
+                    targetRevision,
+                    author: {
+                        name: user.name,
+                        email: user.email,
+                        userId: (user as any).userId || (user as any).id
+                    }
                 })
             });
 
             if (res.ok) {
                 const result = await res.json();
-                alert(`✅ Rolled back to revision ${targetRevision}!\n\nReverted to: ${result.targetCommit?.message}`);
+                alert(`✅ Rolled back to revision ${targetRevision} by ${user.name}!\n\nReverted to: ${result.targetCommit?.message}`);
                 await loadAllData();
             } else {
                 const error = await res.json();
@@ -291,65 +335,87 @@ export default function VersionControlPage() {
                 ) : (
                     <>
                         {/* Compare Tab */}
-                        {activeTab === 'compare' && diffResult && (
+                        {activeTab === 'compare' && (
                             <div>
-                                <h2 className="text-2xl font-bold mb-4">
-                                    Comparing r{diffResult.from.revision} ↔ r{diffResult.to.revision}
-                                </h2>
-
-                                <div className="grid md:grid-cols-2 gap-4 mb-6">
-                                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                        <h3 className="font-semibold mb-2">From: r{diffResult.from.revision}</h3>
-                                        <p className="text-sm text-gray-400">{diffResult.from.commit.message}</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {new Date(diffResult.from.commit.timestamp).toLocaleString()}
+                                {!diffResult ? (
+                                    <div className="text-center py-20 bg-gray-800/30 border border-dashed border-gray-700 rounded-xl">
+                                        <div className="text-6xl mb-4">📊</div>
+                                        <h3 className="text-xl font-semibold mb-2">No Comparison Active</h3>
+                                        <p className="text-gray-400 max-w-md mx-auto mb-6">
+                                            Select two revisions from the dropdowns above and click "Compare" to see the differences between states.
                                         </p>
-                                    </div>
-                                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                        <h3 className="font-semibold mb-2">To: r{diffResult.to.revision}</h3>
-                                        <p className="text-sm text-gray-400">{diffResult.to.commit.message}</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {new Date(diffResult.to.commit.timestamp).toLocaleString()}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <h3 className="text-xl font-bold mb-3">Changes</h3>
-
-                                <div className="space-y-3">
-                                    {diffResult.from.changes.map((change: any, idx: number) => (
-                                        <div key={idx} className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-red-400 font-semibold">− REMOVED</span>
-                                                <span className="text-sm text-gray-400">{change.operation} {change.target}</span>
+                                        <div className="flex justify-center gap-4">
+                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                <span className="w-3 h-3 rounded-full bg-red-500/50"></span>
+                                                Removed Changes
                                             </div>
-                                            {change.query && (
-                                                <pre className="bg-black/30 p-2 rounded text-sm text-red-300 overflow-x-auto">{change.query}</pre>
-                                            )}
-                                        </div>
-                                    ))}
-
-                                    {diffResult.to.changes.map((change: any, idx: number) => (
-                                        <div key={idx} className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-green-400 font-semibold">+ ADDED</span>
-                                                <span className="text-sm text-gray-400">{change.operation} {change.target}</span>
+                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                <span className="w-3 h-3 rounded-full bg-green-500/50"></span>
+                                                Added Changes
                                             </div>
-                                            {change.query && (
-                                                <pre className="bg-black/30 p-2 rounded text-sm text-green-300 overflow-x-auto">{change.query}</pre>
-                                            )}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h2 className="text-2xl font-bold mb-4">
+                                            Comparing r{diffResult.from.revision} ↔ r{diffResult.to.revision}
+                                        </h2>
 
-                                <div className="mt-6">
-                                    <button
-                                        onClick={() => rollbackToCommit(diffResult.to.revision)}
-                                        className="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg transition font-semibold"
-                                    >
-                                        ⏮️ Rollback to r{diffResult.to.revision}
-                                    </button>
-                                </div>
+                                        <div className="grid md:grid-cols-2 gap-4 mb-6">
+                                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                                                <h3 className="font-semibold mb-2">From: r{diffResult.from.revision}</h3>
+                                                <p className="text-sm text-gray-400">{diffResult.from.commit.message}</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {new Date(diffResult.from.commit.timestamp).toLocaleString()}
+                                                </p>
+                                            </div>
+                                            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                                                <h3 className="font-semibold mb-2">To: r{diffResult.to.revision}</h3>
+                                                <p className="text-sm text-gray-400">{diffResult.to.commit.message}</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {new Date(diffResult.to.commit.timestamp).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <h3 className="text-xl font-bold mb-3">Changes</h3>
+
+                                        <div className="space-y-3">
+                                            {diffResult.from.changes.map((change: any, idx: number) => (
+                                                <div key={idx} className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-red-400 font-semibold">− REMOVED</span>
+                                                        <span className="text-sm text-gray-400">{change.operation} {change.target}</span>
+                                                    </div>
+                                                    {change.query && (
+                                                        <pre className="bg-black/30 p-2 rounded text-sm text-red-300 overflow-x-auto">{change.query}</pre>
+                                                    )}
+                                                </div>
+                                            ))}
+
+                                            {diffResult.to.changes.map((change: any, idx: number) => (
+                                                <div key={idx} className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-green-400 font-semibold">+ ADDED</span>
+                                                        <span className="text-sm text-gray-400">{change.operation} {change.target}</span>
+                                                    </div>
+                                                    {change.query && (
+                                                        <pre className="bg-black/30 p-2 rounded text-sm text-green-300 overflow-x-auto">{change.query}</pre>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-6">
+                                            <button
+                                                onClick={() => rollbackToCommit(diffResult.to.revision)}
+                                                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg transition font-semibold"
+                                            >
+                                                ⏮️ Rollback to r{diffResult.to.revision}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -396,7 +462,13 @@ export default function VersionControlPage() {
                                                             )}
                                                         </div>
                                                         <p className="text-sm text-gray-400 mb-3">
-                                                            {commit.author?.name} • {new Date(commit.timestamp).toLocaleString()}
+                                                            by {commit.author?.name}
+                                                            {(commit.author as any)?.userId && (
+                                                                <span className="ml-1 text-purple-400">
+                                                                    ({(commit.author as any).userId})
+                                                                </span>
+                                                            )}
+                                                            {' • '}{new Date(commit.timestamp).toLocaleString()}
                                                         </p>
                                                         <div className="flex flex-wrap gap-2 mb-3">
                                                             {commit.changes?.map((change: any, cidx: number) => (
@@ -426,6 +498,12 @@ export default function VersionControlPage() {
                                                                     ⏮️ Rollback to r{-idx}
                                                                 </button>
                                                             )}
+                                                            <button
+                                                                onClick={() => revertCommit(commit.id, commit.message)}
+                                                                className="px-3 py-1 text-sm bg-red-600/30 hover:bg-red-600 border border-red-500/50 rounded transition"
+                                                            >
+                                                                ⏪ Revert
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -584,12 +662,31 @@ export default function VersionControlPage() {
                                                                     <h3 className="font-semibold text-lg">{commit.message}</h3>
                                                                 </div>
                                                                 <p className="text-sm text-gray-400 mt-1">
-                                                                    {commit.author?.name} • {new Date(commit.timestamp).toLocaleDateString()} at {new Date(commit.timestamp).toLocaleTimeString()}
+                                                                    by {commit.author?.name}
+                                                                    {commit.branchName && (
+                                                                        <span className="ml-2 px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-xs">
+                                                                            on {commit.branchName}
+                                                                        </span>
+                                                                    )}
+                                                                    {(commit.author as any)?.userId && (
+                                                                        <span className="ml-1 text-purple-400">
+                                                                            ({(commit.author as any).userId})
+                                                                        </span>
+                                                                    )}
+                                                                    {' • '}{new Date(commit.timestamp).toLocaleDateString()} at {new Date(commit.timestamp).toLocaleTimeString()}
                                                                 </p>
                                                             </div>
-                                                            <code className="text-xs bg-gray-900 px-2 py-1 rounded">
-                                                                {commit.id?.substring(0, 8)}
-                                                            </code>
+                                                            <div className="flex gap-2 items-center">
+                                                                <button
+                                                                    onClick={() => revertCommit(commit.id, commit.message)}
+                                                                    className="text-xs bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-2 py-1 rounded border border-red-500/30 transition"
+                                                                >
+                                                                    ⏪ Revert
+                                                                </button>
+                                                                <code className="text-xs bg-gray-900 px-2 py-1 rounded">
+                                                                    {commit.id?.substring(0, 8)}
+                                                                </code>
+                                                            </div>
                                                         </div>
 
                                                         <div className="text-sm text-gray-300 mb-2">
@@ -650,5 +747,12 @@ export default function VersionControlPage() {
                 )}
             </div>
         </div>
+    );
+}
+export default function VersionControlPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading Version Control...</div>}>
+            <VersionControlContent />
+        </Suspense>
     );
 }

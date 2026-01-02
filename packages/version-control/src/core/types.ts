@@ -78,6 +78,7 @@ export interface Commit {
     parentIds: string[];  // Support for merge commits (multiple parents)
     treeId: string;       // Reference to database state
     changes: Change[];
+    branchName?: string;  // NEW: Track which branch this commit belongs to
     signature?: CommitSignature;
     metadata?: Record<string, any>;
 }

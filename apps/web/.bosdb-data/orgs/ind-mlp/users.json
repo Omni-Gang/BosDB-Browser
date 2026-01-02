@@ -1,0 +1,13 @@
+[
+  {
+    "id": "mlp",
+    "name": "mlp",
+    "email": "mlp@mlp.com",
+    "role": "user",
+    "accountType": "individual",
+    "password": "$2b$10$MkO2OTfrcv3vziYrWv1ef.5ssAWtIpgkdE9PKaTUDM2KsefcYJMKa",
+    "organizationId": "ind-mlp",
+    "status": "approved",
+    "createdAt": "2025-12-27T18:44:01.920Z"
+  }
+]

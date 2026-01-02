@@ -28,6 +28,7 @@
    Password: password (copy this!)
    ```
 
+
 4. **Save These Details** - You'll need them later!
 
 ---

@@ -1,0 +1,15 @@
+{
+  "conn_1767292847494_6f36r1gat": {
+    "id": "conn_1767292847494_6f36r1gat",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5452,
+    "database": "my_postgres_database",
+    "credentials": "JccsbOlQFGTl2Yr6wIvI3sPT/E7gMU4XBogVDS8dKerkPJ7K8TgXzHzfKrnXj+MgvAViQOoz2kQ8FLf/aSB6OVJWrechVyn16lSjqCnuwrHGS+7YV8xoPALwmic9yktxuJ0=",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-01T18:40:47.494Z"
+  }
+}

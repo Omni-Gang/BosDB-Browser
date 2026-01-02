@@ -1,0 +1,34 @@
+[
+  {
+    "id": "576d9c3e-830f-47c1-9bc0-63b6f0af2b72",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "organizationId": "ind-yuval",
+    "containerName": "bosdb-ind-yuval-postgres-1767120865320",
+    "port": 5433,
+    "username": "bosdb_955284f8",
+    "password": "I6IrhIO8T4BT6e4QbuBn",
+    "database": "bosdb",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2025-12-30T18:54:25.320Z",
+    "updatedAt": "2025-12-30T18:54:25.955Z",
+    "containerId": "99bc9808416a9dabfc9c064e88e8c8e28d528b0bfada0e1ba04e5c34f63424dc"
+  },
+  {
+    "id": "95f4d880-756c-44ca-abd7-5038163f64dc",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "organizationId": "ind-yuval",
+    "containerName": "bosdb-ind-yuval-postgres-1767121081689",
+    "port": 5434,
+    "username": "bosdb_7034e9b1",
+    "password": "24QkuQVZ9DkfWG92aoE+",
+    "database": "bosdb",
+    "status": "running",
+    "autoStart": true,
+    "createdAt": "2025-12-30T18:58:01.689Z",
+    "updatedAt": "2025-12-30T18:58:02.054Z",
+    "containerId": "e861bff5f8a818351abdf442c5b158a5ed7dafa1c3275a9a728ce30feaa17025"
+  }
+]
