@@ -172,10 +172,10 @@
     "username": "postgres",
     "password": "My Postgres Database_bpw3h0y2",
     "database": "my_postgres_database",
-    "status": "stopped",
+    "status": "running",
     "autoStart": true,
     "createdAt": "2026-01-02T12:48:49.657Z",
-    "lastUsedAt": "2026-01-02T18:54:40.622Z",
+    "lastUsedAt": "2026-01-02T19:53:25.188Z",
     "organizationId": "flipkart.com",
     "containerId": "dcbc9407136b012b3769c8c8b42c54c4db575fb80086a35ad0a9ec66d248744a"
   }
