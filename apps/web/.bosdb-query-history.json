@@ -819,5 +819,29 @@
     "userEmail": "ayush@flipkart.com",
     "orgId": "flipkart.com",
     "id": "history_1767542612600_fnph4k4pl"
+  },
+  {
+    "connectionId": "conn_1767542313594_i6np58sw6",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T16:24:47.535Z",
+    "executionTime": 536,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767543887538_n9vwyh8gg"
+  },
+  {
+    "connectionId": "conn_1767545308550_f91b21udy",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T16:48:40.490Z",
+    "executionTime": 10,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767545320490_0yuzcbrdr"
   }
 ]

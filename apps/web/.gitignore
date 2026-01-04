@@ -28,3 +28,5 @@ docker-compose.deploy.yml
 docker-compose.prod.yml
 apps/web/.next
 .next/
+node_modules/
+.turbo

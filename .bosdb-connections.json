@@ -25,17 +25,30 @@
     "organizationId": "marlo.com",
     "createdAt": "2026-01-02T16:19:46.697Z"
   },
-  "conn_1767542313594_i6np58sw6": {
-    "id": "conn_1767542313594_i6np58sw6",
+  "conn_1767540804802_2dc2kbyoj": {
+    "id": "conn_1767540804802_2dc2kbyoj",
     "name": "My Postgres Database",
     "type": "postgres",
-    "host": "caboose.proxy.rlwy.net",
+    "host": "localhost",
     "port": 28143,
     "database": "railway",
-    "credentials": "+ssFbW+WjRglj49drVopsCFyWOVvsj5R6FK/KT5jU+nqNIZohVB9yMWRNkLQ9hBbkBJz/OfyO+9hHzkW+jptZVdRkZrJpUVrJhUlC11nlrnUe5Z8D/H5HY5db+99R2YoDaT4xGE=",
+    "credentials": "5g9HiS1UT7pNQEIGJo0MKvr3NH2yuMQZe8g/tT++RD0XbGFnQZiHH6+4XQ71r/WbL3UMHuAknKarmNhet4hf/pPqrvqsXUd0LG9CABv/3Zq2eRN1yuehNQqdyVMZxTT8oWtIS4Hl",
     "readOnly": false,
     "userEmail": "ayush@flipkart.com",
     "organizationId": "flipkart.com",
-    "createdAt": "2026-01-04T15:58:33.594Z"
+    "createdAt": "2026-01-04T15:33:24.802Z"
+  },
+  "conn_1767545308550_f91b21udy": {
+    "id": "conn_1767545308550_f91b21udy",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5468,
+    "database": "my_postgres_database",
+    "credentials": "vmTp9sAxiOSV64ZDe3DwF461MFuyRG09ZIFL1Zph+oTnRnz3mn08FV3Mk3BvZ7Zk6qyM5MFsacRutWJ/tI67GYcQxx3y8DzaOrKvZ5RqgRPSn38ovvJnYdhPTdrU9VSLZTM=",
+    "readOnly": false,
+    "userEmail": "ayush@flipkart.com",
+    "organizationId": "flipkart.com",
+    "createdAt": "2026-01-04T16:48:28.551Z"
   }
 }

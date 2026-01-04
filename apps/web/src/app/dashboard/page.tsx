@@ -605,19 +605,7 @@ function NewConnectionModal({
                 signal: controller.signal
             });
 
-            // Get response text first to debug JSON parsing issues
-            const responseText = await res.text();
-            console.log('[Provision] Response status:', res.status);
-            console.log('[Provision] Response text:', responseText);
-
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('[Provision] JSON parse error:', parseError);
-                console.error('[Provision] Raw response:', responseText);
-                throw new Error(`Server returned invalid JSON. Status: ${res.status}. Response: ${responseText.substring(0, 200)}`);
-            }
+            const data = await res.json();
 
             if (!res.ok) {
                 if (res.status === 499 || data.error === 'Provisioning cancelled') {
@@ -639,12 +627,12 @@ function NewConnectionModal({
                 body: JSON.stringify({
                     name: data.database.name,
                     type: data.database.type,
-                    host: data.database.host || 'localhost', // ✅ Use host from API response
+                    host: 'localhost',
                     port: data.database.port,
                     database: data.database.database,
                     username: data.database.username,
                     password: data.database.password,
-                    ssl: data.database.ssl || false, // ✅ Use SSL from API response
+                    ssl: false,
                     readOnly: false,
                     skipTest: true, // Skip test for auto-provisioned - credentials are trusted
                 }),

@@ -1,4 +1,3 @@
-// Updated: 2026-01-04 21:58 - Force Vercel fresh deployment
 import { NextRequest, NextResponse } from 'next/server';
 import { pullAndStartDatabase, checkDockerAvailable } from '@/lib/docker-manager';
 import { DatabaseType, VALID_DATABASE_TYPES } from '@/constants/database-types';
@@ -20,13 +19,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        let body;
-        try {
-            body = await request.json();
-        } catch (e) {
-            return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-        }
-
+        const body = await request.json();
         const { type, name, autoStart } = body;
 
         // Validate inputs
@@ -38,61 +31,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid database type' }, { status: 400 });
         }
 
-        // ✅ FOR POSTGRESQL: Return Railway deployed database instead of Docker
-        // This works on both local and Vercel without Docker
-        if (type === 'postgres') {
-            console.log(`[Railway] Using deployed Railway PostgreSQL for "${name}"`);
-
-            const railwayDatabase = {
-                id: `railway_postgres_${Date.now()}`,
-                type: 'postgres',
-                name: name,
-                host: 'caboose.proxy.rlwy.net',
-                port: 28143,
-                username: 'postgres',
-                password: 'XkuCSYMEbRpxqNWWpfNLNSqlvAFKtEkO',
-                database: 'railway',
-                status: 'running',
-                isRailway: true
-            };
-
-            return NextResponse.json({
-                success: true,
-                database: {
-                    id: railwayDatabase.id,
-                    type: railwayDatabase.type,
-                    name: railwayDatabase.name,
-                    host: railwayDatabase.host,
-                    port: railwayDatabase.port,
-                    username: railwayDatabase.username,
-                    password: railwayDatabase.password,
-                    database: railwayDatabase.database,
-                    status: railwayDatabase.status,
-                    ssl: true, // ✅ Railway requires SSL
-                    connectionString: `postgresql://${railwayDatabase.username}:${railwayDatabase.password}@${railwayDatabase.host}:${railwayDatabase.port}/${railwayDatabase.database}?sslmode=require`,
-                    message: '✅ Connected to Railway PostgreSQL (Deployed Database)'
-                }
-            });
-        }
-
-        // For other database types, check if we're on Vercel (no Docker)
-        const isVercel = process.env.VERCEL === '1';
-
-        if (isVercel) {
-            // On Vercel, we can't use Docker for other databases
-            return NextResponse.json({
-                error: `Docker provisioning not available on Vercel. Please use Railway or external ${type} database and add it manually.`,
-                suggestion: 'Use "Add External Connection" instead'
-            }, { status: 503 });
-        }
-
-        // For other database types on local/non-Vercel, use Docker as before
         // Check Docker is available
         const isDockerAvailable = await checkDockerAvailable();
         if (!isDockerAvailable) {
             return NextResponse.json({
-                error: 'Docker is not running. Please start Docker and try again.',
-                suggestion: 'Start Docker Desktop or use Railway PostgreSQL'
+                error: 'Docker is not running. Please start Docker and try again.'
             }, { status: 503 });
         }
 
@@ -126,11 +69,8 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('[Docker API] Failed to provision database:', error);
-        // Always return valid JSON, even on error
         return NextResponse.json({
-            success: false,
-            error: error.message || 'Failed to provision database',
-            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: error.message || 'Failed to provision database'
         }, { status: 500 });
     }
 }
