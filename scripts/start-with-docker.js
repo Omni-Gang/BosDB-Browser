@@ -175,23 +175,9 @@ async function main() {
         if (dockerRunning) {
             console.log('✅ Docker is already running!\n');
         } else {
-            console.log('⚠️  Docker is not running. Attempting to start...\n');
-
-            try {
-                await startDockerDesktop();
-
-                // Wait for Docker to be ready
-                const ready = await waitForDocker(60);
-
-                if (!ready) {
-                    console.log('❌ Docker did not start within 60 seconds.');
-                    console.log('   Please start Docker Desktop manually and try again.\n');
-                    process.exit(1);
-                }
-            } catch (error) {
-                console.log('\n💡 Please start Docker Desktop manually and run this script again.\n');
-                process.exit(1);
-            }
+            console.log('ℹ️  Docker is not running - This is OK if using Railway PostgreSQL!\n');
+            console.log('   (Skipping Docker checks...)\n');
+            // Don't try to start Docker - just continue
         }
 
         // Check MongoDB connection

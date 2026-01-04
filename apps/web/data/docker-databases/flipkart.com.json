@@ -178,5 +178,20 @@
     "lastUsedAt": "2026-01-02T19:53:25.188Z",
     "organizationId": "flipkart.com",
     "containerId": "dcbc9407136b012b3769c8c8b42c54c4db575fb80086a35ad0a9ec66d248744a"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767539106516",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5467,
+    "username": "postgres",
+    "password": "My Postgres Database_uo9ur811",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2026-01-04T15:05:10.429Z",
+    "lastUsedAt": "2026-01-04T15:28:44.797Z",
+    "organizationId": "flipkart.com",
+    "containerId": "425c6751f5eb4841d4308a64348fae5e15c989c45d4208aa871f968251e0961d"
   }
 ]

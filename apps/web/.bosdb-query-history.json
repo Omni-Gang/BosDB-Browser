@@ -759,5 +759,65 @@
     "userEmail": "ayush@flipkart.com",
     "orgId": "flipkart.com",
     "id": "history_1767378488450_myb91m4hq"
+  },
+  {
+    "connectionId": "conn_1767539112015_yw8m4dp63",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T15:05:36.663Z",
+    "executionTime": 22,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767539136665_vvs9iaeks"
+  },
+  {
+    "connectionId": "conn_1767539112015_yw8m4dp63",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T15:07:19.634Z",
+    "executionTime": 33,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767539239636_0mzkq99u6"
+  },
+  {
+    "connectionId": "conn_1767542313594_i6np58sw6",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T15:58:40.708Z",
+    "executionTime": 860,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767542320709_lii2y6big"
+  },
+  {
+    "connectionId": "conn_1767542313594_i6np58sw6",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T16:00:31.828Z",
+    "executionTime": 542,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767542431831_rzjar2zp1"
+  },
+  {
+    "connectionId": "conn_1767542313594_i6np58sw6",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-04T16:03:32.598Z",
+    "executionTime": 537,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767542612600_fnph4k4pl"
   }
 ]

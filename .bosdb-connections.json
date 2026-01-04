@@ -12,19 +12,6 @@
     "organizationId": "ind-testy",
     "createdAt": "2026-01-01T18:40:47.494Z"
   },
-  "conn_1767358132773_4q9xyimqd": {
-    "id": "conn_1767358132773_4q9xyimqd",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "localhost",
-    "port": 5462,
-    "database": "my_postgres_database",
-    "credentials": "MbeD5dP+t9GNAsDHEjfJ+KyRWu61fpkJWWkEBUI46PAz3cxaVDFQTg7cKRGvusuweHho8kN7gvawDZ6Rjd3hczwWTq0Ye86s2ib/tVYCg+uC5GR8jH1bm+eHp1SWtE76r98=",
-    "readOnly": false,
-    "userEmail": "ayush@flipkart.com",
-    "organizationId": "flipkart.com",
-    "createdAt": "2026-01-02T12:48:52.773Z"
-  },
   "conn_1767370786696_34z367qyu": {
     "id": "conn_1767370786696_34z367qyu",
     "name": "My Postgres Database",
@@ -37,5 +24,18 @@
     "userEmail": "ritvik@marlo.com",
     "organizationId": "marlo.com",
     "createdAt": "2026-01-02T16:19:46.697Z"
+  },
+  "conn_1767542313594_i6np58sw6": {
+    "id": "conn_1767542313594_i6np58sw6",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "caboose.proxy.rlwy.net",
+    "port": 28143,
+    "database": "railway",
+    "credentials": "+ssFbW+WjRglj49drVopsCFyWOVvsj5R6FK/KT5jU+nqNIZohVB9yMWRNkLQ9hBbkBJz/OfyO+9hHzkW+jptZVdRkZrJpUVrJhUlC11nlrnUe5Z8D/H5HY5db+99R2YoDaT4xGE=",
+    "readOnly": false,
+    "userEmail": "ayush@flipkart.com",
+    "organizationId": "flipkart.com",
+    "createdAt": "2026-01-04T15:58:33.594Z"
   }
 }

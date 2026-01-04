@@ -627,12 +627,12 @@ function NewConnectionModal({
                 body: JSON.stringify({
                     name: data.database.name,
                     type: data.database.type,
-                    host: 'localhost',
+                    host: data.database.host || 'localhost', // ✅ Use host from API response
                     port: data.database.port,
                     database: data.database.database,
                     username: data.database.username,
                     password: data.database.password,
-                    ssl: false,
+                    ssl: data.database.ssl || false, // ✅ Use SSL from API response
                     readOnly: false,
                     skipTest: true, // Skip test for auto-provisioned - credentials are trusted
                 }),

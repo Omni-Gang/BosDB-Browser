@@ -31,6 +31,43 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid database type' }, { status: 400 });
         }
 
+        // ✅ FOR POSTGRESQL: Return Railway deployed database instead of Docker
+        if (type === 'postgres') {
+            console.log(`[Railway] Using deployed Railway PostgreSQL for "${name}"`);
+
+            const railwayDatabase = {
+                id: `railway_postgres_${Date.now()}`,
+                type: 'postgres',
+                name: name,
+                host: 'caboose.proxy.rlwy.net',
+                port: 28143,
+                username: 'postgres',
+                password: 'XkuCSYMEbRpxqNWWpfNLNSqlvAFKtEkO',
+                database: 'railway',
+                status: 'running',
+                isRailway: true
+            };
+
+            return NextResponse.json({
+                success: true,
+                database: {
+                    id: railwayDatabase.id,
+                    type: railwayDatabase.type,
+                    name: railwayDatabase.name,
+                    host: railwayDatabase.host,
+                    port: railwayDatabase.port,
+                    username: railwayDatabase.username,
+                    password: railwayDatabase.password,
+                    database: railwayDatabase.database,
+                    status: railwayDatabase.status,
+                    ssl: true, // ✅ Railway requires SSL
+                    connectionString: `postgresql://${railwayDatabase.username}:${railwayDatabase.password}@${railwayDatabase.host}:${railwayDatabase.port}/${railwayDatabase.database}?sslmode=require`,
+                    message: '✅ Connected to Railway PostgreSQL (Deployed Database)'
+                }
+            });
+        }
+
+        // For other database types, use Docker as before
         // Check Docker is available
         const isDockerAvailable = await checkDockerAvailable();
         if (!isDockerAvailable) {

@@ -34,11 +34,17 @@ async function connectDB() {
             family: 4, // Use IPv4
         };
 
-        console.log('[MongoDB] Connecting to MongoDB Atlas...');
+        console.log('[MongoDB] Attempting to connect to MongoDB Atlas...');
 
         cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
             console.log('[MongoDB] ✅ Connected to MongoDB Atlas successfully!');
             return mongoose;
+        }).catch((err) => {
+            console.warn('[MongoDB] ⚠️  Could not connect to MongoDB Atlas. Using local file storage instead.');
+            console.warn('[MongoDB] Error:', err.message);
+            console.warn('[MongoDB] To fix: Add your IP to MongoDB Atlas Network Access or check your MONGODB_URI');
+            // Return null instead of throwing - app will use file-based storage
+            return null;
         });
     }
 
@@ -47,7 +53,8 @@ async function connectDB() {
     } catch (e) {
         cached.promise = null;
         console.error('[MongoDB] ❌ Connection failed:', e);
-        throw e;
+        // Don't throw - allow app to continue with file storage
+        return null;
     }
 
     return cached.conn;
@@ -55,8 +62,10 @@ async function connectDB() {
 
 // Connect immediately when this module is imported (on project start)
 // This ensures MongoDB is connected as soon as possible
-connectDB().catch(err => {
-    console.error('[MongoDB] Initial connection failed:', err.message);
+// If it fails, the app will gracefully fall back to file storage
+connectDB().catch(() => {
+    console.warn('[MongoDB] Initial connection failed. App will use local file storage.');
+    console.warn('[MongoDB] To enable MongoDB: Whitelist your IP in MongoDB Atlas Network Access');
 });
 
 export default connectDB;
