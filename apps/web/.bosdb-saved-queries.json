@@ -1,0 +1,24 @@
+[
+  {
+    "name": "jjj",
+    "description": "jjj",
+    "query": "agvedhygfvchugdafsvgcfg",
+    "connectionId": "conn_1767358132773_4q9xyimqd",
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "saved_1767370849464_s69gtywkd",
+    "createdAt": "2026-01-02T16:20:49.464Z",
+    "updatedAt": "2026-01-02T16:20:49.464Z"
+  },
+  {
+    "name": "ayush",
+    "description": "",
+    "query": "guuu",
+    "connectionId": "conn_1767358132773_4q9xyimqd",
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "saved_1767374989526_aqa9vsru6",
+    "createdAt": "2026-01-02T17:29:49.526Z",
+    "updatedAt": "2026-01-02T17:29:49.526Z"
+  }
+]
