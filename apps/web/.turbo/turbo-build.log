@@ -3,6 +3,7 @@
 > next build
 
   ▲ Next.js 14.2.14
+  - Environments: .env
 
    Creating an optimized production build ...
  ✓ Compiled successfully
@@ -32,40 +33,36 @@ info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/d
 [Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
 [Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
 [Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
-[MongoDB] Connecting to MongoDB Atlas...
 [Docker] Starting background idle timeout check (10 min)...
 [Docker] Starting background idle timeout check (10 min)...
 [Docker] Starting background idle timeout check (10 min)...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
 [Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
 [MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [Docker] Starting background idle timeout check (10 min)...
    Generating static pages (0/36) ...
-[MongoDB] Connecting to MongoDB Atlas...
    Generating static pages (9/36) 
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[Docker] Starting background idle timeout check (10 min)...
-[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
    Generating static pages (18/36) 
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [Docker] Starting background idle timeout check (10 min)...
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
    Generating static pages (27/36) 
-[MongoDB] ✅ Connected to MongoDB Atlas successfully!
-[Docker] Starting background idle timeout check (10 min)...
  ✓ Generating static pages (36/36)
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
    Finalizing page optimization ...
    Collecting build traces ...
 
 Route (app)                                           Size     First Load JS
-┌ ○ /                                                 181 B          94.2 kB
+┌ ○ /                                                 181 B          94.1 kB
 ├ ○ /_not-found                                       138 B          87.3 kB
-├ ○ /admin                                            4.68 kB        98.7 kB
+├ ○ /admin                                            4.68 kB        98.6 kB
 ├ ƒ /api/admin/assign                                 0 B                0 B
 ├ ƒ /api/admin/users                                  0 B                0 B
 ├ ƒ /api/ai/generate-sql                              0 B                0 B
@@ -98,19 +95,19 @@ Route (app)                                           Size     First Load JS
 ├ ƒ /api/vcs/rollback/diff                            0 B                0 B
 ├ ○ /dashboard                                        11.2 kB         105 kB
 ├ ○ /docs                                             2.23 kB        96.2 kB
-├ ƒ /docs/[slug]                                      181 B          94.2 kB
-├ ○ /history                                          2.57 kB        96.6 kB
-├ ○ /login                                            3.77 kB        97.8 kB
-├ ○ /pricing                                          13.5 kB         107 kB
+├ ƒ /docs/[slug]                                      181 B          94.1 kB
+├ ○ /history                                          2.57 kB        96.5 kB
+├ ○ /login                                            3.77 kB        97.7 kB
+├ ○ /pricing                                          12.8 kB         107 kB
 ├ ○ /query                                            200 kB          294 kB
 ├ ○ /saved-queries                                    3.21 kB        97.2 kB
-├ ○ /settings                                         4.99 kB          99 kB
-├ ○ /vcs-test                                         876 B          88.1 kB
+├ ○ /settings                                         4.99 kB        98.9 kB
+├ ○ /vcs-test                                         876 B            88 kB
 └ ○ /version-control                                  5.62 kB        99.6 kB
 + First Load JS shared by all                         87.2 kB
   ├ chunks/117-6a4d634ca07799d1.js                    31.6 kB
   ├ chunks/fd9d1056-1d3a824f72c4170b.js               53.6 kB
-  └ other shared chunks (total)                       1.98 kB
+  └ other shared chunks (total)                       1.92 kB
 
 
 ○  (Static)   prerendered as static content
