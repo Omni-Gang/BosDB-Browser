@@ -197,14 +197,14 @@ export class PatchService {
         return commits;
     }
 
-    private async checkPatch(patch: Patch): Promise<boolean> {
+    private async checkPatch(_patch: Patch): Promise<boolean> {
         // Simplified check - in production would verify all changes can be applied
         return true;
     }
 
     private async applyPatchInternal(
         patch: Patch,
-        options?: PatchOptions
+        _options?: PatchOptions
     ): Promise<PatchApplyResult> {
         let appliedPatches = 0;
         let failedPatches = 0;

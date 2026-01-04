@@ -9,10 +9,9 @@ interface ContextMenuProps {
 }
 
 export default function ContextMenu({ open, x, y, onClose, children }: ContextMenuProps) {
-    if (!open) return null;
-
     // Close on click outside
     React.useEffect(() => {
+        if (!open) return;
         const handleClick = () => onClose();
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -25,7 +24,9 @@ export default function ContextMenu({ open, x, y, onClose, children }: ContextMe
             document.removeEventListener('click', handleClick);
             document.removeEventListener('keydown', handleEscape);
         };
-    }, [onClose]);
+    }, [open, onClose]);
+
+    if (!open) return null;
 
     return (
         <div
@@ -57,8 +58,8 @@ export function MenuItem({ onClick, icon, children, disabled }: MenuItemProps) {
             }}
             disabled={disabled}
             className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition ${disabled
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
                 }`}
         >
             {icon && <span>{icon}</span>}

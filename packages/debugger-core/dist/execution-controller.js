@@ -19,7 +19,7 @@ class ExecutionController extends eventemitter3_1.EventEmitter {
     /**
      * Execute a query with debug instrumentation
      */
-    async executeQuery(sessionId, query, parameters = []) {
+    async executeQuery(sessionId, query, parameters = [], runner) {
         const session = this.sessionManager.getSession(sessionId);
         if (!session) {
             throw new Error(`Session not found: ${sessionId}`);
@@ -35,25 +35,69 @@ class ExecutionController extends eventemitter3_1.EventEmitter {
         this.pendingExecutions.set(queryId, execution);
         this.emit('queryStarted', execution);
         try {
-            // Execute with instrumentation at each stage
-            await this.execWithInstrumentation(session.id, queryId, query, parameters);
+            // Split query into individual statements
+            // Simple split by semicolon for now (ideally use a real parser)
+            const statements = query.split(';').map(s => s.trim()).filter(s => s.length > 0);
+            const finalResults = { rows: [], rowCount: 0, fields: [] };
+            for (let i = 0; i < statements.length; i++) {
+                const stmt = statements[i];
+                const lineNumber = i + 1; // Simplified mapping
+                // Create execution point for each statement
+                const execPoint = {
+                    id: (0, uuid_1.v4)(),
+                    timestamp: new Date(),
+                    queryId,
+                    stage: 'execute',
+                    lineNumber
+                };
+                this.recordExecutionPoint(sessionId, execPoint);
+                const context = {
+                    sessionId,
+                    queryId,
+                    query: stmt,
+                    parameters: [],
+                    startTime: new Date(),
+                    userId: session.userId,
+                    connectionId: session.connectionId,
+                    executionPoint: execPoint,
+                    variables: new Map(),
+                };
+                // Check breakpoints
+                const breakpoint = await this.breakpointManager.shouldBreak(context);
+                // Also check if we are in stepping mode
+                const mode = this.executionMode.get(sessionId);
+                if (breakpoint || mode === 'stepping') {
+                    await this.pause(sessionId, execPoint, breakpoint ? 'breakpoint' : 'step', {
+                        breakpoint,
+                        context,
+                    });
+                }
+                // Execute actual statement
+                const result = await runner(stmt, []);
+                // Aggregrate results (mostly take the last one or accumulate)
+                finalResults.rows = [...finalResults.rows, ...result.rows];
+                finalResults.rowCount += result.rowCount;
+                if (result.fields)
+                    finalResults.fields = result.fields;
+                this.emit('queryStage', {
+                    sessionId,
+                    queryId,
+                    stage: 'execute',
+                    lineNumber,
+                    timestamp: new Date(),
+                });
+            }
             execution.status = 'completed';
             execution.endTime = new Date();
-            execution.duration =
-                execution.endTime.getTime() - execution.startTime.getTime();
+            execution.duration = execution.endTime.getTime() - execution.startTime.getTime();
+            execution.result = finalResults;
             // Update session metadata
             this.sessionManager.updateSessionMetadata(sessionId, {
                 totalQueries: session.metadata.totalQueries + 1,
                 totalExecutionTime: session.metadata.totalExecutionTime + execution.duration,
             });
             this.emit('queryCompleted', execution);
-            // For now, return mock result
-            // In production, this would return actual query results
-            return {
-                rows: [],
-                rowCount: 0,
-                fields: [],
-            };
+            return finalResults;
         }
         catch (error) {
             execution.status = 'failed';
@@ -121,7 +165,7 @@ class ExecutionController extends eventemitter3_1.EventEmitter {
     /**
      * Simulate stage execution (placeholder for actual execution)
      */
-    async simulateStageExecution(stage) {
+    async simulateStageExecution(_stage) {
         // In production, this would call the actual database execution
         // For now, just a small delay to simulate work
         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -174,6 +218,33 @@ class ExecutionController extends eventemitter3_1.EventEmitter {
     async stepOut(sessionId) {
         this.executionMode.set(sessionId, 'stepping');
         this.emit('stepped', { sessionId, stepType: 'out' });
+    }
+    /**
+     * Rewind execution (execute inverse SQL of last statement)
+     */
+    async rewind(sessionId, _runner) {
+        const history = this.executionHistory.get(sessionId);
+        if (!history || history.length === 0)
+            return;
+        // Get the last execution point
+        const lastPoint = history[history.length - 1];
+        if (!lastPoint)
+            return;
+        // In a full implementation, we'd find the inverse SQL from the timeline
+        // For this demo/first-pass, we'll emit an event and decrement history
+        history.pop();
+        this.emit('rewound', { sessionId, executionPoint: lastPoint });
+        // Pause at the new "last" point
+        const prevPoint = history[history.length - 1];
+        if (prevPoint) {
+            this.sessionManager.updateSessionState(sessionId, {
+                currentExecutionPoint: prevPoint,
+            });
+            this.executionMode.set(sessionId, 'paused');
+        }
+        else {
+            this.executionMode.set(sessionId, 'stopped');
+        }
     }
     /**
      * Wait for resume signal

@@ -253,7 +253,7 @@ function QueryPageContent() {
         });
     }, [activeTabIndex]);
 
-    const currentBreakpoints = tabs[activeTabIndex]?.breakpoints || [];
+    const currentBreakpoints = useMemo(() => tabs[activeTabIndex]?.breakpoints || [], [tabs, activeTabIndex]);
 
     const setBreakpointsForTab = useCallback((lineNumbers: number[]) => {
         setTabs(prevTabs => {
@@ -669,17 +669,33 @@ function QueryPageContent() {
                 const qUpper = q.toUpperCase();
                 let metadata: any = {};
 
-                // Capture Metadata for Rollback (Row Snapshots)
-                if (qUpper.startsWith('DELETE FROM') || qUpper.startsWith('UPDATE') || qUpper.startsWith('DROP TABLE')) {
+                // Capture Metadata for Rollback (Row Snapshots & Schema)
+                const isDrop = qUpper.startsWith('DROP TABLE') ||
+                    (connectionInfo?.type === 'mongodb' && q.includes('"drop"')) ||
+                    (connectionInfo?.type === 'redis' && q.toUpperCase().includes('"DEL"'));
+
+                if (qUpper.startsWith('DELETE FROM') || qUpper.startsWith('UPDATE') || isDrop) {
                     try {
-                        const tableNameMatch = q.match(/(?:DELETE\s+FROM|UPDATE|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?)\s+([`"]?)([\w.]+)\1/i);
+                        let tableNameMatch = q.match(/(?:DELETE\s+FROM|UPDATE|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?)\s+([`"]?)([\w.]+)\1/i);
+
+                        // Handle NoSQL matches if SQL regex fails
+                        if (!tableNameMatch && isDrop) {
+                            if (connectionInfo?.type === 'mongodb') {
+                                const mMatch = q.match(/"drop"\s*:\s*"([^"]+)"/);
+                                if (mMatch) tableNameMatch = [mMatch[0], '', mMatch[1]];
+                            } else if (connectionInfo?.type === 'redis') {
+                                const rMatch = q.match(/"args"\s*:\s*\[\s*"([^"]+)"/);
+                                if (rMatch) tableNameMatch = [rMatch[0], '', rMatch[1]];
+                            }
+                        }
+
                         const whereMatch = q.match(/WHERE\s+([\s\S]+)$/i);
 
                         if (tableNameMatch) {
                             const fullTableName = tableNameMatch[2];
                             const whereClause = whereMatch ? whereMatch[0] : '';
 
-                            if (qUpper.startsWith('DROP TABLE')) {
+                            if (isDrop) {
                                 // Extract schema if present (e.g., public.users)
                                 let schema = 'public';
                                 let tableOnly = fullTableName;
@@ -692,7 +708,7 @@ function QueryPageContent() {
                                     tableOnly = fullTableName.replace(/["`]/g, '');
                                 }
 
-                                // Capture table structure before dropping
+                                // Capture table structure (or collection/key info) before dropping
                                 const ddlRes = await fetch(`/api/schema/table?connectionId=${connectionId}&table=${tableOnly}&schema=${schema}`, {
                                     headers: getHeaders(),
                                 });
@@ -709,7 +725,7 @@ function QueryPageContent() {
                                     headers: getHeaders(),
                                     body: JSON.stringify({
                                         connectionId,
-                                        query: `SELECT * FROM ${fullTableName} ${whereClause}`,
+                                        query: connectionInfo?.type === 'mongodb' ? q : `SELECT * FROM ${fullTableName} ${whereClause}`,
                                         timeout: 10000,
                                         maxRows: 1000
                                     }),
@@ -1330,7 +1346,7 @@ function QueryPageContent() {
 
                         {results.length === 0 && !error && (
                             <div className="text-center py-12 text-muted-foreground">
-                                Write a query and click "Run" (or Ctrl+E) to execute
+                                Write a query and click &quot;Run&quot; (or Ctrl+E) to execute
                             </div>
                         )}
                     </div>

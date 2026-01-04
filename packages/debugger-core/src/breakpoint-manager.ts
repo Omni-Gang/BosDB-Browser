@@ -190,8 +190,8 @@ export class BreakpointManager extends EventEmitter {
      * Evaluate data breakpoint (watch expressions)
      */
     private evaluateDataBreakpoint(
-        bp: DataBreakpoint,
-        context: ExecutionContext
+        _bp: DataBreakpoint,
+        _context: ExecutionContext
     ): boolean {
         // This would check if the watched expression changed
         // For now, simplified implementation
@@ -202,8 +202,8 @@ export class BreakpointManager extends EventEmitter {
      * Evaluate transaction breakpoint
      */
     private evaluateTransactionBreakpoint(
-        bp: TransactionBreakpoint,
-        context: ExecutionContext
+        _bp: TransactionBreakpoint,
+        _context: ExecutionContext
     ): boolean {
         // Check transaction events
         // This would be called when BEGIN, COMMIT, ROLLBACK happens
@@ -214,8 +214,8 @@ export class BreakpointManager extends EventEmitter {
      * Evaluate lock breakpoint
      */
     private evaluateLockBreakpoint(
-        bp: LockBreakpoint,
-        context: ExecutionContext
+        _bp: LockBreakpoint,
+        _context: ExecutionContext
     ): boolean {
         // Check lock events
         // This would be called when locks are acquired/waited/released
@@ -226,8 +226,8 @@ export class BreakpointManager extends EventEmitter {
      * Evaluate plan breakpoint
      */
     private evaluatePlanBreakpoint(
-        bp: PlanBreakpoint,
-        context: ExecutionContext
+        _bp: PlanBreakpoint,
+        _context: ExecutionContext
     ): boolean {
         // Check execution plan node
         return false; // TODO: Implement plan node evaluation

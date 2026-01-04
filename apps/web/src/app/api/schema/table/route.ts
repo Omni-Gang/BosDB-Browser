@@ -20,11 +20,13 @@ export async function POST(request: NextRequest) {
         }
 
         const { adapter, adapterConnectionId } = await getConnectedAdapter(connectionId);
+        const { getConnection } = await import('@/lib/store');
+        const connection = await getConnection(connectionId);
 
         let sql = '';
 
         if (action === 'create') {
-            sql = generateCreateTableSQL(tableDef, schema);
+            sql = generateCreateTableSQL(tableDef, schema, connection?.type || 'postgresql');
         } else {
             return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
         }
@@ -69,12 +71,14 @@ export async function GET(request: NextRequest) {
         }
 
         const { adapter, adapterConnectionId } = await getConnectedAdapter(connectionId);
+        const { getConnection } = await import('@/lib/store');
+        const connection = await getConnection(connectionId);
 
         // Describe table
         const tableMetadata = await adapter.describeTable(adapterConnectionId, schema, tableName);
 
         // Generate CREATE TABLE SQL
-        const sql = generateCreateTableSQL(tableMetadata, schema);
+        const sql = generateCreateTableSQL(tableMetadata, schema, connection?.type || 'postgresql');
 
         return NextResponse.json({ success: true, tableMetadata, sql });
     } catch (error: any) {

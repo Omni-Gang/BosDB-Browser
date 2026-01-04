@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
  * GET /api/debug/sessions
  * Get all sessions for current user
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
     try {
         const user = await getCurrentUser();
         if (!user) {

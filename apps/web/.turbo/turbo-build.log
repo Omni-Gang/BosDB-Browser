@@ -8,22 +8,108 @@
    Creating an optimized production build ...
  ✓ Compiled successfully
    Linting and checking validity of types ...
-Failed to compile.
 
-./src/app/api/schema/table/route.ts:32:23
-Type error: Property 'executeQuery' does not exist on type '{ adapter: any; adapterConnectionId: any; }'.
+./src/app/login/page.tsx
+230:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
 
-[0m [90m 30 |[39m[0m
-[0m [90m 31 |[39m         [90m// Execute SQL[39m[0m
-[0m[31m[1m>[22m[39m[90m 32 |[39m         [36mawait[39m adapter[33m.[39mexecuteQuery(sql)[33m;[39m[0m
-[0m [90m    |[39m                       [31m[1m^[22m[39m[0m
-[0m [90m 33 |[39m[0m
-[0m [90m 34 |[39m         [90m// Track in VCS[39m[0m
-[0m [90m 35 |[39m         [36mtry[39m {[0m
-npm error Lifecycle script `build` failed with error:
-npm error code 1
-npm error path C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
-npm error workspace @bosdb/web@0.1.0
-npm error location C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web
-npm error command failed
-npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build
+./src/app/query/page.tsx
+297:8  Warning: React Hook useCallback has a missing dependency: 'syncBreakpointToBackend'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+491:8  Warning: React Hook useEffect has missing dependencies: 'fetchConnectionInfo', 'fetchHistory', 'fetchSchemas', and 'loadPendingChanges'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+821:8  Warning: React Hook useCallback has a missing dependency: 'loadPendingChanges'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+856:8  Warning: React Hook useEffect has a missing dependency: 'executeByCursor'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/saved-queries/page.tsx
+27:8  Warning: React Hook useEffect has a missing dependency: 'fetchQueries'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/version-control/page.tsx
+28:8  Warning: React Hook useEffect has a missing dependency: 'loadAllData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/DebuggerPanel.tsx
+63:8  Warning: React Hook useEffect has missing dependencies: 'setCurrentLine' and 'setStatus'. Either include them or remove the dependency array. If 'setStatus' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[Docker] Starting background idle timeout check (10 min)...
+[Docker] Starting background idle timeout check (10 min)...
+[Docker] Starting background idle timeout check (10 min)...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] Connecting to MongoDB Atlas...
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
+[Docker] Starting background idle timeout check (10 min)...
+   Generating static pages (0/36) ...
+   Generating static pages (9/36) 
+[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
+   Generating static pages (18/36) 
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
+[Docker] Starting background idle timeout check (10 min)...
+   Generating static pages (27/36) 
+ ✓ Generating static pages (36/36)
+[MongoDB] ✅ Connected to MongoDB Atlas successfully!
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                           Size     First Load JS
+┌ ○ /                                                 181 B          94.1 kB
+├ ○ /_not-found                                       138 B          87.3 kB
+├ ○ /admin                                            4.68 kB        98.6 kB
+├ ƒ /api/admin/assign                                 0 B                0 B
+├ ƒ /api/admin/users                                  0 B                0 B
+├ ƒ /api/ai/generate-sql                              0 B                0 B
+├ ƒ /api/auth                                         0 B                0 B
+├ ƒ /api/auth/change-password                         0 B                0 B
+├ ƒ /api/connections                                  0 B                0 B
+├ ƒ /api/data/update                                  0 B                0 B
+├ ƒ /api/debug/sessions                               0 B                0 B
+├ ƒ /api/debug/sessions/[sessionId]                   0 B                0 B
+├ ƒ /api/debug/sessions/[sessionId]/breakpoints       0 B                0 B
+├ ƒ /api/debug/sessions/[sessionId]/control/[action]  0 B                0 B
+├ ƒ /api/debug/sessions/[sessionId]/execute           0 B                0 B
+├ ƒ /api/docker/[id]                                  0 B                0 B
+├ ƒ /api/docker/containers                            0 B                0 B
+├ ƒ /api/docker/provision                             0 B                0 B
+├ ƒ /api/history                                      0 B                0 B
+├ ƒ /api/org/members                                  0 B                0 B
+├ ƒ /api/payment                                      0 B                0 B
+├ ƒ /api/procedures                                   0 B                0 B
+├ ƒ /api/query                                        0 B                0 B
+├ ƒ /api/saved-queries                                0 B                0 B
+├ ƒ /api/schema                                       0 B                0 B
+├ ƒ /api/schema/table                                 0 B                0 B
+├ ƒ /api/subscription                                 0 B                0 B
+├ ƒ /api/tables                                       0 B                0 B
+├ ƒ /api/vcs/branches                                 0 B                0 B
+├ ƒ /api/vcs/commit                                   0 B                0 B
+├ ƒ /api/vcs/pending                                  0 B                0 B
+├ ƒ /api/vcs/rollback                                 0 B                0 B
+├ ƒ /api/vcs/rollback/diff                            0 B                0 B
+├ ○ /dashboard                                        11.2 kB         105 kB
+├ ○ /docs                                             2.23 kB        96.2 kB
+├ ƒ /docs/[slug]                                      181 B          94.1 kB
+├ ○ /history                                          2.57 kB        96.5 kB
+├ ○ /login                                            3.77 kB        97.7 kB
+├ ○ /pricing                                          12.8 kB         107 kB
+├ ○ /query                                            200 kB          294 kB
+├ ○ /saved-queries                                    3.21 kB        97.2 kB
+├ ○ /settings                                         4.99 kB        98.9 kB
+├ ○ /vcs-test                                         876 B            88 kB
+└ ○ /version-control                                  5.62 kB        99.6 kB
++ First Load JS shared by all                         87.2 kB
+  ├ chunks/117-6a4d634ca07799d1.js                    31.6 kB
+  ├ chunks/fd9d1056-1d3a824f72c4170b.js               53.6 kB
+  └ other shared chunks (total)                       1.92 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

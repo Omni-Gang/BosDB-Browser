@@ -23,7 +23,7 @@ export declare class VersionControlManager {
     deleteTag(name: string): Promise<Result<void>>;
     listTags(filter?: TagFilter): Promise<Result<Tag[]>>;
     checkoutTag(tagName: string): Promise<Result<DatabaseSnapshot>>;
-    stash(message: string, author: Author, changes: Change[], options?: StashOptions): Promise<Result<Stash>>;
+    stash(message: string, author: Author, changes: Change[], _options?: StashOptions): Promise<Result<Stash>>;
     stashPop(): Promise<Result<Change[]>>;
     stashApply(stashId?: string): Promise<Result<Change[]>>;
     listStashes(): Promise<Result<Stash[]>>;
@@ -32,9 +32,9 @@ export declare class VersionControlManager {
     private detectConflicts;
     private canFastForward;
     cherryPick(commitId: string, options?: CherryPickOptions): Promise<Result<CherryPickResult>>;
-    rebase(upstreamBranch: string, options?: RebaseOptions): Promise<Result<RebaseResult>>;
+    rebase(upstreamBranch: string, _options?: RebaseOptions): Promise<Result<RebaseResult>>;
     private getCommitsBetween;
-    diff(fromCommit: string, toCommit: string, options?: DiffOptions): Promise<Result<Diff>>;
+    diff(fromCommit: string, toCommit: string, _options?: DiffOptions): Promise<Result<Diff>>;
     private computeDiff;
     getReflog(options?: ReflogOptions): Promise<Result<ReflogEntry[]>>;
     private addReflogEntry;

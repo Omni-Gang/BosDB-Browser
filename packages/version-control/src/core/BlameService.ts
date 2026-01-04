@@ -24,7 +24,7 @@ export class BlameService {
     async blameTable(
         tableName: string,
         commitId: string,
-        options?: BlameOptions
+        _options?: BlameOptions
     ): Promise<Result<BlameInfo>> {
         try {
             const commits = await this.getCommitsAffectingTable(tableName, commitId);
@@ -129,7 +129,7 @@ export class BlameService {
     }
 
     private async buildBlameLines(
-        target: string,
+        _target: string,
         commits: Commit[]
     ): Promise<BlameLine[]> {
         const lines: BlameLine[] = [];

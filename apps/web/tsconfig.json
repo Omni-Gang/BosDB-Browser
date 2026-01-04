@@ -34,6 +34,12 @@
       ],
       "@bosdb/utils": [
         "../../packages/utils/src/index.ts"
+      ],
+      "@bosdb/debugger-core": [
+        "../../packages/debugger-core/src/index.ts"
+      ],
+      "@bosdb/version-control": [
+        "../../packages/version-control/src/index.ts"
       ]
     },
     "incremental": true,
@@ -63,6 +69,12 @@
     },
     {
       "path": "../../packages/utils"
+    },
+    {
+      "path": "../../packages/debugger-core"
+    },
+    {
+      "path": "../../packages/version-control"
     }
   ]
 }

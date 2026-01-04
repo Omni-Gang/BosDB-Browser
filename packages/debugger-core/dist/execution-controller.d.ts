@@ -6,7 +6,7 @@ import { EventEmitter } from 'eventemitter3';
 import { ExecutionPoint, QueryExecution, QueryResult } from './types';
 import { BreakpointManager } from './breakpoint-manager';
 import { SessionManager } from './session-manager';
-export type ExecutionMode = 'running' | 'paused' | 'stepping';
+export type ExecutionMode = 'running' | 'paused' | 'stepping' | 'stopped';
 export declare class ExecutionController extends EventEmitter {
     private breakpointManager;
     private sessionManager;
@@ -17,7 +17,7 @@ export declare class ExecutionController extends EventEmitter {
     /**
      * Execute a query with debug instrumentation
      */
-    executeQuery(sessionId: string, query: string, parameters?: any[]): Promise<QueryResult>;
+    executeQuery(sessionId: string, query: string, parameters: any[] | undefined, runner: (sql: string, params?: any[]) => Promise<QueryResult>): Promise<QueryResult>;
     /**
      * Execute with instrumentation at each stage
      */
@@ -46,6 +46,10 @@ export declare class ExecutionController extends EventEmitter {
      * Step out (exit current procedure/function)
      */
     stepOut(sessionId: string): Promise<void>;
+    /**
+     * Rewind execution (execute inverse SQL of last statement)
+     */
+    rewind(sessionId: string, _runner: (sql: string) => Promise<any>): Promise<void>;
     /**
      * Wait for resume signal
      */

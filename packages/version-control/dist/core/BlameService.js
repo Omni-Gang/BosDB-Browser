@@ -11,7 +11,7 @@ class BlameService {
     /**
      * Get blame information for a table
      */
-    async blameTable(tableName, commitId, options) {
+    async blameTable(tableName, commitId, _options) {
         try {
             const commits = await this.getCommitsAffectingTable(tableName, commitId);
             const lines = await this.buildBlameLines(tableName, commits);
@@ -82,7 +82,7 @@ class BlameService {
         }
         return commits.reverse();
     }
-    async buildBlameLines(target, commits) {
+    async buildBlameLines(_target, commits) {
         const lines = [];
         for (let i = 0; i < commits.length; i++) {
             const commit = commits[i];

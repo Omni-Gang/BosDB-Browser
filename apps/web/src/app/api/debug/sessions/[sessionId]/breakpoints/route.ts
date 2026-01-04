@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     }
 }
 
-export async function GET(req: NextRequest, { params }: RouteParams) {
+export async function GET(_req: NextRequest, { params }: RouteParams) {
     try {
         const user = await getCurrentUser();
         if (!user) {

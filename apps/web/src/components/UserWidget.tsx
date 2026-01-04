@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { User, Shield, Users, LogOut, ChevronRight, X, Loader2 } from 'lucide-react';
 import { getCurrentUser, logout } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -25,13 +25,6 @@ export function UserWidget() {
         const u = getCurrentUser();
         setUser(u);
     }, []);
-
-    // Fetch team members when team panel opens
-    useEffect(() => {
-        if (showTeam && user?.organizationId) {
-            fetchTeamMembers();
-        }
-    }, [showTeam, user?.organizationId]);
 
     const fetchTeamMembers = async () => {
         if (!user?.organizationId) return;

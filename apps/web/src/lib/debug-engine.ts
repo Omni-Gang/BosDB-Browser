@@ -3,7 +3,7 @@
  * Ensures single instance across the application
  */
 
-import { DebugEngine } from 'debugger-core';
+import { DebugEngine } from '@bosdb/debugger-core';
 
 let debugEngineInstance: DebugEngine | null = null;
 

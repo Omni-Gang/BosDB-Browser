@@ -55,10 +55,10 @@ export default function VCSTestPage() {
             <div className="mt-8">
                 <h2 className="text-xl font-bold mb-2">Instructions:</h2>
                 <ol className="list-decimal list-inside space-y-2">
-                    <li>Click "Run Test" to add a test change</li>
+                    <li>Click &quot;Run Test&quot; to add a test change</li>
                     <li>Check if it appears in the result</li>
                     <li>Go to /version-control?connection=test-connection</li>
-                    <li>Check "Pending" tab for the change</li>
+                    <li>Check &quot;Pending&quot; tab for the change</li>
                 </ol>
             </div>
         </div>

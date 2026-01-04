@@ -240,8 +240,14 @@ class MongoDBAdapter extends IDBAdapter_1.BaseDBAdapter {
                 const pipeline = queryObj.pipeline || [];
                 rows = await collection.aggregate(pipeline).toArray();
             }
+            else if (queryObj.drop) {
+                // Drop collection
+                const success = await db.collection(queryObj.drop).drop();
+                rows = [{ success }];
+                fields = [{ name: 'success', dataType: 'boolean' }];
+            }
             else {
-                throw new Error('Invalid query format. Use {"find": "collection", "filter": {...}} or {"aggregate": "collection", "pipeline": [...]}');
+                throw new Error('Invalid query format. Use {"find": "collection", "filter": {...}}, {"aggregate": "collection", "pipeline": [...]}, or {"drop": "collection"}');
             }
             // Infer fields from results
             if (rows.length > 0) {

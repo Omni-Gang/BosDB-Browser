@@ -21,6 +21,12 @@ function VersionControlContent() {
     const [compareTo, setCompareTo] = useState<number>(-1);
     const [diffResult, setDiffResult] = useState<any>(null);
 
+    useEffect(() => {
+        if (connectionId) {
+            loadAllData();
+        }
+    }, [connectionId]);
+
     // Show message if no connection selected
     if (!connectionId) {
         return (
@@ -39,7 +45,7 @@ function VersionControlContent() {
                     </Link>
                     <div className="mt-8 p-4 bg-blue-600/10 border border-blue-500/30 rounded-lg text-left">
                         <p className="text-sm text-gray-300">
-                            <strong>Tip:</strong> Access version control from the Query Editor by clicking the "Version Control" button,
+                            <strong>Tip:</strong> Access version control from the Query Editor by clicking the &quot;Version Control&quot; button,
                             or use: <code className="bg-gray-800 px-2 py-1 rounded">/version-control?connection=YOUR_ID</code>
                         </p>
                     </div>
@@ -47,10 +53,6 @@ function VersionControlContent() {
             </div>
         );
     }
-
-    useEffect(() => {
-        loadAllData();
-    }, [connectionId]);
 
     const loadAllData = async () => {
         setLoading(true);
@@ -342,7 +344,7 @@ function VersionControlContent() {
                                         <div className="text-6xl mb-4">📊</div>
                                         <h3 className="text-xl font-semibold mb-2">No Comparison Active</h3>
                                         <p className="text-gray-400 max-w-md mx-auto mb-6">
-                                            Select two revisions from the dropdowns above and click "Compare" to see the differences between states.
+                                            Select two revisions from the dropdowns above and click &quot;Compare&quot; to see the differences between states.
                                         </p>
                                         <div className="flex justify-center gap-4">
                                             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -471,14 +473,14 @@ function VersionControlContent() {
                                                     <div
                                                         key={idx}
                                                         className={`rounded-lg p-4 ${change.type === 'SCHEMA'
-                                                                ? 'bg-purple-900/20 border border-purple-500/30'
-                                                                : 'bg-green-900/20 border border-green-500/30'
+                                                            ? 'bg-purple-900/20 border border-purple-500/30'
+                                                            : 'bg-green-900/20 border border-green-500/30'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <span className={`px-2 py-1 text-xs rounded font-semibold ${change.type === 'SCHEMA'
-                                                                    ? 'bg-purple-500/30 text-purple-400'
-                                                                    : 'bg-green-500/30 text-green-400'
+                                                                ? 'bg-purple-500/30 text-purple-400'
+                                                                : 'bg-green-500/30 text-green-400'
                                                                 }`}>
                                                                 {change.type}
                                                             </span>

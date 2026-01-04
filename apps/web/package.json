@@ -12,6 +12,7 @@
     "dependencies": {
         "@bosdb/core": "*",
         "@bosdb/db-adapters": "*",
+        "@bosdb/debugger-core": "*",
         "@bosdb/security": "*",
         "@bosdb/utils": "*",
         "@bosdb/version-control": "*",

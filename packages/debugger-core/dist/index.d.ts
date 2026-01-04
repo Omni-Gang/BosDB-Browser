@@ -9,6 +9,7 @@ export declare class DebugEngine extends EventEmitter {
     private breakpointManager;
     private executionController;
     private stateInspector;
+    private timeTravelEngine;
     constructor();
     /**
      * Create a new debug session
@@ -29,7 +30,7 @@ export declare class DebugEngine extends EventEmitter {
     /**
      * Execute a query with debugging
      */
-    executeQuery(sessionId: string, query: string, parameters?: any[]): Promise<QueryResult>;
+    executeQuery(sessionId: string, query: string, parameters?: any[], runner?: (sql: string, params?: any[]) => Promise<QueryResult>): Promise<QueryResult>;
     /**
      * Pause execution
      */
@@ -50,6 +51,10 @@ export declare class DebugEngine extends EventEmitter {
      * Step out
      */
     stepOut(sessionId: string): Promise<void>;
+    /**
+     * Rewind step (reverse execution)
+     */
+    rewind(sessionId: string, runner: (sql: string) => Promise<any>): Promise<void>;
     /**
      * Get execution history
      */

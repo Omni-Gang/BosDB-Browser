@@ -234,7 +234,7 @@ class VersionControlManager {
         }
     }
     // ============ Stash Operations ============
-    async stash(message, author, changes, options) {
+    async stash(message, author, changes, _options) {
         try {
             const branch = await this.storage.getBranch(this.currentBranch);
             if (!branch) {
@@ -370,11 +370,11 @@ class VersionControlManager {
             message: 'Merge successful',
         };
     }
-    async detectConflicts(commit1, commit2) {
+    async detectConflicts(_commit1, _commit2) {
         // Simplified conflict detection
         return [];
     }
-    async canFastForward(baseCommitId, targetCommitId) {
+    async canFastForward(baseCommitId, _targetCommitId) {
         if (!baseCommitId)
             return true;
         // Simplified: in production, would check if target is descendant of base
@@ -422,7 +422,7 @@ class VersionControlManager {
         }
     }
     // ============ Rebase Operation ============
-    async rebase(upstreamBranch, options) {
+    async rebase(upstreamBranch, _options) {
         try {
             const upstream = await this.storage.getBranch(upstreamBranch);
             const current = await this.storage.getBranch(this.currentBranch);
@@ -471,7 +471,7 @@ class VersionControlManager {
         return commits;
     }
     // ============ Diff Operation ============
-    async diff(fromCommit, toCommit, options) {
+    async diff(fromCommit, toCommit, _options) {
         try {
             const from = await this.storage.getCommit(fromCommit);
             const to = await this.storage.getCommit(toCommit);
@@ -490,7 +490,7 @@ class VersionControlManager {
             return { success: false, error: `Diff failed: ${error}` };
         }
     }
-    computeDiff(from, to) {
+    computeDiff(_from, _to) {
         const schemaChanges = [];
         const dataChanges = [];
         // Simplified diff computation

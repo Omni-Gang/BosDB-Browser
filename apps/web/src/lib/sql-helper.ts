@@ -87,12 +87,28 @@ export interface TableDef {
     columns: ColumnDef[];
 }
 
-export function generateCreateTableSQL(tableDef: any, schema: string = 'public'): string {
-    if (!tableDef.name) throw new Error('Table name is required');
-    if (!tableDef.columns || tableDef.columns.length === 0) throw new Error('At least one column is required');
+export function generateCreateTableSQL(tableMetadata: any, schema: string = 'public', dbType: string = 'postgresql'): string {
+    if (!tableMetadata.name) throw new Error('Table name is required');
 
-    const columnDefinitions = tableDef.columns.map((col: any) => {
-        const parts = [`"${col.name}"`, col.type || col.dataType];
+    // Handle NoSQL Dialects
+    if (dbType === 'mongodb') {
+        const indexes = tableMetadata.indexes || [];
+        const indexCmds = indexes.map((idx: any) =>
+            `db.collection("${tableMetadata.name}").createIndex(${JSON.stringify(idx.key || idx.columns)}, ${JSON.stringify({ name: idx.name, unique: idx.unique })})`
+        ).join(';\n');
+        return `db.createCollection("${tableMetadata.name}");\n${indexCmds}`;
+    }
+
+    if (dbType === 'redis') {
+        // For Redis, it's just a placeholder or we could return a restore command if we had data
+        return `-- Redis key ${tableMetadata.name} recreation. Type: ${tableMetadata.columns?.[1]?.dataType || 'string'}`;
+    }
+
+    // SQL Dialects (PostgreSQL/MySQL)
+    if (!tableMetadata.columns || tableMetadata.columns.length === 0) throw new Error('At least one column is required');
+
+    const columnDefinitions = tableMetadata.columns.map((col: any) => {
+        let parts = [dbType === 'mysql' ? `\`${col.name}\`` : `"${col.name}"`, col.type || col.dataType];
 
         if (col.isPrimaryKey) {
             parts.push('PRIMARY KEY');
@@ -102,22 +118,47 @@ export function generateCreateTableSQL(tableDef: any, schema: string = 'public')
             parts.push('NOT NULL');
         }
 
-        if (col.defaultValue) {
-            // Basic heuristic for default value quoting
+        if (col.defaultValue !== undefined && col.defaultValue !== null) {
             const isNumber = !isNaN(Number(col.defaultValue));
-            const isFunction = col.defaultValue.toUpperCase().endsWith('()'); // e.g., NOW()
-
+            const isFunction = String(col.defaultValue).toUpperCase().endsWith('()');
             if (isNumber || isFunction) {
                 parts.push(`DEFAULT ${col.defaultValue}`);
             } else {
-                parts.push(`DEFAULT '${col.defaultValue.replace(/'/g, "''")}'`);
+                parts.push(`DEFAULT '${String(col.defaultValue).replace(/'/g, "''")}'`);
             }
         }
 
         return parts.join(' ');
     });
 
-    return `CREATE TABLE "${schema}"."${tableDef.name}" (\n    ${columnDefinitions.join(',\n    ')}\n);`;
+    let sql = `CREATE TABLE ${dbType === 'mysql' ? `\`${schema}\`.\`${tableMetadata.name}\`` : `"${schema}"."${tableMetadata.name}"`} (\n    ${columnDefinitions.join(',\n    ')}`;
+
+    // Add Foreign Keys if present
+    if (tableMetadata.foreignKeys && tableMetadata.foreignKeys.length > 0) {
+        const fkSql = tableMetadata.foreignKeys.map((fk: any) => {
+            const cols = fk.columns.map((c: string) => dbType === 'mysql' ? `\`${c}\`` : `"${c}"`).join(', ');
+            const refCols = fk.referencedColumns.map((c: string) => dbType === 'mysql' ? `\`${c}\`` : `"${c}"`).join(', ');
+            return `CONSTRAINT "${fk.name}" FOREIGN KEY (${cols}) REFERENCES "${fk.referencedTable}" (${refCols})`;
+        });
+        sql += `,\n    ${fkSql.join(',\n    ')}`;
+    }
+
+    sql += '\n);';
+
+    // Add Indexes separately
+    if (tableMetadata.indexes && tableMetadata.indexes.length > 0) {
+        const indexSql = tableMetadata.indexes
+            .filter((idx: any) => !idx.primary) // Primary key handled in CREATE TABLE
+            .map((idx: any) => {
+                const cols = idx.columns.map((c: string) => dbType === 'mysql' ? `\`${c}\`` : `"${c}"`).join(', ');
+                return `CREATE ${idx.unique ? 'UNIQUE ' : ''}INDEX "${idx.name}" ON "${schema}"."${tableMetadata.name}" (${cols});`;
+            });
+        if (indexSql.length > 0) {
+            sql += '\n' + indexSql.join('\n');
+        }
+    }
+
+    return sql;
 }
 
 export function getCurrentStatement(sql: string, offset: number): string {

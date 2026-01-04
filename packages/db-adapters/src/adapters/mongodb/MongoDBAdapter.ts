@@ -283,8 +283,13 @@ export class MongoDBAdapter extends BaseDBAdapter {
                 const collection = db.collection(queryObj.aggregate);
                 const pipeline = queryObj.pipeline || [];
                 rows = await collection.aggregate(pipeline).toArray();
+            } else if (queryObj.drop) {
+                // Drop collection
+                const success = await db.collection(queryObj.drop).drop();
+                rows = [{ success }];
+                fields = [{ name: 'success', dataType: 'boolean' }];
             } else {
-                throw new Error('Invalid query format. Use {"find": "collection", "filter": {...}} or {"aggregate": "collection", "pipeline": [...]}');
+                throw new Error('Invalid query format. Use {"find": "collection", "filter": {...}}, {"aggregate": "collection", "pipeline": [...]}, or {"drop": "collection"}');
             }
 
             // Infer fields from results

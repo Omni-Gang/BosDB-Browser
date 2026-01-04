@@ -13,7 +13,7 @@ interface RouteParams {
     };
 }
 
-export async function GET(req: NextRequest, { params }: RouteParams) {
+export async function GET(_req: NextRequest, { params }: RouteParams) {
     try {
         const user = await getCurrentUser();
         if (!user) {
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
+export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     try {
         const user = await getCurrentUser();
         if (!user) {

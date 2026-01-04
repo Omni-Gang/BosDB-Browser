@@ -24,6 +24,7 @@ const session_manager_1 = require("./session-manager");
 const breakpoint_manager_1 = require("./breakpoint-manager");
 const execution_controller_1 = require("./execution-controller");
 const state_inspector_1 = require("./state-inspector");
+const time_travel_1 = require("./time-travel");
 class DebugEngine extends eventemitter3_1.EventEmitter {
     constructor() {
         super();
@@ -31,6 +32,7 @@ class DebugEngine extends eventemitter3_1.EventEmitter {
         this.sessionManager = new session_manager_1.SessionManager();
         this.breakpointManager = new breakpoint_manager_1.BreakpointManager();
         this.stateInspector = new state_inspector_1.StateInspector();
+        this.timeTravelEngine = new time_travel_1.TimeTravelEngine();
         this.executionController = new execution_controller_1.ExecutionController(this.breakpointManager, this.sessionManager);
         // Forward events
         this.forwardEvents();
@@ -68,8 +70,10 @@ class DebugEngine extends eventemitter3_1.EventEmitter {
     /**
      * Execute a query with debugging
      */
-    async executeQuery(sessionId, query, parameters) {
-        return this.executionController.executeQuery(sessionId, query, parameters);
+    async executeQuery(sessionId, query, parameters, runner) {
+        if (!runner)
+            throw new Error('StatementRunner is required for execution');
+        return this.executionController.executeQuery(sessionId, query, parameters, runner);
     }
     /**
      * Pause execution
@@ -103,6 +107,12 @@ class DebugEngine extends eventemitter3_1.EventEmitter {
      */
     async stepOut(sessionId) {
         await this.executionController.stepOut(sessionId);
+    }
+    /**
+     * Rewind step (reverse execution)
+     */
+    async rewind(sessionId, runner) {
+        return this.executionController.rewind(sessionId, runner);
     }
     /**
      * Get execution history

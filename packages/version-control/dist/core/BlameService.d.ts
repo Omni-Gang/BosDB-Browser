@@ -8,7 +8,7 @@ export declare class BlameService {
     /**
      * Get blame information for a table
      */
-    blameTable(tableName: string, commitId: string, options?: BlameOptions): Promise<Result<BlameInfo>>;
+    blameTable(tableName: string, commitId: string, _options?: BlameOptions): Promise<Result<BlameInfo>>;
     /**
      * Get blame information for a specific column
      */

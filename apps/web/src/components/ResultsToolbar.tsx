@@ -82,7 +82,7 @@ export function ResultsToolbar({ data, columns, onFilteredDataChange, onExport }
     // Notify parent of filtered data changes
     useEffect(() => {
         onFilteredDataChange(filteredData);
-    }, [filteredData]); // Intentionally omit onFilteredDataChange to avoid loop
+    }, [filteredData, onFilteredDataChange]);
 
     const handleSort = (column: string) => {
         if (sortColumn === column) {

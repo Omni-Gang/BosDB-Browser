@@ -146,7 +146,7 @@ class BreakpointManager extends eventemitter3_1.EventEmitter {
     /**
      * Evaluate data breakpoint (watch expressions)
      */
-    evaluateDataBreakpoint(bp, context) {
+    evaluateDataBreakpoint(_bp, _context) {
         // This would check if the watched expression changed
         // For now, simplified implementation
         return false; // TODO: Implement data watching
@@ -154,7 +154,7 @@ class BreakpointManager extends eventemitter3_1.EventEmitter {
     /**
      * Evaluate transaction breakpoint
      */
-    evaluateTransactionBreakpoint(bp, context) {
+    evaluateTransactionBreakpoint(_bp, _context) {
         // Check transaction events
         // This would be called when BEGIN, COMMIT, ROLLBACK happens
         return false; // TODO: Implement transaction event detection
@@ -162,7 +162,7 @@ class BreakpointManager extends eventemitter3_1.EventEmitter {
     /**
      * Evaluate lock breakpoint
      */
-    evaluateLockBreakpoint(bp, context) {
+    evaluateLockBreakpoint(_bp, _context) {
         // Check lock events
         // This would be called when locks are acquired/waited/released
         return false; // TODO: Implement lock event detection
@@ -170,7 +170,7 @@ class BreakpointManager extends eventemitter3_1.EventEmitter {
     /**
      * Evaluate plan breakpoint
      */
-    evaluatePlanBreakpoint(bp, context) {
+    evaluatePlanBreakpoint(_bp, _context) {
         // Check execution plan node
         return false; // TODO: Implement plan node evaluation
     }

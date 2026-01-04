@@ -477,7 +477,7 @@ export default function PricingPage() {
                                     {/* Order Summary */}
                                     <div className="p-8 bg-black/20 border-r border-white/5">
                                         <div className="mb-8">
-                                            <h1 className="text-sm font-bold text-gray-400 uppercase mb-4">You're paying</h1>
+                                            <h1 className="text-sm font-bold text-gray-400 uppercase mb-4">You&apos;re paying</h1>
                                             <div className="flex items-baseline gap-1">
                                                 <span className="text-4xl font-bold text-white">
                                                     ${calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon)}

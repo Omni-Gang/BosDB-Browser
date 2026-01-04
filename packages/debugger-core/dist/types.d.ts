@@ -170,6 +170,7 @@ export interface Field {
     type: string;
     nullable: boolean;
 }
+export type StatementRunner = (sql: string, params?: any[]) => Promise<QueryResult>;
 export interface ExecutionPlan {
     rootNode: PlanNode;
     totalCost: number;
@@ -239,9 +240,23 @@ export interface DebugError {
     recoverable: boolean;
     suggestedAction?: string;
 }
+export interface DebugOperation {
+    id: string;
+    sessionId: string;
+    type: 'DML' | 'DDL' | 'TRANSACTION' | 'PROCEDURE';
+    sql: string;
+    inverseSql?: string;
+    timestamp: Date;
+    metadata: Record<string, any>;
+}
+export interface ExecutionTimeline {
+    sessionId: string;
+    operations: DebugOperation[];
+    currentIndex: number;
+}
 export interface TimePoint {
     timestamp: Date;
-    executionPointId: string;
+    operationId: string;
     snapshotId?: string;
 }
 export interface ReplayOptions {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Users, Database, Plus, Shield, ArrowLeft, Check, AlertCircle } from 'lucide-react';
@@ -449,14 +449,7 @@ function ConnectionRow({
         canManageSchema: false
     });
 
-    // Fetch current permissions when expanded
-    useEffect(() => {
-        if (expanded && hasAccess) {
-            fetchPermissions();
-        }
-    }, [expanded]);
-
-    const fetchPermissions = async () => {
+    const fetchPermissions = useCallback(async () => {
         try {
             const res = await fetch(`/api/admin/assign?userId=${userId}&connectionId=${connection.id}`);
             const data = await res.json();
@@ -466,7 +459,14 @@ function ConnectionRow({
         } catch (err) {
             console.error('Failed to fetch permissions:', err);
         }
-    };
+    }, [userId, connection.id]);
+
+    // Fetch current permissions when expanded
+    useEffect(() => {
+        if (expanded && hasAccess) {
+            fetchPermissions();
+        }
+    }, [expanded, hasAccess, fetchPermissions]);
 
     const updatePermission = async (perm: string, value: boolean) => {
         setLoading(true);

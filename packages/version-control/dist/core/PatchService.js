@@ -165,11 +165,11 @@ class PatchService {
         }
         return commits;
     }
-    async checkPatch(patch) {
+    async checkPatch(_patch) {
         // Simplified check - in production would verify all changes can be applied
         return true;
     }
-    async applyPatchInternal(patch, options) {
+    async applyPatchInternal(patch, _options) {
         let appliedPatches = 0;
         let failedPatches = 0;
         const conflicts = [];

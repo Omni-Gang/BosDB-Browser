@@ -306,7 +306,7 @@ export class VersionControlManager {
 
     // ============ Stash Operations ============
 
-    async stash(message: string, author: Author, changes: Change[], options?: StashOptions): Promise<Result<Stash>> {
+    async stash(message: string, author: Author, changes: Change[], _options?: StashOptions): Promise<Result<Stash>> {
         try {
             const branch = await this.storage.getBranch(this.currentBranch);
             if (!branch) {
@@ -467,12 +467,12 @@ export class VersionControlManager {
         };
     }
 
-    private async detectConflicts(commit1: Commit | null, commit2: Commit): Promise<any[]> {
+    private async detectConflicts(_commit1: Commit | null, _commit2: Commit): Promise<any[]> {
         // Simplified conflict detection
         return [];
     }
 
-    private async canFastForward(baseCommitId: string, targetCommitId: string): Promise<boolean> {
+    private async canFastForward(baseCommitId: string, _targetCommitId: string): Promise<boolean> {
         if (!baseCommitId) return true;
         // Simplified: in production, would check if target is descendant of base
         return false;
@@ -528,7 +528,7 @@ export class VersionControlManager {
 
     // ============ Rebase Operation ============
 
-    async rebase(upstreamBranch: string, options?: RebaseOptions): Promise<Result<RebaseResult>> {
+    async rebase(upstreamBranch: string, _options?: RebaseOptions): Promise<Result<RebaseResult>> {
         try {
             const upstream = await this.storage.getBranch(upstreamBranch);
             const current = await this.storage.getBranch(this.currentBranch);
@@ -585,7 +585,7 @@ export class VersionControlManager {
 
     // ============ Diff Operation ============
 
-    async diff(fromCommit: string, toCommit: string, options?: DiffOptions): Promise<Result<Diff>> {
+    async diff(fromCommit: string, toCommit: string, _options?: DiffOptions): Promise<Result<Diff>> {
         try {
             const from = await this.storage.getCommit(fromCommit);
             const to = await this.storage.getCommit(toCommit);
@@ -609,7 +609,7 @@ export class VersionControlManager {
         }
     }
 
-    private computeDiff(from: DatabaseSnapshot, to: DatabaseSnapshot): Diff {
+    private computeDiff(_from: DatabaseSnapshot, _to: DatabaseSnapshot): Diff {
         const schemaChanges: any[] = [];
         const dataChanges: any[] = [];
 

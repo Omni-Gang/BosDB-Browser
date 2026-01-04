@@ -209,7 +209,7 @@ export class ExecutionController extends EventEmitter {
     /**
      * Simulate stage execution (placeholder for actual execution)
      */
-    private async simulateStageExecution(stage: QueryStage): Promise<void> {
+    private async simulateStageExecution(_stage: QueryStage): Promise<void> {
         // In production, this would call the actual database execution
         // For now, just a small delay to simulate work
         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -282,7 +282,7 @@ export class ExecutionController extends EventEmitter {
     /**
      * Rewind execution (execute inverse SQL of last statement)
      */
-    async rewind(sessionId: string, runner: (sql: string) => Promise<any>): Promise<void> {
+    async rewind(sessionId: string, _runner: (sql: string) => Promise<any>): Promise<void> {
         const history = this.executionHistory.get(sessionId);
         if (!history || history.length === 0) return;
 
