@@ -3,13 +3,76 @@ import { pullAndStartDatabase, checkDockerAvailable } from '@/lib/docker-manager
 import { DatabaseType, VALID_DATABASE_TYPES } from '@/constants/database-types';
 import { getCurrentUser } from '@/lib/auth';
 
-// POST /api/docker/provision - DISABLED (Use direct database connections instead)
+// POST /api/docker/provision - Create and start a new Docker database
 export async function POST(request: NextRequest) {
-    return NextResponse.json({
-        error: 'Docker provisioning is disabled. Please use direct database connections instead.',
-        message: 'Add your database connections manually using the connection details from your database provider (Railway, AWS, etc.).',
-        disabled: true
-    }, { status: 503 });
+    try {
+        // Get current user from headers (sent by frontend)
+        const userEmail = request.headers.get('x-user-email');
+        if (!userEmail) {
+            return NextResponse.json({ error: 'User email required' }, { status: 401 });
+        }
+
+        // Find user to get organization ID
+        const { findUserByEmail } = await import('@/lib/users-store');
+        const user = await findUserByEmail(userEmail);
+        if (!user || !user.organizationId) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const body = await request.json();
+        const { type, name, autoStart } = body;
+
+        // Validate inputs
+        if (!type || !name) {
+            return NextResponse.json({ error: 'Type and name are required' }, { status: 400 });
+        }
+
+        if (!VALID_DATABASE_TYPES.includes(type)) {
+            return NextResponse.json({ error: 'Invalid database type' }, { status: 400 });
+        }
+
+        // Check Docker is available
+        const isDockerAvailable = await checkDockerAvailable();
+        if (!isDockerAvailable) {
+            return NextResponse.json({
+                error: 'Docker is not running. Please start Docker and try again.'
+            }, { status: 503 });
+        }
+
+        console.log(`[Docker API] Creating ${type} database "${name}" for org ${user.organizationId}`);
+
+        // Create the database (this will pull image, create container, start it)
+        const database = await pullAndStartDatabase(
+            type,
+            name,
+            user.organizationId,
+            autoStart !== false, // Default to true
+            request.signal
+        );
+
+        console.log(`[Docker API] Successfully created database: ${database.id}`);
+
+        return NextResponse.json({
+            success: true,
+            database: {
+                id: database.id,
+                type: database.type,
+                name: database.name,
+                port: database.port,
+                username: database.username,
+                password: database.password,
+                database: database.database,
+                status: database.status,
+                connectionString: getConnectionString(database)
+            }
+        });
+
+    } catch (error: any) {
+        console.error('[Docker API] Failed to provision database:', error);
+        return NextResponse.json({
+            error: error.message || 'Failed to provision database'
+        }, { status: 500 });
+    }
 }
 
 // Helper to generate connection strings
