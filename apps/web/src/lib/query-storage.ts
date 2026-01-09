@@ -56,12 +56,20 @@ export function loadTabs(connectionId: string): TabsState | null {
 }
 
 // Create default tabs state
-export function createDefaultTabs(): TabsState {
+export function createDefaultTabs(dbType: string = 'postgres'): TabsState {
+    let defaultQuery = 'SELECT * FROM information_schema.tables LIMIT 10;';
+
+    if (dbType === 'mongodb') {
+        defaultQuery = '{\n    "find": "collection_name",\n    "limit": 10\n}';
+    } else if (dbType === 'redis') {
+        defaultQuery = '{\n    "command": "KEYS",\n    "args": ["*"]\n}';
+    }
+
     return {
         tabs: [{
             id: `tab-${Date.now()}`,
             name: 'Query 1',
-            query: 'SELECT * FROM information_schema.tables LIMIT 10;',
+            query: defaultQuery,
             breakpoints: []
         }],
         activeIndex: 0

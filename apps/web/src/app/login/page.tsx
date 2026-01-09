@@ -520,23 +520,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Existing Users - Outside the box */}
-        {users.length > 0 && (
-          <div className="mt-6 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-            <p className="text-sm text-gray-400 mb-2">Registered Users:</p>
-            <div className="flex flex-wrap gap-2">
-              {users.map(user => (
-                <span
-                  key={user.email}
-                  className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded cursor-pointer hover:bg-gray-600"
-                  onClick={() => { setUserId(user.email); setShowRegister(false); }}
-                >
-                  {user.name || user.id} <span className="text-gray-500">({user.role})</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );

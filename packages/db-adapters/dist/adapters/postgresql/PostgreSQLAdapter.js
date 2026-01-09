@@ -52,6 +52,15 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
             }
         }
         catch (error) {
+            console.error('[Postgres] ❌ Connection failed:', {
+                host: config.host,
+                port: config.port,
+                user: config.username,
+                ssl: config.ssl,
+                error: error.message,
+                code: error.code,
+                detail: error.detail
+            });
             throw new Error(`Failed to connect to PostgreSQL: ${error.message}`);
         }
     }

@@ -1,0 +1,109 @@
+version: '3.8'
+
+# All databases for BosDB Browser
+# Deploy each as separate Railway service using these images
+
+services:
+  # ============ RELATIONAL ============
+
+  postgres:
+    image: postgres:16-alpine
+    ports: [ "5432:5432" ]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bosdb_secret
+      POSTGRES_DB: bosdb
+    volumes: [ postgres_data:/var/lib/postgresql/data ]
+
+  mysql:
+    image: mysql:8.0
+    ports: [ "3306:3306" ]
+    environment:
+      MYSQL_ROOT_PASSWORD: bosdb_secret
+      MYSQL_DATABASE: bosdb
+    volumes: [ mysql_data:/var/lib/mysql ]
+
+  mariadb:
+    image: mariadb:11
+    ports: [ "3307:3306" ]
+    environment:
+      MARIADB_ROOT_PASSWORD: bosdb_secret
+      MARIADB_DATABASE: bosdb
+    volumes: [ mariadb_data:/var/lib/mysql ]
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports: [ "1433:1433" ]
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: BosDB_Secret1!
+
+  oracle:
+    image: gvenzl/oracle-free:latest
+    ports: [ "1521:1521" ]
+    environment:
+      ORACLE_PASSWORD: bosdb_secret
+      APP_USER: bosdb
+      APP_USER_PASSWORD: bosdb_secret
+
+  # ============ NOSQL ============
+
+  mongodb:
+    image: mongo:7
+    ports: [ "27017:27017" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: bosdb_secret
+    volumes: [ mongo_data:/data/db ]
+
+  redis:
+    image: redis:7-alpine
+    ports: [ "6379:6379" ]
+    command: redis-server --requirepass bosdb_secret
+
+  cassandra:
+    image: cassandra:5
+    ports: [ "9042:9042" ]
+    environment:
+      CASSANDRA_CLUSTER_NAME: BosDB
+    volumes: [ cassandra_data:/var/lib/cassandra ]
+
+  # ============ GRAPH ============
+
+  neo4j:
+    image: neo4j:5-community
+    ports: [ "7474:7474", "7687:7687" ]
+    environment:
+      NEO4J_AUTH: neo4j/bosdb_secret
+
+  # ============ SEARCH & ANALYTICS ============
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    ports: [ "9200:9200" ]
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes: [ es_data:/usr/share/elasticsearch/data ]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports: [ "8123:8123", "9000:9000" ]
+    volumes: [ clickhouse_data:/var/lib/clickhouse ]
+
+  # ============ AWS LOCAL EMULATORS ============
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    ports: [ "8000:8000" ]
+    command: "-jar DynamoDBLocal.jar -sharedDb"
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mariadb_data:
+  mongo_data:
+  cassandra_data:
+  es_data:
+  clickhouse_data:

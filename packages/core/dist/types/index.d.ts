@@ -1,7 +1,7 @@
 /**
  * Core type definitions for BosDB
  */
-export type DatabaseType = 'postgresql' | 'mysql' | 'mariadb' | 'mongodb' | 'redis';
+export type DatabaseType = 'postgresql' | 'mysql' | 'mariadb' | 'mongodb' | 'redis' | 'cockroachdb';
 export type DatabaseStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 export interface User {
     id: string;

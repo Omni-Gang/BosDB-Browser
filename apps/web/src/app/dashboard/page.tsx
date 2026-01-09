@@ -101,11 +101,7 @@ export default function DashboardPage() {
                                     Documentation
                                 </button>
                             </Link>
-                            <Link href="/debug">
-                                <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition">
-                                    Debugger
-                                </button>
-                            </Link>
+
                             <Link href="/settings">
                                 <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition">
                                     Settings

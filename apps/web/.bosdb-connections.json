@@ -37,5 +37,60 @@
     "userEmail": "testy@gmail.com",
     "organizationId": "ind-testy",
     "createdAt": "2026-01-01T17:41:21.881Z"
+  },
+  "railway-postgres": {
+    "id": "railway-postgres",
+    "name": "Railway Postgres (Direct)",
+    "type": "postgres",
+    "host": "crossover.proxy.rlwy.net",
+    "port": 18633,
+    "database": "railway",
+    "credentials": "cbrijd2sTSA6c2QhnZ34v/dWCKU5Lpnk6ofeQJ4waAPpicSBLYN16ycVvAA3xYmB9btDz8FiaRAc0V6APtiDdEOk8a4ZEzMsvCS10RSVpMntiEQrg4RrcEiPgqR1UYfVfFhT6k0=",
+    "ssl": true,
+    "readOnly": false,
+    "userEmail": "system",
+    "organizationId": "system",
+    "createdAt": "2026-01-05T19:27:29.964Z"
+  },
+  "railway-mysql": {
+    "id": "railway-mysql",
+    "name": "Railway MySQL (Direct)",
+    "type": "mysql",
+    "host": "maglev.proxy.rlwy.net",
+    "port": 51411,
+    "database": "railway",
+    "credentials": "nvRegdyz1ukVaxMNazbrRsXFLlfgOajtP2HorDNoRvmjdjJqW5lD4neC316Ffd+ZnJ3BQzBEyQd9YtbErd+3/c2EVIU/ygqJ89ZQC0SE+F8cjOyQfuGXMgGYszrD6HsGKw==",
+    "ssl": true,
+    "readOnly": false,
+    "userEmail": "system",
+    "organizationId": "system",
+    "createdAt": "2026-01-05T19:27:29.965Z"
+  },
+  "railway-redis": {
+    "id": "railway-redis",
+    "name": "Railway Redis (Direct)",
+    "type": "redis",
+    "host": "trolley.proxy.rlwy.net",
+    "port": 17906,
+    "database": "0",
+    "credentials": "i0jtJhaW1yFPL/ZuCRFQ/P/H6haFpDTp+f2b3xwWLxIoluA8ejb6eAG8TOdwnpp6NaJidSjkAvcWw5TxTTZdXDJf+TWACIEt9LYfyLxIGTj0Cf7Me50CBCKAlk5eCwyPZDf3Rw==",
+    "ssl": true,
+    "readOnly": false,
+    "userEmail": "system",
+    "organizationId": "system",
+    "createdAt": "2026-01-05T19:27:29.965Z"
+  },
+  "conn_1767641249971_7nfnknsq5": {
+    "id": "conn_1767641249971_7nfnknsq5",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 18633,
+    "database": "railway",
+    "credentials": "vCASVUoRPR2xu2m+uT3bElOghVn373YvOjyNzxSaXQIUEzygKbmOofZfVlT72TE/GMuC1GQiW/tGPy+cf7OigwQRpblNNJmK4V3S2U5OiLK+wea+yX2k43FM+ER6fvz794684kE=",
+    "readOnly": false,
+    "userEmail": "bosdb@gmail.com",
+    "organizationId": "ind-bosdb",
+    "createdAt": "2026-01-05T19:27:29.971Z"
   }
 }

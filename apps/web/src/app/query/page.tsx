@@ -187,7 +187,7 @@ function QueryPageContent() {
     // Multi-tab state
     const [tabs, setTabs] = useState<QueryTab[]>([]);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
-    const [showDebugger, setShowDebugger] = useState(true);
+    const [showDebugger, setShowDebugger] = useState(false);
     const [tabsLoaded, setTabsLoaded] = useState(false);
 
     // Current query is derived from active tab
@@ -297,15 +297,22 @@ function QueryPageContent() {
     }, [currentBreakpoints, setBreakpointsForTab, debugSessionId]);
 
     const addNewTab = useCallback(() => {
+        let defaultQuery = '';
+        if (connectionInfo?.type === 'mongodb') {
+            defaultQuery = '{\n    "find": "collection_name",\n    "limit": 10\n}';
+        } else if (connectionInfo?.type === 'redis') {
+            defaultQuery = '{\n    "command": "KEYS",\n    "args": ["*"]\n}';
+        }
+
         const newTab: QueryTab = {
             id: generateTabId(),
             name: `Query ${tabs.length + 1}`,
-            query: '',
+            query: defaultQuery,
             breakpoints: []
         };
         setTabs(prev => [...prev, newTab]);
         setActiveTabIndex(tabs.length);
-    }, [tabs.length]);
+    }, [tabs.length, connectionInfo]);
 
     const closeTab = useCallback((index: number) => {
         if (tabs.length <= 1) return;
@@ -327,19 +334,20 @@ function QueryPageContent() {
 
     // Load tabs from localStorage on mount
     useEffect(() => {
-        if (connectionId && !tabsLoaded) {
-            const saved = loadTabs(connectionId);
-            if (saved && saved.tabs.length > 0) {
-                setTabs(saved.tabs);
-                setActiveTabIndex(saved.activeIndex);
-            } else {
-                const defaults = createDefaultTabs();
-                setTabs(defaults.tabs);
-                setActiveTabIndex(defaults.activeIndex);
-            }
+        if (!connectionId || tabsLoaded) return;
+
+        const saved = loadTabs(connectionId);
+        if (saved && saved.tabs.length > 0) {
+            setTabs(saved.tabs);
+            setActiveTabIndex(saved.activeIndex);
+            setTabsLoaded(true);
+        } else if (connectionInfo) {
+            const defaults = createDefaultTabs(connectionInfo.type);
+            setTabs(defaults.tabs);
+            setActiveTabIndex(defaults.activeIndex);
             setTabsLoaded(true);
         }
-    }, [connectionId, tabsLoaded]);
+    }, [connectionId, tabsLoaded, connectionInfo]);
 
     // Save tabs to localStorage on changes (debounced)
     useEffect(() => {

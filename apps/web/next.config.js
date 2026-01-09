@@ -23,10 +23,28 @@ const nextConfig = {
             'ssh2',
             'docker-modem',
             'mongodb',
-            'mongoose'
+            'mongoose',
+            // New database drivers
+            'oracledb',
+            'mssql',
+            'cassandra-driver',
+            'neo4j-driver',
+            '@elastic/elasticsearch',
+            // Optional native dependencies to exclude from bundling
+            'kerberos',
+            'snappy',
+            'aws-crt',
         ],
     },
     webpack: (config, { isServer }) => {
+        // Ignore optional native dependencies
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            'kerberos': false,
+            'snappy': false,
+            'aws-crt': false,
+        };
+
         if (!isServer) {
             config.resolve.fallback = {
                 ...config.resolve.fallback,
@@ -37,6 +55,15 @@ const nextConfig = {
                 crypto: false,
                 stream: false,
                 path: false,
+                // Add these as well for client-side safety
+                'kerberos': false,
+                'snappy': false,
+                'aws-crt': false,
+                'oracledb': false,
+                'mssql': false,
+                'cassandra-driver': false,
+                'neo4j-driver': false,
+                '@elastic/elasticsearch': false,
             };
         }
         return config;

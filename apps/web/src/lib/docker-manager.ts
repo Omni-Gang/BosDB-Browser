@@ -613,7 +613,7 @@ export function startIdleTimeoutCheck() {
     }, 60000); // Check every minute
 }
 
-// Start the check automatically
+// Start the check automatically - DISABLED for Railway migration
 if (typeof window === 'undefined') {
-    startIdleTimeoutCheck();
+    // startIdleTimeoutCheck();
 }

@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 
 // Get MongoDB URI from environment variable (with fallback for development)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://bosdb:vY0xUQxLuOzNzHv3@bosdb.mvxsw5l.mongodb.net/bosdb?appName=BosDB';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:qvlWNvRXbwxCKdUWGhiSJAmOeuBDIgsN@mongodb.railway.internal:27017';
 
 if (!MONGODB_URI) {
     throw new Error('Please define the MONGODB_URI environment variable inside .env.local');

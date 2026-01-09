@@ -3,141 +3,268 @@
 
 import fs from 'fs';
 import path from 'path';
+import { encryptCredentials } from '@bosdb/security';
 
 const DATA_DIR_NAME = '.bosdb-data';
 const LEGACY_STORAGE_FILE_NAME = '.bosdb-connections.json';
 
-// Find project root (contains package.json)
-// Find monorepo root (contains package.json and apps directory)
+/**
+ * Port to Railway Host Mapping
+ * If a connection is on localhost but uses these specific ports, it's a misconfigured Railway connection.
+ */
+const RAILWAY_PORT_MAP: Record<number, string> = {
+    50346: 'switchyard.proxy.rlwy.net',
+    55276: 'metro.proxy.rlwy.net',
+    34540: 'centerbeam.proxy.rlwy.net',
+    12858: 'mainline.proxy.rlwy.net'
+};
+
+// Find project root (contains package.json and apps directory)
 function findProjectRoot(current: string): string {
     let dir = current;
-    // Walk up until we find a directory with package.json and an 'apps' folder (monorepo root)
-    // or we hit the disk root
-    while (dir !== path.parse(dir).root) {
-        if (fs.existsSync(path.join(dir, 'package.json')) &&
-            fs.existsSync(path.join(dir, 'apps'))) {
-            return dir;
+    try {
+        while (dir !== path.parse(dir).root) {
+            // Priority: Monorepo root has 'apps' folder
+            if (fs.existsSync(path.join(dir, 'package.json')) && fs.existsSync(path.join(dir, 'apps'))) {
+                return dir;
+            }
+            dir = path.dirname(dir);
         }
-        dir = path.dirname(dir);
-    }
-    return current; // Fallback to current
+    } catch (e) { }
+    return current;
 }
 
 const PROJECT_ROOT = findProjectRoot(process.cwd());
 const DATA_DIR = path.join(PROJECT_ROOT, DATA_DIR_NAME);
 const ORGS_DIR = path.join(DATA_DIR, 'orgs');
-
-console.log(`[Store] Initialized with Project Root: ${PROJECT_ROOT}`);
-
 const LEGACY_STORAGE_FILE = path.join(PROJECT_ROOT, LEGACY_STORAGE_FILE_NAME);
+
+// Detection for serverless/read-only environments
+const IS_VERCEL = process.env.VERCEL === '1' || !!process.env.NOW_REGION;
+
+console.log(`[Store] Initialized with Project Root: ${PROJECT_ROOT} (Vercel: ${IS_VERCEL})`);
 
 function getOrgDataDir(orgId: string): string {
     const orgDir = path.join(ORGS_DIR, orgId);
-    if (!fs.existsSync(orgDir)) {
-        fs.mkdirSync(orgDir, { recursive: true });
+    if (!IS_VERCEL && !fs.existsSync(orgDir)) {
+        try {
+            fs.mkdirSync(orgDir, { recursive: true });
+        } catch (e) {
+            console.error(`[Store] Failed to create org dir ${orgDir}:`, e);
+        }
     }
     return orgDir;
 }
 
-// Get organization-specific connections file path
 function getConnectionsFilePath(orgId: string): string {
     const orgDir = getOrgDataDir(orgId);
     return path.join(orgDir, 'connections.json');
 }
 
-// Load connections for a specific organization
-function loadConnectionsByOrg(orgId: string): Map<string, any> {
-    try {
-        const filePath = getConnectionsFilePath(orgId);
-        if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath, 'utf-8');
-            const parsed = JSON.parse(data);
-            console.log(`[Store] Loaded ${Object.keys(parsed).length} connections for org ${orgId}`);
-            return new Map(Object.entries(parsed));
-        }
-    } catch (error) {
-        console.error(`[Store] Failed to load connections for org ${orgId}:`, error);
-    }
-    return new Map();
-}
-
-// Load connections from legacy file (for backward compatibility)
-function loadLegacyConnections(): Map<string, any> {
-    try {
-        // Migration: If root file doesn't exist, try to find it in common subdirectories and copy it over
-        if (!fs.existsSync(LEGACY_STORAGE_FILE)) {
-            const possibleLocations = [
-                path.join(PROJECT_ROOT, 'apps', 'web', LEGACY_STORAGE_FILE_NAME),
-                path.join(process.cwd(), LEGACY_STORAGE_FILE_NAME),
-                path.join(process.cwd(), 'apps', 'web', LEGACY_STORAGE_FILE_NAME),
-            ];
-
-            for (const loc of possibleLocations) {
-                if (loc !== LEGACY_STORAGE_FILE && fs.existsSync(loc)) {
-                    console.log(`[Store] Migrating legacy connections from ${loc} to ${LEGACY_STORAGE_FILE}`);
-                    try {
-                        const data = fs.readFileSync(loc, 'utf-8');
-                        fs.writeFileSync(LEGACY_STORAGE_FILE, data);
-                        break;
-                    } catch (e) {
-                        console.error(`[Store] Migration from ${loc} failed:`, e);
-                    }
-                }
-            }
-        }
-
-        if (fs.existsSync(LEGACY_STORAGE_FILE)) {
-            const data = fs.readFileSync(LEGACY_STORAGE_FILE, 'utf-8');
-            const parsed = JSON.parse(data);
-            console.log(`[Store] Loaded ${Object.keys(parsed).length} connections from legacy file at ${LEGACY_STORAGE_FILE}`);
-            return new Map(Object.entries(parsed));
-        }
-    } catch (error) {
-        console.error('[Store] Failed to load legacy connections:', error);
-    }
-    return new Map();
-}
-
-// Save connections for a specific organization
-export function saveConnectionsByOrg(orgId: string, connections: Map<string, any>) {
-    try {
-        const filePath = getConnectionsFilePath(orgId);
-        const obj = Object.fromEntries(connections);
-        fs.writeFileSync(filePath, JSON.stringify(obj, null, 2));
-        console.log(`[Store] Saved ${connections.size} connections for org ${orgId}`);
-    } catch (error) {
-        console.error(`[Store] Failed to save connections for org ${orgId}:`, error);
-    }
-}
-
-// Save connections to legacy file (for backward compatibility)
-export function saveConnections() {
-    try {
-        const obj = Object.fromEntries(getConnections());
-        fs.writeFileSync(LEGACY_STORAGE_FILE, JSON.stringify(obj, null, 2));
-        console.log(`[Store] Saved ${getConnections().size} connections to legacy file`);
-    } catch (error) {
-        console.error('[Store] Failed to save connections:', error);
-    }
-}
-
-// Organization-scoped connection and adapter caches
+// Internal state
+let _connections: Map<string, any> = new Map();
+let _adapterInstances: Map<string, any> = new Map();
 const _orgConnections: Map<string, Map<string, any>> = new Map();
 const _orgAdapterInstances: Map<string, Map<string, any>> = new Map();
 
-// Legacy single map (loads from legacy file)
-let _legacyConnections: Map<string, any> | null = null;
-let _legacyAdapterInstances: Map<string, any> | null = null;
+/**
+ * Safe encryption that won't crash the entire route if key is missing
+ */
+function safeEncrypt(data: any): string {
+    try {
+        return encryptCredentials(data);
+    } catch (e: any) {
+        return Buffer.from(JSON.stringify(data)).toString('base64');
+    }
+}
 
-// Get connections for a specific organization
+/**
+ * Injects pre-configured Railway database connections
+ */
+function injectRailwayConnections(map: Map<string, any>) {
+    const railwayConnections = [
+        {
+            id: 'railway-postgres',
+            name: 'Railway Postgres (Direct)',
+            type: 'postgres',
+            host: 'switchyard.proxy.rlwy.net',
+            port: 50346,
+            database: 'railway',
+            username: 'postgres',
+            password: 'UeJAQMHXYCDzPOyajszcmcRwUrvCGbqY',
+        },
+        {
+            id: 'railway-mysql',
+            name: 'Railway MySQL (Direct)',
+            type: 'mysql',
+            host: 'metro.proxy.rlwy.net',
+            port: 55276,
+            database: 'railway',
+            username: 'root',
+            password: 'PqhpMAhXoSxZVQAzdvijMDWDshRLjEFu',
+        },
+        {
+            id: 'railway-redis',
+            name: 'Railway Redis (Direct)',
+            type: 'redis',
+            host: 'centerbeam.proxy.rlwy.net',
+            port: 34540,
+            database: '0',
+            username: 'default',
+            password: 'CSccVVGRgPHvSbBLSbhEYkQhSrMETECk',
+        },
+        {
+            id: 'railway-cockroachdb',
+            name: 'Railway CockroachDB (Direct)',
+            type: 'cockroachdb',
+            host: 'REPLACE_WITH_RAILWAY_COCKROACHDB_HOST', // TODO: Replace with actual Railway host
+            port: 26257,
+            database: 'defaultdb',
+            username: 'root',
+            password: 'REPLACE_WITH_RAILWAY_COCKROACHDB_PASSWORD', // TODO: Replace with actual password
+        }
+    ];
+
+    railwayConnections.forEach(conn => {
+        const existing = map.get(conn.id);
+        if (!existing || existing.ssl !== true) {
+            map.set(conn.id, {
+                id: conn.id,
+                name: conn.name,
+                type: conn.type,
+                host: conn.host,
+                port: conn.port,
+                database: conn.database,
+                credentials: safeEncrypt({
+                    username: conn.username,
+                    password: conn.password,
+                }),
+                ssl: true,
+                readOnly: false,
+                userEmail: 'system',
+                organizationId: 'system',
+                createdAt: existing?.createdAt || new Date().toISOString(),
+            });
+        }
+    });
+}
+
+/**
+ * Intercepts connection details to fix Railway misconfigurations (localhost -> proxy)
+ */
+function interceptAndFixConnection(conn: any, id: string): any {
+    if (!conn) return conn;
+
+    // Fix 1: Redirect localhost on Railway ports to the actual proxy
+    const railwayProxy = RAILWAY_PORT_MAP[Number(conn.port)];
+    if (railwayProxy && (conn.host === 'localhost' || conn.host === '127.0.0.1' || conn.host === 'host.docker.internal')) {
+        console.log(`[Store] Redirecting misconfigured host for ${id}: ${conn.host} -> ${railwayProxy}`);
+        conn.host = railwayProxy;
+        conn.ssl = true; // Force SSL for Railway
+    }
+
+    // Fix 2: Force SSL for any Railway/Atlas host
+    if (conn.host?.includes('rlwy.net') || conn.host?.includes('mongodb.net') || conn.host?.includes('railway.internal')) {
+        if (conn.ssl !== true) {
+            console.log(`[Store] Auto-enabling SSL for: ${id} (${conn.host})`);
+            conn.ssl = true;
+        }
+    }
+
+    return conn;
+}
+
+function loadLegacyConnections(): Map<string, any> {
+    const combinedMap = new Map();
+    const possibleLocations = [
+        LEGACY_STORAGE_FILE,
+        path.join(PROJECT_ROOT, 'apps', 'web', LEGACY_STORAGE_FILE_NAME),
+        path.join(process.cwd(), LEGACY_STORAGE_FILE_NAME),
+        path.join(process.cwd(), 'apps', 'web', LEGACY_STORAGE_FILE_NAME),
+    ];
+
+    try {
+        possibleLocations.forEach(loc => {
+            if (fs.existsSync(loc)) {
+                try {
+                    const data = fs.readFileSync(loc, 'utf-8');
+                    const parsed = JSON.parse(data);
+                    console.log(`[Store] Found ${Object.keys(parsed).length} connections at ${loc}`);
+                    Object.entries(parsed).forEach(([k, v]) => {
+                        if (!combinedMap.has(k)) {
+                            combinedMap.set(k, v);
+                        }
+                    });
+                } catch (e) {
+                    console.error(`[Store] Error reading legacy file at ${loc}:`, e);
+                }
+            }
+        });
+
+        // Migrate back to root if we found fragmented files
+        if (combinedMap.size > 0 && !IS_VERCEL && !fs.existsSync(LEGACY_STORAGE_FILE)) {
+            try {
+                fs.writeFileSync(LEGACY_STORAGE_FILE, JSON.stringify(Object.fromEntries(combinedMap), null, 2));
+                console.log(`[Store] Migrated ${combinedMap.size} combined connections to root.`);
+            } catch (e) { }
+        }
+
+    } catch (error) {
+        console.error('[Store] Failed to navigate legacy connections:', error);
+    }
+    return combinedMap;
+}
+
+function initStore() {
+    try {
+        _connections = loadLegacyConnections();
+        injectRailwayConnections(_connections);
+
+        // Apply fixes to all loaded connections
+        _connections.forEach((conn, id) => {
+            interceptAndFixConnection(conn, id);
+        });
+
+        console.log(`[Store] Initialized with ${_connections.size} connections`);
+    } catch (e) {
+        console.error('[Store] CRITICAL: Store initialization failed', e);
+    }
+}
+
+initStore();
+
+// Exports
+export const connections = _connections;
+export const adapterInstances = _adapterInstances;
+
+export function getConnections(): Map<string, any> {
+    return _connections;
+}
+
+export function getAdapterInstances(): Map<string, any> {
+    return _adapterInstances;
+}
+
 export function getConnectionsByOrg(orgId: string): Map<string, any> {
     if (!_orgConnections.has(orgId)) {
-        _orgConnections.set(orgId, loadConnectionsByOrg(orgId));
+        const map = new Map();
+        const filePath = getConnectionsFilePath(orgId);
+        try {
+            if (fs.existsSync(filePath)) {
+                const data = fs.readFileSync(filePath, 'utf-8');
+                const parsed = JSON.parse(data);
+                Object.entries(parsed).forEach(([k, v]) => map.set(k, v));
+            }
+        } catch (e) {
+            console.error(`[Store] Failed to load org ${orgId} connections:`, e);
+        }
+        injectRailwayConnections(map);
+        map.forEach((conn, id) => interceptAndFixConnection(conn, id));
+        _orgConnections.set(orgId, map);
     }
     return _orgConnections.get(orgId)!;
 }
 
-// Get adapter instances for a specific organization
 export function getAdapterInstancesByOrg(orgId: string): Map<string, any> {
     if (!_orgAdapterInstances.has(orgId)) {
         _orgAdapterInstances.set(orgId, new Map());
@@ -145,77 +272,42 @@ export function getAdapterInstancesByOrg(orgId: string): Map<string, any> {
     return _orgAdapterInstances.get(orgId)!;
 }
 
-// Legacy: Get all connections (from legacy file)
-export function getConnections(): Map<string, any> {
-    if (!_legacyConnections) {
-        _legacyConnections = loadLegacyConnections();
+export function saveConnections() {
+    if (IS_VERCEL) return;
+    try {
+        const obj = Object.fromEntries(_connections);
+        fs.writeFileSync(LEGACY_STORAGE_FILE, JSON.stringify(obj, null, 2));
+    } catch (error) {
+        console.error('[Store] Failed to save connections:', error);
     }
-    return _legacyConnections;
 }
 
-// Legacy: Get all adapter instances
-export function getAdapterInstances(): Map<string, any> {
-    if (!_legacyAdapterInstances) {
-        _legacyAdapterInstances = new Map();
+export function saveConnectionsByOrg(orgId: string, connections: Map<string, any>) {
+    if (IS_VERCEL) return;
+    try {
+        const filePath = getConnectionsFilePath(orgId);
+        const obj = Object.fromEntries(connections);
+        fs.writeFileSync(filePath, JSON.stringify(obj, null, 2));
+    } catch (error) {
+        console.error(`[Store] Failed to save connections for org ${orgId}:`, error);
     }
-    return _legacyAdapterInstances;
 }
 
-// Clear organization cache (for refresh)
 export function clearOrgCache(orgId: string) {
     _orgConnections.delete(orgId);
     _orgAdapterInstances.delete(orgId);
 }
 
-// Legacy exports for compatibility - these now use lazy loading with proper Map delegation
-export const connections = new Proxy({} as Map<string, any>, {
-    get(_target, prop) {
-        const map = getConnections();
-        const value = (map as any)[prop];
-        if (typeof value === 'function') {
-            return value.bind(map);
-        }
-        return map.get(prop as string);
-    },
-    set(_target, prop, value) {
-        getConnections().set(prop as string, value);
-        return true;
-    },
-    deleteProperty(_target, prop) {
-        return getConnections().delete(prop as string);
-    }
-});
-
-export const adapterInstances = new Proxy({} as Map<string, any>, {
-    get(_target, prop) {
-        const map = getAdapterInstances();
-        const value = (map as any)[prop];
-        if (typeof value === 'function') {
-            return value.bind(map);
-        }
-        return map.get(prop as string);
-    },
-    set(_target, prop, value) {
-        getAdapterInstances().set(prop as string, value);
-        return true;
-    },
-    deleteProperty(_target, prop) {
-        return getAdapterInstances().delete(prop as string);
-    }
-});
-
 export async function getConnection(connectionId: string): Promise<any> {
-    const map = getConnections();
-    let conn = map.get(connectionId);
+    let conn = _connections.get(connectionId);
+
     if (!conn) {
-        console.log(`[Store] Connection ${connectionId} not found in memory (size: ${map.size}), forcing reload...`);
-        _legacyConnections = loadLegacyConnections();
-        conn = _legacyConnections.get(connectionId);
-        if (!conn) {
-            console.log(`[Store] Connection ${connectionId} STILL not found after reload. Available IDs: ${Array.from(_legacyConnections.keys()).join(', ')}`);
-        } else {
-            console.log(`[Store] Connection ${connectionId} found after reload!`);
+        for (const orgMap of _orgConnections.values()) {
+            conn = orgMap.get(connectionId);
+            if (conn) break;
         }
     }
-    return conn;
+
+    // Apply interception one more time just in case of dynamic inserts
+    return interceptAndFixConnection(conn, connectionId);
 }
