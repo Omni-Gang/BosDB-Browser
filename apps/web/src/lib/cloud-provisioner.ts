@@ -208,6 +208,10 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
     const password = generatePassword();
 
     try {
+        if (!config.adminPassword) {
+            throw new Error('Cloud PostgreSQL configuration missing (password not found). Please check CLOUD_POSTGRES_URL in .env');
+        }
+
         // Dynamic import to avoid build issues
         const { Pool } = await import('pg');
 

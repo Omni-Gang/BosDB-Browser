@@ -3,18 +3,6 @@
     "connectionId": "conn_1767358132773_4q9xyimqd",
     "connectionName": "My Postgres Database",
     "query": "SELECT * FROM information_schema.tables LIMIT 10",
-    "executedAt": "2026-01-02T12:49:10.409Z",
-    "executionTime": 4,
-    "rowCount": 10,
-    "success": true,
-    "userEmail": "ayush@flipkart.com",
-    "orgId": "flipkart.com",
-    "id": "history_1767358150409_b53i2ozif"
-  },
-  {
-    "connectionId": "conn_1767358132773_4q9xyimqd",
-    "connectionName": "My Postgres Database",
-    "query": "SELECT * FROM information_schema.tables LIMIT 10",
     "executedAt": "2026-01-02T12:49:11.047Z",
     "executionTime": 4,
     "rowCount": 10,
@@ -1231,5 +1219,17 @@
     "userEmail": "ritvik@flipkart.com",
     "orgId": "flipkart.com",
     "id": "history_1767971487856_202de2msf"
+  },
+  {
+    "connectionId": "conn_1767995451437_1ij8wmgmn",
+    "connectionName": "My Postgres Database",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "executedAt": "2026-01-09T21:51:14.335Z",
+    "executionTime": 553,
+    "rowCount": 10,
+    "success": true,
+    "userEmail": "ritvik@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "history_1767995474338_1n9azzov6"
   }
 ]
