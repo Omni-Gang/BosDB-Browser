@@ -56,6 +56,7 @@ function parseConnectionUrl(url: string | undefined, defaultHost: string, defaul
 // Parse env vars
 const pgConfig = parseConnectionUrl(process.env.CLOUD_POSTGRES_URL, 'switchyard.proxy.rlwy.net', 50346);
 const mysqlConfig = parseConnectionUrl(process.env.CLOUD_MYSQL_URL, 'metro.proxy.rlwy.net', 55276);
+const mariadbConfig = parseConnectionUrl(process.env.CLOUD_MARIADB_URL, 'metro.proxy.rlwy.net', 54136);
 const redisConfig = parseConnectionUrl(process.env.CLOUD_REDIS_URL, 'centerbeam.proxy.rlwy.net', 34540);
 const mongoConfig = parseConnectionUrl(process.env.CLOUD_MONGO_URL, 'mainline.proxy.rlwy.net', 12858);
 const oracleConfig = parseConnectionUrl(process.env.CLOUD_ORACLE_URL, 'trolley.proxy.rlwy.net', 49717);
@@ -74,6 +75,13 @@ export const CLOUD_DATABASES = {
         port: mysqlConfig.port,
         adminUser: mysqlConfig.username || 'root',
         adminPassword: mysqlConfig.password || '',
+        ssl: true,
+    },
+    mariadb: {
+        host: mariadbConfig.host,
+        port: mariadbConfig.port,
+        adminUser: mariadbConfig.username || 'root',
+        adminPassword: mariadbConfig.password || '',
         ssl: true,
     },
     redis: {
@@ -122,7 +130,7 @@ const CLOUD_TYPE_MAPPING: Record<string, keyof typeof CLOUD_DATABASES> = {
 
     // MySQL family - use Railway MySQL
     mysql: 'mysql',
-    mariadb: 'mysql',
+    mariadb: 'mariadb', // Dedicated MariaDB
     tidb: 'mysql',
     singlestore: 'mysql',
 
@@ -336,6 +344,29 @@ async function provisionMongoDB(name: string, userId: string): Promise<CloudProv
 }
 
 /**
+ * Provision a MariaDB database on the shared cloud instance
+ */
+async function provisionMariaDB(name: string, userId: string): Promise<CloudProvisionResult> {
+    const config = CLOUD_DATABASES.mariadb;
+    // MariaDB is similar to MySQL, sharing the logic but using its own config
+    return {
+        success: true,
+        database: {
+            id: `cloud_mariadb_${Date.now()}`,
+            type: 'mariadb',
+            name,
+            host: config.host,
+            port: config.port,
+            database: 'railway', // Shared DB
+            username: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl,
+            connectionString: `mariadb://${config.adminUser}:${config.adminPassword}@${config.host}:${config.port}/railway`,
+        },
+    };
+}
+
+/**
  * Provision an Oracle database on Railway
  */
 async function provisionOracle(name: string, _userId: string): Promise<CloudProvisionResult> {
@@ -442,6 +473,8 @@ export async function provisionCloudDatabase(
             return provisionPostgres(name, userId);
         case 'mysql':
             return provisionMySQL(name, userId);
+        case 'mariadb':
+            return provisionMariaDB(name, userId);
         case 'redis':
             return provisionRedis(name, userId);
         case 'mongodb':

@@ -18,7 +18,8 @@ const RAILWAY_PORT_MAP: Record<number, string> = {
     55276: 'metro.proxy.rlwy.net',
     34540: 'centerbeam.proxy.rlwy.net',
     12858: 'mainline.proxy.rlwy.net',
-    49717: 'trolley.proxy.rlwy.net'
+    49717: 'trolley.proxy.rlwy.net',
+    54136: 'metro.proxy.rlwy.net'
 };
 
 // Find project root (contains package.json and apps directory)
@@ -109,6 +110,16 @@ function injectRailwayConnections(map: Map<string, any>) {
             database: 'railway',
             username: CLOUD_DATABASES.mysql.adminUser,
             password: CLOUD_DATABASES.mysql.adminPassword,
+        },
+        {
+            id: 'railway-mariadb',
+            name: 'Railway MariaDB (Direct)',
+            type: 'mariadb',
+            host: CLOUD_DATABASES.mariadb.host,
+            port: CLOUD_DATABASES.mariadb.port,
+            database: 'railway',
+            username: CLOUD_DATABASES.mariadb.adminUser,
+            password: CLOUD_DATABASES.mariadb.adminPassword,
         },
         {
             id: 'railway-redis',
