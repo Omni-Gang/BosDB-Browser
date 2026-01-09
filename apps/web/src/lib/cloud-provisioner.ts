@@ -24,40 +24,77 @@ export interface CloudProvisionResult {
 }
 
 // Shared Railway database credentials (admin access)
-const CLOUD_DATABASES = {
+/**
+ * Parse a database connection URL
+ */
+function parseConnectionUrl(url: string | undefined, defaultHost: string, defaultPort: number): {
+    host: string;
+    port: number;
+    username?: string;
+    password?: string;
+    database?: string;
+} {
+    if (!url) {
+        return { host: defaultHost, port: defaultPort };
+    }
+
+    try {
+        const parsed = new URL(url);
+        return {
+            host: parsed.hostname,
+            port: Number(parsed.port) || defaultPort,
+            username: decodeURIComponent(parsed.username),
+            password: decodeURIComponent(parsed.password),
+            database: parsed.pathname.split('/')[1] || undefined,
+        };
+    } catch (e) {
+        console.warn('[CloudProvisioner] Failed to parse connection URL:', e);
+        return { host: defaultHost, port: defaultPort };
+    }
+}
+
+// Parse env vars
+const pgConfig = parseConnectionUrl(process.env.CLOUD_POSTGRES_URL, 'switchyard.proxy.rlwy.net', 50346);
+const mysqlConfig = parseConnectionUrl(process.env.CLOUD_MYSQL_URL, 'metro.proxy.rlwy.net', 55276);
+const redisConfig = parseConnectionUrl(process.env.CLOUD_REDIS_URL, 'centerbeam.proxy.rlwy.net', 34540);
+const mongoConfig = parseConnectionUrl(process.env.CLOUD_MONGO_URL, 'mainline.proxy.rlwy.net', 12858);
+const oracleConfig = parseConnectionUrl(process.env.CLOUD_ORACLE_URL, 'trolley.proxy.rlwy.net', 49717);
+
+// Shared Railway database credentials (admin access)
+export const CLOUD_DATABASES = {
     postgres: {
-        host: 'switchyard.proxy.rlwy.net',
-        port: 50346,
-        adminUser: 'postgres',
-        adminPassword: 'UeJAQMHXYCDzPOyajszcmcRwUrvCGbqY',
+        host: pgConfig.host,
+        port: pgConfig.port,
+        adminUser: pgConfig.username || 'postgres',
+        adminPassword: pgConfig.password || '',
         ssl: true,
     },
     mysql: {
-        host: 'metro.proxy.rlwy.net',
-        port: 55276,
-        adminUser: 'root',
-        adminPassword: 'PqhpMAhXoSxZVQAzdvijMDWDshRLjEFu',
+        host: mysqlConfig.host,
+        port: mysqlConfig.port,
+        adminUser: mysqlConfig.username || 'root',
+        adminPassword: mysqlConfig.password || '',
         ssl: true,
     },
     redis: {
-        host: 'centerbeam.proxy.rlwy.net',
-        port: 34540,
-        password: 'CSccVVGRgPHvSbBLSbhEYkQhSrMETECk',
+        host: redisConfig.host,
+        port: redisConfig.port,
+        password: redisConfig.password || '',
         ssl: true,
     },
     mongodb: {
-        host: 'mainline.proxy.rlwy.net',
-        port: 12858,
-        adminUser: 'mongo',
-        adminPassword: 'QpXFweoQZsmLYXxwgwlDyINSBpLLVbLq',
+        host: mongoConfig.host,
+        port: mongoConfig.port,
+        adminUser: mongoConfig.username || 'mongo',
+        adminPassword: mongoConfig.password || '',
         ssl: false,
     },
     oracle: {
-        host: 'trolley.proxy.rlwy.net',
-        port: 49717,
-        adminUser: process.env.CLOUD_ORACLE_USER || 'system',
-        adminPassword: process.env.CLOUD_ORACLE_PASSWORD || 'bosdb_secret',
-        serviceName: 'XE',
+        host: oracleConfig.host,
+        port: oracleConfig.port,
+        adminUser: oracleConfig.username || 'system',
+        adminPassword: oracleConfig.password || '',
+        serviceName: process.env.CLOUD_ORACLE_SERVICE || 'XE', // Oracle doesn't nicely map to URL path usually
         ssl: false,
     },
 };

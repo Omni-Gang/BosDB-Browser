@@ -80,6 +80,11 @@ function safeEncrypt(data: any): string {
     }
 }
 
+// ... existing code ...
+import { CLOUD_DATABASES } from './cloud-provisioner';
+
+// ...
+
 /**
  * Injects pre-configured Railway database connections
  */
@@ -89,55 +94,58 @@ function injectRailwayConnections(map: Map<string, any>) {
             id: 'railway-postgres',
             name: 'Railway Postgres (Direct)',
             type: 'postgres',
-            host: 'switchyard.proxy.rlwy.net',
-            port: 50346,
+            host: CLOUD_DATABASES.postgres.host,
+            port: CLOUD_DATABASES.postgres.port,
             database: 'railway',
-            username: 'postgres',
-            password: 'UeJAQMHXYCDzPOyajszcmcRwUrvCGbqY',
+            username: CLOUD_DATABASES.postgres.adminUser,
+            password: CLOUD_DATABASES.postgres.adminPassword,
         },
         {
             id: 'railway-mysql',
             name: 'Railway MySQL (Direct)',
             type: 'mysql',
-            host: 'metro.proxy.rlwy.net',
-            port: 55276,
+            host: CLOUD_DATABASES.mysql.host,
+            port: CLOUD_DATABASES.mysql.port,
             database: 'railway',
-            username: 'root',
-            password: 'PqhpMAhXoSxZVQAzdvijMDWDshRLjEFu',
+            username: CLOUD_DATABASES.mysql.adminUser,
+            password: CLOUD_DATABASES.mysql.adminPassword,
         },
         {
             id: 'railway-redis',
             name: 'Railway Redis (Direct)',
             type: 'redis',
-            host: 'centerbeam.proxy.rlwy.net',
-            port: 34540,
+            host: CLOUD_DATABASES.redis.host,
+            port: CLOUD_DATABASES.redis.port,
             database: '0',
             username: 'default',
-            password: 'CSccVVGRgPHvSbBLSbhEYkQhSrMETECk',
+            password: CLOUD_DATABASES.redis.password,
         },
         {
             id: 'railway-mongo',
             name: 'Railway MongoDB (Direct)',
             type: 'mongodb',
-            host: 'mainline.proxy.rlwy.net',
-            port: 12858,
+            host: CLOUD_DATABASES.mongodb.host,
+            port: CLOUD_DATABASES.mongodb.port,
             database: 'test',
-            username: 'mongo',
-            password: 'QpXFweoQZsmLYXxwgwlDyINSBpLLVbLq',
+            username: CLOUD_DATABASES.mongodb.adminUser,
+            password: CLOUD_DATABASES.mongodb.adminPassword,
         },
         {
             id: 'railway-oracle',
             name: 'Railway Oracle (Direct)',
             type: 'oracle',
-            host: 'trolley.proxy.rlwy.net',
-            port: 49717,
-            database: 'XE',
-            username: 'system',
-            password: 'bosdb_secret',
+            host: CLOUD_DATABASES.oracle.host,
+            port: CLOUD_DATABASES.oracle.port,
+            database: CLOUD_DATABASES.oracle.serviceName || 'XE',
+            username: CLOUD_DATABASES.oracle.adminUser,
+            password: CLOUD_DATABASES.oracle.adminPassword,
         }
     ];
 
     railwayConnections.forEach(conn => {
+        // Skip connection if password is missing (env var not set)
+        if (!conn.password) return;
+
         const existing = map.get(conn.id);
         if (!existing || existing.ssl !== true) {
             map.set(conn.id, {
