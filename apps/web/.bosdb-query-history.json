@@ -22,5 +22,101 @@
     "userEmail": "demo@gmail.com",
     "orgId": "demo-individual-org",
     "id": "history_1768133518732_pcdg9ywnj"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.students LIMIT 100",
+    "executedAt": "2026-01-12T17:15:57.171Z",
+    "executionTime": 916,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768238157174_j3cs5ade8"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.students LIMIT 100",
+    "executedAt": "2026-01-12T17:22:25.677Z",
+    "executionTime": 986,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768238545679_kczg3duwz"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.students LIMIT 100",
+    "executedAt": "2026-01-12T17:31:34.807Z",
+    "executionTime": 833,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239094809_mhtoqukjf"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.users LIMIT 100",
+    "executedAt": "2026-01-12T17:34:20.382Z",
+    "executionTime": 615,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239260383_ov168dsxr"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "INSERT INTO students (name, age, email)\r\nVALUES\r\n('Aarav Sharma', 19, 'aarav.sharma1@example.com'),\r\n('Ananya Verma', 21, 'ananya.verma2@example.com'),\r\n('Rohit Mehta', 22, 'rohit.mehta3@example.com'),\r\n('Sneha Kapoor', 20, 'sneha.kapoor4@example.com'),\r\n('Kunal Singh', 23, 'kunal.singh5@example.com'),\r\n('Pooja Gupta', 18, 'pooja.gupta6@example.com'),\r\n('Aditya Jain', 24, 'aditya.jain7@example.com'),\r\n('Neha Malhotra', 21, 'neha.malhotra8@example.com'),\r\n('Vikram Rao', 22, 'vikram.rao9@example.com'),\r\n('Riya Chawla', 19, 'riya.chawla10@example.com'),\r\n('Siddharth Nair', 23, 'siddharth.nair11@example.com'),\r\n('Kritika Bansal', 20, 'kritika.bansal12@example.com'),\r\n('Manish Yadav', 25, 'manish.yadav13@example.com'),\r\n('Isha Khandelwal', 18, 'isha.khandelwal14@example.com'),\r\n('Amit Patel', 24, 'amit.patel15@example.com'),\r\n('Nidhi Arora', 22, 'nidhi.arora16@example.com'),\r\n('Rahul Khanna', 21, 'rahul.khanna17@example.com'),\r\n('Simran Kaur', 19, 'simran.kaur18@example.com'),\r\n('Deepak Soni', 23, 'deepak.soni19@example.com'),\r\n('Tanvi Joshi', 20, 'tanvi.joshi20@example.com'),\r\n('Harsh Aggarwal', 22, 'harsh.aggarwal21@example.com'),\r\n('Mehul Shah', 24, 'mehul.shah22@example.com'),\r\n('Ayesha Khan', 21, 'ayesha.khan23@example.com'),\r\n('Naveen Reddy', 23, 'naveen.reddy24@example.com'),\r\n('Kavita Mishra', 20, 'kavita.mishra25@example.com'),\r\n('Pranav Kulkarni', 22, 'pranav.kulkarni26@example.com'),\r\n('Shubham Tiwari', 19, 'shubham.tiwari27@example.com'),\r\n('Rashmi Pandey', 21, 'rashmi.pandey28@example.com'),\r\n('Akash Dubey', 24, 'akash.dubey29@example.com'),\r\n('Priya Saxena', 20, 'priya.saxena30@example.com')",
+    "executedAt": "2026-01-12T17:36:27.255Z",
+    "executionTime": 664,
+    "rowCount": 0,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239387257_hr99fshrg"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.users LIMIT 100",
+    "executedAt": "2026-01-12T17:36:34.178Z",
+    "executionTime": 843,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239394178_n9lqb1leh"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.students",
+    "executedAt": "2026-01-12T17:36:52.251Z",
+    "executionTime": 1263,
+    "rowCount": 33,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239412251_qscvu4px4"
+  },
+  {
+    "connectionId": "conn_1768238128481_4ww2qc02l",
+    "connectionName": "My Mysql Database",
+    "query": "SELECT * FROM railway.students",
+    "executedAt": "2026-01-12T17:38:33.620Z",
+    "executionTime": 815,
+    "rowCount": 33,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768239513621_41ljzqesw"
   }
 ]

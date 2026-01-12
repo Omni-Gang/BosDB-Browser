@@ -589,6 +589,19 @@ function QueryPageContent() {
         setContextMenu({ x: e.clientX, y: e.clientY, tableName, schemaName });
     };
 
+    const handleFilteredDataChange = useCallback((data: any[]) => {
+        setFilteredResults(prev => {
+            const next = new Map(prev);
+            next.set(activeTab, data);
+            return next;
+        });
+    }, [activeTab]);
+
+    const handleExport = useCallback(() => {
+        setExportingIndex(activeTab);
+        setShowExportModal(true);
+    }, [activeTab]);
+
 
 
     // Monaco decorations for breakpoints and current line
@@ -1433,21 +1446,12 @@ function QueryPageContent() {
                                         <ResultsToolbar
                                             data={results[activeTab].rows}
                                             columns={results[activeTab].columnNames}
-                                            onFilteredDataChange={(data) => {
-                                                setFilteredResults(prev => {
-                                                    const next = new Map(prev);
-                                                    next.set(activeTab, data);
-                                                    return next;
-                                                });
-                                            }}
-                                            onExport={() => {
-                                                setExportingIndex(activeTab);
-                                                setShowExportModal(true);
-                                            }}
+                                            onFilteredDataChange={handleFilteredDataChange}
+                                            onExport={handleExport}
                                         />
                                         <div className="h-[400px]">
                                             <DataEditor
-                                                rows={results[activeTab].rows}
+                                                rows={filteredResults.get(activeTab) || results[activeTab].rows}
                                                 fields={results[activeTab].fields}
                                                 onSave={async (updates) => {
                                                     // Get table name from result set
