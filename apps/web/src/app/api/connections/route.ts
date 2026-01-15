@@ -3,7 +3,7 @@ import { AdapterFactory } from '@bosdb/db-adapters';
 import { encryptCredentials } from '@bosdb/security';
 import { Logger } from '@bosdb/utils';
 import type { ConnectionConfig } from '@bosdb/core';
-import { connections, saveConnections, getConnection } from '@/lib/store';
+import { connections, saveConnections, getConnection, deleteConnection } from '@/lib/store';
 
 const logger = new Logger('ConnectionsAPI');
 
@@ -60,59 +60,101 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { name, type, host, port, database, username, password, ssl, readOnly, skipTest } = body;
+        // Check if this is a request for Auto-Provisioning
+        // We assume "New Connection" flow without explicit host/port means "Auto-Provision" 
+        // OR if the client explicitly requests it.
+        const shouldProvision = !host && !port && (type === 'postgres' || type === 'mysql' || type === 'postgresql');
 
-        // Validate required fields
-        if (!name || !type || !host || !database || !username || !password) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
+        let finalConfig: ConnectionConfig;
+        let provisionedUsername = username;
 
-        const config: ConnectionConfig = {
-            name,
-            host,
-            port: port || 5432,
-            database,
-            username,
-            password,
-            ssl: ssl || false,
-            readOnly: readOnly || false,
-        };
+        if (shouldProvision) {
+            // AUTO-PROVISIONING FLOW
+            const { provisionCloudDatabase } = await import('@/lib/cloud-provisioner');
+            const result = await provisionCloudDatabase(type, name, userEmail);
 
-        // Skip connection test if requested (for auto-provisioned databases)
-        if (!skipTest) {
-            // Create adapter and test connection
-            const adapter = AdapterFactory.create(type);
-            const testResult = await adapter.testConnection(config);
-
-            if (!testResult.success) {
+            if (!result.success || !result.database) {
                 return NextResponse.json(
-                    { error: 'Connection test failed', details: testResult.error },
-                    { status: 400 }
+                    { error: 'Failed to provision database', details: result.error },
+                    { status: 500 }
                 );
+            }
+
+            const dbInfo = result.database;
+            finalConfig = {
+                name,
+                host: dbInfo.host,
+                port: dbInfo.port,
+                database: dbInfo.database,
+                username: dbInfo.username,
+                password: dbInfo.password,
+                ssl: dbInfo.ssl,
+                readOnly: false
+            };
+            provisionedUsername = dbInfo.username;
+
+            logger.info(`Auto-provisioned database for ${name}: ${dbInfo.database} on ${dbInfo.host}`);
+
+        } else {
+            // MANUAL CONNECTION FLOW
+            // Validate required fields
+            if (!name || !type || !host || !database || !username || !password) {
+                return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            }
+
+            // AUTO-CORRECT: Use sanitizeHost here too, in case user/UI sent localhost for a cloud port
+            const { sanitizeHost } = await import('@/lib/cloud-provisioner');
+            const effectiveHost = sanitizeHost(host, port || 5432);
+
+            finalConfig = {
+                name,
+                host: effectiveHost,
+                port: port || 5432,
+                database,
+                username,
+                password,
+                ssl: ssl || false,
+                readOnly: readOnly || false,
+            };
+
+            // Skip connection test if requested
+            if (!skipTest) {
+                const adapter = AdapterFactory.create(type);
+                const testResult = await adapter.testConnection(finalConfig);
+
+                if (!testResult.success) {
+                    return NextResponse.json(
+                        { error: 'Connection test failed', details: testResult.error },
+                        { status: 400 }
+                    );
+                }
             }
         }
 
         // Encrypt credentials
         const encryptedCredentials = encryptCredentials({
-            username,
-            password,
+            username: finalConfig.username,
+            password: finalConfig.password,
         });
 
         // Generate connection ID
         const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Store connection info (without plaintext password)
+        // Store connection info
         const connectionInfo = {
             id: connectionId,
-            name,
+            name: finalConfig.name,
             type,
-            host,
-            port: config.port,
-            database,
+            host: finalConfig.host,
+            port: finalConfig.port,
+            database: finalConfig.database,
             credentials: encryptedCredentials,
-            readOnly: config.readOnly,
-            userEmail: userEmail, // Store user email as owner
-            organizationId: orgId, // Store organization ID for sharing
+            readOnly: finalConfig.readOnly,
+            userEmail: userEmail,
+            organizationId: orgId,
             createdAt: new Date().toISOString(),
+            isProvisioned: shouldProvision, // Mark as managed
+            managedUsername: shouldProvision ? provisionedUsername : undefined
         };
 
         connections.set(connectionId, connectionInfo);
@@ -120,17 +162,17 @@ export async function POST(request: NextRequest) {
         // Persist to file
         saveConnections();
 
-        logger.info(`Connection created: ${connectionId} (${type}://${host}:${port}/${database}) by ${userEmail}`);
+        logger.info(`Connection created: ${connectionId} (${type}://${finalConfig.host}:${finalConfig.port}/${finalConfig.database}) by ${userEmail} [Provisioned: ${shouldProvision}]`);
 
         // Return connection without credentials
         return NextResponse.json({
             id: connectionId,
-            name,
+            name: finalConfig.name,
             type,
-            host,
-            port: config.port,
-            database,
-            readOnly: config.readOnly,
+            host: finalConfig.host,
+            port: finalConfig.port,
+            database: finalConfig.database,
+            readOnly: finalConfig.readOnly,
             status: 'disconnected',
         });
     } catch (error: any) {
@@ -168,16 +210,27 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Not authorized to delete this connection' }, { status: 403 });
         }
 
-        // Delete the connection
-        connections.delete(connectionId);
+        // Deprovision from cloud if this was a managed connection
+        // We check 'isProvisioned' property or infer from database name convention if needed
+        if (connection.isProvisioned || (connection.database && connection.database.startsWith('bosdb_'))) {
+            try {
+                const { destroyCloudDatabase } = await import('@/lib/cloud-provisioner');
+                // Extract username if we stored it, otherwise might rely on cascade or admin force
+                // We persisted 'managedUsername' in the new flow.
+                await destroyCloudDatabase(connection.type, connection.database, connection.managedUsername);
+            } catch (e) {
+                logger.error('Failed to destroy cloud database', e);
+                // Continue with deletion anyway
+            }
+        }
 
-        // Close active connection if exists
+        // Delete the connection using shared helper
+        deleteConnection(connectionId);
+
+        // Close active connection if exists (local map)
         if (activeConnections.has(connectionId)) {
             activeConnections.delete(connectionId);
         }
-
-        // Persist changes
-        saveConnections();
 
         logger.info(`Connection deleted: ${connectionId} by ${userEmail}`);
 
