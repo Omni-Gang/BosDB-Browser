@@ -163,31 +163,31 @@
     "createdAt": "2026-01-11T11:47:45.658Z",
     "ssl": true
   },
-  "conn_1768133491813_6jhckgwqg": {
-    "id": "conn_1768133491813_6jhckgwqg",
+  "conn_1768669248551_dsxoa1y9h": {
+    "id": "conn_1768669248551_dsxoa1y9h",
     "name": "My Postgres Database",
     "type": "postgres",
     "host": "switchyard.proxy.rlwy.net",
     "port": 50346,
     "database": "railway",
-    "credentials": "QXeXhjkzejZ56u5uSO4n+NZyuuoK6XNhBvQ2LRmX3LyiKg8yNsyJ/LtwQBaRHuo+GpnnbRrZYGkD2L92tqAjL7EJbQDT8mzbZBv2hX9EN64TsHSBFoN+M6Oi4UoTqztd4GTmjKI=",
+    "credentials": "gConiJ1lEx4jnYJN2tQ3ZQhTEdp1nTZYkO3PNMeTsddxWAAAbE1VECqGrIF1iFnO7Wwvr2kd+P0AiBzeryvlQBOQPOHFFh+xmp26/0ucuhuyjRPvBzHQZ1YAzFeXyZl/A0GyHX8=",
     "readOnly": false,
     "userEmail": "demo@gmail.com",
     "organizationId": "demo-individual-org",
-    "createdAt": "2026-01-11T12:11:31.813Z",
+    "createdAt": "2026-01-17T17:00:48.551Z",
     "ssl": true
   },
-  "conn_1768133497375_19syg9j57": {
-    "id": "conn_1768133497375_19syg9j57",
-    "name": "My Postgres Database",
+  "conn_1768669314378_qmvoiehai": {
+    "id": "conn_1768669314378_qmvoiehai",
+    "name": "My Mssql Database",
     "type": "postgres",
     "host": "localhost",
     "port": 50346,
     "database": "railway",
-    "credentials": "wLQR2KJ7fyU1+f5R+Y/fM5O+mIZpsycmILkdprvvoF08/L8jPQQ0c0bZD3eMG9pza9E75C2HqGKJHyBkY7nCkX7It+JeKvMDZ9YmX8c5byti0GLqkuvnAlEcodUHNxfpDpxLOzg=",
+    "credentials": "H3ftzhmSmraQXR/So62YuJVPVbR1+aKAshCFvzaPwkq5n9m5mzs3+N2H25/yQP6fiPvSSRhYnn7QfJs9O5AYlHVq6xMSJoDm1CYBmln9BR5CowRHUKxJkXoq6epWhFrFoq5Ukwo=",
     "readOnly": false,
     "userEmail": "demo@gmail.com",
     "organizationId": "demo-individual-org",
-    "createdAt": "2026-01-11T12:11:37.375Z"
+    "createdAt": "2026-01-17T17:01:54.378Z"
   }
 }

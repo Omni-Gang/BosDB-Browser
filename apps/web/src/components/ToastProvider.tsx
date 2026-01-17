@@ -9,14 +9,16 @@ interface Toast {
     id: string;
     message: string;
     type: ToastType;
+    action?: ReactNode;
+    duration?: number;
 }
 
 interface ToastContextType {
-    showToast: (message: string, type?: ToastType) => void;
-    success: (message: string) => void;
-    error: (message: string) => void;
-    info: (message: string) => void;
-    warning: (message: string) => void;
+    showToast: (message: string, type?: ToastType, action?: ReactNode, duration?: number) => void;
+    success: (message: string, action?: ReactNode, duration?: number) => void;
+    error: (message: string, action?: ReactNode, duration?: number) => void;
+    info: (message: string, action?: ReactNode, duration?: number) => void;
+    warning: (message: string, action?: ReactNode, duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -24,16 +26,18 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const showToast = useCallback((message: string, type: ToastType = 'info') => {
+    const showToast = useCallback((message: string, type: ToastType = 'info', action?: ReactNode, duration: number = 4000) => {
         const id = Math.random().toString(36).substr(2, 9);
-        const newToast = { id, message, type };
+        const newToast = { id, message, type, action, duration };
 
         setToasts(prev => [...prev, newToast]);
 
-        // Auto-dismiss after 4 seconds
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id));
-        }, 4000);
+        // Auto-dismiss
+        if (duration !== Infinity) {
+            setTimeout(() => {
+                setToasts(prev => prev.filter(t => t.id !== id));
+            }, duration);
+        }
     }, []);
 
     const removeToast = useCallback((id: string) => {
@@ -42,10 +46,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     const contextValue: ToastContextType = {
         showToast,
-        success: (msg) => showToast(msg, 'success'),
-        error: (msg) => showToast(msg, 'error'),
-        info: (msg) => showToast(msg, 'info'),
-        warning: (msg) => showToast(msg, 'warning'),
+        success: (msg, action, duration) => showToast(msg, 'success', action, duration),
+        error: (msg, action, duration) => showToast(msg, 'error', action, duration),
+        info: (msg, action, duration) => showToast(msg, 'info', action, duration),
+        warning: (msg, action, duration) => showToast(msg, 'warning', action, duration),
     };
 
     return (
@@ -68,10 +72,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     const icons = {
-        success: <CheckCircle className="w-5 h-5" />,
-        error: <AlertCircle className="w-5 h-5" />,
-        info: <Info className="w-5 h-5" />,
-        warning: <AlertTriangle className="w-5 h-5" />,
+        success: <CheckCircle className="w-5 h-5 flex-shrink-0" />,
+        error: <AlertCircle className="w-5 h-5 flex-shrink-0" />,
+        info: <Info className="w-5 h-5 flex-shrink-0" />,
+        warning: <AlertTriangle className="w-5 h-5 flex-shrink-0" />,
     };
 
     const colors = {
@@ -83,13 +87,20 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
     return (
         <div
-            className={`${colors[toast.type]} pointer-events-auto backdrop-blur-md border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md animate-in slide-in-from-right-5 fade-in duration-300`}
+            className={`${colors[toast.type]} pointer-events-auto backdrop-blur-md border rounded-lg shadow-lg px-4 py-3 flex items-start gap-3 min-w-[300px] max-w-md animate-in slide-in-from-right-5 fade-in duration-300`}
         >
-            {icons[toast.type]}
-            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+            <div className="mt-0.5">{icons[toast.type]}</div>
+            <div className="flex-1">
+                <p className="text-sm font-medium leading-5">{toast.message}</p>
+                {toast.action && (
+                    <div className="mt-2">
+                        {toast.action}
+                    </div>
+                )}
+            </div>
             <button
                 onClick={onClose}
-                className="hover:bg-white/20 rounded p-1 transition"
+                className="hover:bg-white/20 rounded p-1 transition -mr-1 -mt-1"
             >
                 <X className="w-4 h-4" />
             </button>
