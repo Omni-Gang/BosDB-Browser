@@ -1,0 +1,9 @@
+IssueID,Title,Description,Steps to Reproduce,Expected Behavior,Observed Behavior,Severity,Status
+VCS-001,VCS Revert Fails with 404,Reverting a commit via the API returns a 404 Not Found error.,"1. Create a table and commit change.
+2. Send POST request to /api/vcs/rollback with valid commitId.",Rolling back or reverting should create a new revert commit.,API returns 404 Not Found (Target commit not found error potentially).,High,Open
+VCS-002,VCS Branch Isolation Failure,Commits made on a feature branch are visible in the main branch history.,"1. Create and switch to 'dev-branch'.
+2. Make a commit.
+3. Switch back to 'main'.
+4. Query commit history of 'main'.",Main branch history should NOT show commits from 'dev-branch' until merged.,Dev branch commit was found in Main branch history.,Critical,Open
+AI-001,AI API 500 Error without Keys,The AI SQL generation endpoint fails with a 500 error when no API keys are configured, instead of using the fallback logic.,"1. Ensure no API keys (GEMINI, OPENAI, etc.) are set in .env.
+2. POST to /api/ai/generate-sql with a prompt.",The API should return a fallback response explaining that keys are missing and providing a template.,API returns 500 Internal Server Error.,Medium,Open

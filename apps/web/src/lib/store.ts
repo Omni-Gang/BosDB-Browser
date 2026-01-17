@@ -12,7 +12,7 @@ const LEGACY_STORAGE_FILE_NAME = '.bosdb-connections.json';
  * Port to Railway Host Mapping
  * If a connection is on localhost but uses these specific ports, it's a misconfigured Railway connection.
  */
-// Port to Railway Host Mapping
+// Port to Railway Host Mapping - Used for MIGRATION ONLY
 const RAILWAY_PORT_MAP: Record<number, string> = {
     50346: 'switchyard.proxy.rlwy.net',
     55276: 'metro.proxy.rlwy.net',
@@ -186,15 +186,15 @@ function injectRailwayConnections(map: Map<string, any>) {
 function interceptAndFixConnection(conn: any, id: string): any {
     if (!conn) return conn;
 
-    // Fix 1: Redirect localhost on Railway ports to the actual proxy
-    const railwayProxy = RAILWAY_PORT_MAP[Number(conn.port)];
-    if (railwayProxy && (conn.host === 'localhost' || conn.host === '127.0.0.1' || conn.host === 'host.docker.internal')) {
-        console.log(`[Store] Redirecting misconfigured host for ${id}: ${conn.host} -> ${railwayProxy}`);
-        conn.host = railwayProxy;
-        conn.ssl = true; // Force SSL for Railway
-    }
+    // Fix 1: DISABLED - Do not redirect localhost
+    // const railwayProxy = RAILWAY_PORT_MAP[Number(conn.port)];
+    // if (railwayProxy && (conn.host === 'localhost' || conn.host === '127.0.0.1' || conn.host === 'host.docker.internal')) {
+    //     console.log(`[Store] Redirecting misconfigured host for ${id}: ${conn.host} -> ${railwayProxy}`);
+    //     conn.host = railwayProxy;
+    //     conn.ssl = true; 
+    // }
 
-    // Fix 2: Force SSL for any Railway/Atlas host
+    // Fix 2: Force SSL for known cloud hosts only (Safe default)
     if (conn.host?.includes('rlwy.net') || conn.host?.includes('mongodb.net') || conn.host?.includes('railway.internal')) {
         if (conn.ssl !== true) {
             console.log(`[Store] Auto-enabling SSL for: ${id} (${conn.host})`);
@@ -215,6 +215,8 @@ function loadLegacyConnections(): Map<string, any> {
     ];
 
     try {
+        const filesToDelete: string[] = [];
+
         possibleLocations.forEach(loc => {
             if (fs.existsSync(loc)) {
                 try {
@@ -226,18 +228,38 @@ function loadLegacyConnections(): Map<string, any> {
                             combinedMap.set(k, v);
                         }
                     });
+
+                    // Mark for deletion if it's not the main file and not on Vercel
+                    if (loc !== LEGACY_STORAGE_FILE && !IS_VERCEL) {
+                        filesToDelete.push(loc);
+                    }
                 } catch (e) {
                     console.error(`[Store] Error reading legacy file at ${loc}:`, e);
                 }
             }
         });
 
-        // Migrate back to root if we found fragmented files
-        if (combinedMap.size > 0 && !IS_VERCEL && !fs.existsSync(LEGACY_STORAGE_FILE)) {
+        // Migrate back to root if we changed anything or found fragmented files
+        if (!IS_VERCEL) {
             try {
-                fs.writeFileSync(LEGACY_STORAGE_FILE, JSON.stringify(Object.fromEntries(combinedMap), null, 2));
-                console.log(`[Store] Migrated ${combinedMap.size} combined connections to root.`);
-            } catch (e) { }
+                // write to main file
+                const obj = Object.fromEntries(combinedMap);
+                fs.writeFileSync(LEGACY_STORAGE_FILE, JSON.stringify(obj, null, 2));
+                console.log(`[Store] Consolidated ${combinedMap.size} connections to root.`);
+
+                // Delete old files
+                filesToDelete.forEach(file => {
+                    try {
+                        fs.unlinkSync(file);
+                        console.log(`[Store] Removed legacy file: ${file}`);
+                    } catch (e) {
+                        console.error(`[Store] Failed to remove legacy file ${file}`, e);
+                    }
+                });
+
+            } catch (e) {
+                console.error('[Store] Failed to save consolidated connections', e);
+            }
         }
 
     } catch (error) {
@@ -249,9 +271,27 @@ function loadLegacyConnections(): Map<string, any> {
 function initStore() {
     try {
         _connections = loadLegacyConnections();
+
+        // MIGRATION: Fix legacy localhost connections permanently
+        let migrationChanged = false;
+        _connections.forEach((conn, id) => {
+            const mappedHost = RAILWAY_PORT_MAP[Number(conn.port)];
+            if (mappedHost && (conn.host === 'localhost' || conn.host === '127.0.0.1' || conn.host === 'host.docker.internal')) {
+                console.log(`[Store] Migrating legacy connection ${id} to real host: ${mappedHost}`);
+                conn.host = mappedHost;
+                conn.ssl = true;
+                migrationChanged = true;
+            }
+        });
+
+        if (migrationChanged) {
+            saveConnections();
+            console.log('[Store] Legacy connections migrated and saved.');
+        }
+
         injectRailwayConnections(_connections);
 
-        // Apply fixes to all loaded connections
+        // Apply fixes to all loaded connections (SSL enforcement only)
         _connections.forEach((conn, id) => {
             interceptAndFixConnection(conn, id);
         });
@@ -322,6 +362,48 @@ export function saveConnectionsByOrg(orgId: string, connections: Map<string, any
     } catch (error) {
         console.error(`[Store] Failed to save connections for org ${orgId}:`, error);
     }
+}
+
+export function deleteConnection(connectionId: string) {
+    // 1. Remove from main map
+    if (_connections.has(connectionId)) {
+        _connections.delete(connectionId);
+        saveConnections();
+    }
+
+    // 2. Remove from active adapters (Cleanup)
+    if (_adapterInstances.has(connectionId)) {
+        const entry = _adapterInstances.get(connectionId);
+        // Best effort close
+        try {
+            if (entry.adapter && typeof entry.adapter.disconnect === 'function') {
+                entry.adapter.disconnect();
+            }
+        } catch (e) {
+            console.error(`[Store] Failed to disconnect adapter for ${connectionId}`, e);
+        }
+        _adapterInstances.delete(connectionId);
+    }
+
+    // 3. Remove from org maps
+    _orgConnections.forEach((map, orgId) => {
+        if (map.has(connectionId)) {
+            map.delete(connectionId);
+            saveConnectionsByOrg(orgId, map); // Persist org change
+        }
+    });
+
+    _orgAdapterInstances.forEach((map) => {
+        if (map.has(connectionId)) {
+            const entry = map.get(connectionId);
+            try {
+                if (entry && entry.adapter && typeof entry.adapter.disconnect === 'function') {
+                    entry.adapter.disconnect();
+                }
+            } catch (e) { }
+            map.delete(connectionId);
+        }
+    });
 }
 
 export function clearOrgCache(orgId: string) {

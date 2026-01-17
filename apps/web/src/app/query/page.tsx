@@ -239,6 +239,7 @@ function QueryPageContent() {
     const [debugCurrentLine, setDebugCurrentLine] = useState<number | null>(null);
     const debugDecorationRef = useRef<string[]>([]);
     const breakpointDecorationsRef = useRef<Map<number, string[]>>(new Map());
+    const connectionIdRef = useRef<string | null>(null);
 
     // Memoize columns for the first result (fallback)
     const columns = useMemo(() => results.length > 0 ? results[0].fields.map(f => f.name) : [], [results]);
@@ -589,6 +590,19 @@ function QueryPageContent() {
         setContextMenu({ x: e.clientX, y: e.clientY, tableName, schemaName });
     };
 
+    const handleFilteredDataChange = useCallback((data: any[]) => {
+        setFilteredResults(prev => {
+            const next = new Map(prev);
+            next.set(activeTab, data);
+            return next;
+        });
+    }, [activeTab]);
+
+    const handleExport = useCallback(() => {
+        setExportingIndex(activeTab);
+        setShowExportModal(true);
+    }, [activeTab]);
+
 
 
     // Monaco decorations for breakpoints and current line
@@ -633,6 +647,15 @@ function QueryPageContent() {
 
     useEffect(() => {
         if (connectionId) {
+            connectionIdRef.current = connectionId;
+            // Reset state to prevent bleeding from previous connection
+            setSchemas([]);
+            setSchemaTables(new Map());
+            setSchemaProcedures(new Map());
+            setExpandedSchemas(new Set(['public']));
+            setLoadingResources(new Map());
+            setResourceErrors(new Map());
+
             fetchConnectionInfo();
             fetchSchemas();
             loadPendingChanges();
@@ -695,6 +718,9 @@ function QueryPageContent() {
         try {
             const res = await fetch(`/api/history?connectionId=${connectionId}`, { headers: getHeaders() });
             const data = await res.json();
+
+            if (connectionIdRef.current !== connectionId) return;
+
             if (data.history) {
                 // Map server history format to frontend format if needed
                 setHistory(data.history.map((h: any) => ({
@@ -714,6 +740,7 @@ function QueryPageContent() {
         try {
             const res = await fetch('/api/connections', { headers: getHeaders() });
             const data = await res.json();
+            if (connectionIdRef.current !== connectionId) return;
             const conn = data.connections?.find((c: any) => c.id === connectionId);
             setConnectionInfo(conn);
         } catch (err) {
@@ -725,6 +752,7 @@ function QueryPageContent() {
         try {
             const res = await fetch(`/api/schema?connectionId=${connectionId}`, { headers: getHeaders() });
             const data = await res.json();
+            if (connectionIdRef.current !== connectionId) return;
             setSchemas(data.schemas || []);
         } catch (err) {
             console.error('Failed to fetch schemas:', err);
@@ -736,13 +764,17 @@ function QueryPageContent() {
         try {
             const res = await fetch(`/api/procedures?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
             const data = await res.json();
+            if (connectionIdRef.current !== connectionId) return;
             if (!res.ok) throw new Error(data.error || 'Failed to fetch procedures');
             setSchemaProcedures(prev => new Map(prev).set(schemaName, data.procedures || []));
         } catch (err: any) {
+            if (connectionIdRef.current !== connectionId) return;
             console.error('Failed to fetch procedures:', err);
             setResourceErrors(prev => new Map(prev).set(`${schemaName}:procedures`, err.message));
         } finally {
-            updateLoading(schemaName, 'procedures', false);
+            if (connectionIdRef.current === connectionId) {
+                updateLoading(schemaName, 'procedures', false);
+            }
         }
     };
 
@@ -751,13 +783,17 @@ function QueryPageContent() {
         try {
             const res = await fetch(`/api/tables?connectionId=${connectionId}&schema=${schemaName}`, { headers: getHeaders() });
             const data = await res.json();
+            if (connectionIdRef.current !== connectionId) return;
             if (!res.ok) throw new Error(data.error || 'Failed to fetch tables');
             setSchemaTables(prev => new Map(prev).set(schemaName, data.tables || []));
         } catch (err: any) {
+            if (connectionIdRef.current !== connectionId) return;
             console.error('Failed to fetch tables:', err);
             setResourceErrors(prev => new Map(prev).set(`${schemaName}:tables`, err.message));
         } finally {
-            updateLoading(schemaName, 'tables', false);
+            if (connectionIdRef.current === connectionId) {
+                updateLoading(schemaName, 'tables', false);
+            }
         }
     };
 
@@ -1151,6 +1187,21 @@ function QueryPageContent() {
                                 </button>
                             </div>
                         </div>
+
+
+                        {/* Connection Verification Info */}
+                        {connectionInfo && (
+                            <div className="mb-4 px-3 py-2 bg-muted/50 rounded-md border border-border text-xs">
+                                <div className="font-medium truncate text-foreground" title={connectionInfo.name}>
+                                    {connectionInfo.name}
+                                </div>
+                                <div className="text-muted-foreground truncate font-mono mt-1 flex items-center gap-1" title={`${connectionInfo.host}:${connectionInfo.port}`}>
+                                    <Database className="w-3 h-3" />
+                                    {connectionInfo.host}:{connectionInfo.port}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-1">
                             {schemas.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">No schemas found</p>
@@ -1446,21 +1497,12 @@ function QueryPageContent() {
                                         <ResultsToolbar
                                             data={results[activeTab].rows}
                                             columns={results[activeTab].columnNames}
-                                            onFilteredDataChange={(data) => {
-                                                setFilteredResults(prev => {
-                                                    const next = new Map(prev);
-                                                    next.set(activeTab, data);
-                                                    return next;
-                                                });
-                                            }}
-                                            onExport={() => {
-                                                setExportingIndex(activeTab);
-                                                setShowExportModal(true);
-                                            }}
+                                            onFilteredDataChange={handleFilteredDataChange}
+                                            onExport={handleExport}
                                         />
                                         <div className="h-[400px]">
                                             <DataEditor
-                                                rows={results[activeTab].rows}
+                                                rows={filteredResults.get(activeTab) || results[activeTab].rows}
                                                 fields={results[activeTab].fields}
                                                 onSave={async (updates) => {
                                                     // Get table name from result set
@@ -1554,188 +1596,210 @@ function QueryPageContent() {
                 </div>
 
                 {/* Debugger Panel */}
-                {showDebugger && connectionId && (
-                    <DebuggerPanel
-                        connectionId={connectionId || ''}
-                        currentQuery={query}
-                        breakpoints={currentBreakpoints}
-                        onToggleBreakpoint={toggleBreakpoint}
-                        sessionId={debugSessionId}
-                        setSessionId={setDebugSessionId}
-                        status={debugStatus}
-                        setStatus={setDebugStatus}
-                        currentLine={debugCurrentLine}
-                        setCurrentLine={setDebugCurrentLine}
-                        onClose={() => setShowDebugger(false)}
-                    />
-                )}
+                {
+                    showDebugger && connectionId && (
+                        <DebuggerPanel
+                            connectionId={connectionId || ''}
+                            currentQuery={query}
+                            breakpoints={currentBreakpoints}
+                            onToggleBreakpoint={toggleBreakpoint}
+                            sessionId={debugSessionId}
+                            setSessionId={setDebugSessionId}
+                            status={debugStatus}
+                            setStatus={setDebugStatus}
+                            currentLine={debugCurrentLine}
+                            setCurrentLine={setDebugCurrentLine}
+                            onClose={() => setShowDebugger(false)}
+                        />
+                    )
+                }
 
                 {/* History Sidebar */}
-                {showHistory && (
-                    <QueryHistory
-                        history={history}
-                        onSelect={(sql) => setQuery(sql)}
-                        onRun={(sql) => {
-                            setQuery(sql);
-                            setTimeout(() => executeQuery(sql), 100);
-                        }}
-                        onClear={() => setHistory([])}
-                        onRemove={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
-                    />
-                )}
-            </div>
+                {
+                    showHistory && (
+                        <QueryHistory
+                            history={history}
+                            onSelect={(sql) => setQuery(sql)}
+                            onRun={(sql) => {
+                                setQuery(sql);
+                                setTimeout(() => executeQuery(sql), 100);
+                            }}
+                            onClear={() => setHistory([])}
+                            onRemove={(id) => setHistory(prev => prev.filter(item => item.id !== id))}
+                        />
+                    )
+                }
+            </div >
             {/* Table Designer Modal */}
-            {showTableDesigner && connectionId && (
-                <TableDesigner
-                    connectionId={connectionId}
-                    onClose={() => setShowTableDesigner(false)}
-                    onSuccess={() => {
-                        setShowTableDesigner(false);
-                        fetchSchemas(); // Refresh schema list
-                    }}
-                />
-            )}
+            {
+                showTableDesigner && connectionId && (
+                    <TableDesigner
+                        connectionId={connectionId}
+                        onClose={() => setShowTableDesigner(false)}
+                        onSuccess={() => {
+                            setShowTableDesigner(false);
+                            fetchSchemas(); // Refresh schema list
+                        }}
+                    />
+                )
+            }
             {/* Save Query Modal */}
-            {showSaveModal && connectionId && (
-                <SaveQueryModal
-                    query={query}
-                    connectionId={connectionId}
-                    onClose={() => setShowSaveModal(false)}
-                    onSuccess={() => setShowSaveModal(false)}
-                />
-            )}
+            {
+                showSaveModal && connectionId && (
+                    <SaveQueryModal
+                        query={query}
+                        connectionId={connectionId}
+                        onClose={() => setShowSaveModal(false)}
+                        onSuccess={() => setShowSaveModal(false)}
+                    />
+                )
+            }
 
             {/* Export Modal */}
-            {showExportModal && results[exportingIndex] && (
-                <ExportModal
-                    data={filteredResults.get(exportingIndex) || results[exportingIndex].rows}
-                    columns={results[exportingIndex].columnNames}
-                    tableName={`query-result-${exportingIndex + 1}-${Date.now()}`}
-                    onClose={() => setShowExportModal(false)}
-                />
-            )}
+            {
+                showExportModal && results[exportingIndex] && (
+                    <ExportModal
+                        data={filteredResults.get(exportingIndex) || results[exportingIndex].rows}
+                        columns={results[exportingIndex].columnNames}
+                        tableName={`query-result-${exportingIndex + 1}-${Date.now()}`}
+                        onClose={() => setShowExportModal(false)}
+                    />
+                )
+            }
 
             {/* Import Modal */}
-            {showImportModal && importTable && connectionId && (
-                <ImportModal
-                    tableName={`${importTable.schema}.${importTable.name}`}
-                    connectionId={connectionId}
-                    onClose={() => {
-                        setShowImportModal(false);
-                        setImportTable(null);
-                    }}
-                    onSuccess={() => {
-                        setShowImportModal(false);
-                        setImportTable(null);
-                    }}
-                />
-            )}
+            {
+                showImportModal && importTable && connectionId && (
+                    <ImportModal
+                        tableName={`${importTable.schema}.${importTable.name}`}
+                        connectionId={connectionId}
+                        onClose={() => {
+                            setShowImportModal(false);
+                            setImportTable(null);
+                        }}
+                        onSuccess={() => {
+                            setShowImportModal(false);
+                            setImportTable(null);
+                        }}
+                    />
+                )
+            }
 
 
 
             {/* Query Plan Viewer */}
-            {showQueryPlan && queryPlan && connectionInfo && (
-                <QueryPlanViewer
-                    plan={queryPlan}
-                    executionTime={results[0]?.executionTime}
-                    dbType={connectionInfo.type}
-                    onClose={() => setShowQueryPlan(false)}
-                />
-            )}
+            {
+                showQueryPlan && queryPlan && connectionInfo && (
+                    <QueryPlanViewer
+                        plan={queryPlan}
+                        executionTime={results[0]?.executionTime}
+                        dbType={connectionInfo.type}
+                        onClose={() => setShowQueryPlan(false)}
+                    />
+                )
+            }
 
             {/* Table Context Menu */}
-            {contextMenu && (
-                <TableContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    tableName={contextMenu.tableName}
-                    schemaName={contextMenu.schemaName}
-                    onClose={() => setContextMenu(null)}
-                    onSelectQuery={(sql) => setQuery(sql)}
-                    onImport={() => {
-                        setImportTable({ name: contextMenu.tableName, schema: contextMenu.schemaName });
-                        setShowImportModal(true);
-                        setContextMenu(null);
-                    }}
-                />
-            )}
-
-            {/* Procedure Context Menu */}
-            {procedureMenu && (
-                <div
-                    className="fixed bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[180px]"
-                    style={{ top: procedureMenu.y, left: procedureMenu.x }}
-                    onClick={() => setProcedureMenu(null)}
-                >
-                    <button
-                        onClick={() => setQuery(`CALL ${procedureMenu.schemaName}.${procedureMenu.procedureName}();`)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                    >
-                        <Play className="w-4 h-4 text-green-500" />
-                        Execute
-                    </button>
-                    <button
-                        onClick={() => handleDebugProcedure(procedureMenu.schemaName, procedureMenu.procedureName)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-purple-500/10 text-purple-600 font-medium flex items-center gap-2"
-                    >
-                        <Bug className="w-4 h-4" />
-                        Debug Procedure
-                    </button>
-                    <button
-                        onClick={() => setQuery(`-- View definition of ${procedureMenu.procedureName}\nSELECT routine_definition FROM information_schema.routines WHERE routine_name = '${procedureMenu.procedureName}' AND routine_schema = '${procedureMenu.schemaName}';`)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                    >
-                        <FileCode className="w-4 h-4 text-blue-500" />
-                        View Definition
-                    </button>
-                    <button
-                        onClick={() => setQuery(`-- Edit procedure (modify and execute)\n-- First, get the current definition:\nSELECT routine_definition FROM information_schema.routines WHERE routine_name = '${procedureMenu.procedureName}';`)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
-                    >
-                        <Wand2 className="w-4 h-4 text-purple-500" />
-                        Edit
-                    </button>
-                    <div className="border-t border-border my-1" />
-                    <button
-                        onClick={() => setQuery(`DROP PROCEDURE IF EXISTS ${procedureMenu.schemaName}.${procedureMenu.procedureName};`)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-destructive/10 text-destructive flex items-center gap-2"
-                    >
-                        <X className="w-4 h-4" />
-                        Drop Procedure
-                    </button>
-                </div>
-            )}
-
-            {/* Click outside to close context menus */}
-            {(procedureMenu || contextMenu) && (
-                <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => {
-                        setProcedureMenu(null);
-                        setContextMenu(null);
-                    }}
-                />
-            )}
-
-            {/* AI Assistant - Floating Button */}
-            {connectionId && connectionInfo && (
-                <div className="fixed bottom-0 right-0 z-50 p-4">
-                    <AIAssistantPanel
-                        connectionId={connectionId || ''}
-                        connectionInfo={connectionInfo}
-                        schemas={schemas.map(s => s.name)}
-                        tables={Array.from(schemaTables.entries()).flatMap(([schema, tables]) =>
-                            tables.map(t => ({ schema, name: t.name }))
-                        )}
-                        onInsertQuery={(sql) => setQuery(sql)}
-                        onRunQuery={(sql) => {
-                            setQuery(sql);
-                            setTimeout(() => executeQuery(), 100);
+            {
+                contextMenu && (
+                    <TableContextMenu
+                        x={contextMenu.x}
+                        y={contextMenu.y}
+                        tableName={contextMenu.tableName}
+                        schemaName={contextMenu.schemaName}
+                        onClose={() => setContextMenu(null)}
+                        onSelectQuery={(sql) => setQuery(sql)}
+                        onImport={() => {
+                            setImportTable({ name: contextMenu.tableName, schema: contextMenu.schemaName });
+                            setShowImportModal(true);
+                            setContextMenu(null);
                         }}
                     />
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Procedure Context Menu */}
+            {
+                procedureMenu && (
+                    <div
+                        className="fixed bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[180px]"
+                        style={{ top: procedureMenu.y, left: procedureMenu.x }}
+                        onClick={() => setProcedureMenu(null)}
+                    >
+                        <button
+                            onClick={() => setQuery(`CALL ${procedureMenu.schemaName}.${procedureMenu.procedureName}();`)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                        >
+                            <Play className="w-4 h-4 text-green-500" />
+                            Execute
+                        </button>
+                        <button
+                            onClick={() => handleDebugProcedure(procedureMenu.schemaName, procedureMenu.procedureName)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-purple-500/10 text-purple-600 font-medium flex items-center gap-2"
+                        >
+                            <Bug className="w-4 h-4" />
+                            Debug Procedure
+                        </button>
+                        <button
+                            onClick={() => setQuery(`-- View definition of ${procedureMenu.procedureName}\nSELECT routine_definition FROM information_schema.routines WHERE routine_name = '${procedureMenu.procedureName}' AND routine_schema = '${procedureMenu.schemaName}';`)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                        >
+                            <FileCode className="w-4 h-4 text-blue-500" />
+                            View Definition
+                        </button>
+                        <button
+                            onClick={() => setQuery(`-- Edit procedure (modify and execute)\n-- First, get the current definition:\nSELECT routine_definition FROM information_schema.routines WHERE routine_name = '${procedureMenu.procedureName}';`)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                        >
+                            <Wand2 className="w-4 h-4 text-purple-500" />
+                            Edit
+                        </button>
+                        <div className="border-t border-border my-1" />
+                        <button
+                            onClick={() => setQuery(`DROP PROCEDURE IF EXISTS ${procedureMenu.schemaName}.${procedureMenu.procedureName};`)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-destructive/10 text-destructive flex items-center gap-2"
+                        >
+                            <X className="w-4 h-4" />
+                            Drop Procedure
+                        </button>
+                    </div>
+                )
+            }
+
+            {/* Click outside to close context menus */}
+            {
+                (procedureMenu || contextMenu) && (
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => {
+                            setProcedureMenu(null);
+                            setContextMenu(null);
+                        }}
+                    />
+                )
+            }
+
+            {/* AI Assistant - Floating Button */}
+            {
+                connectionId && connectionInfo && (
+                    <div className="fixed bottom-0 right-0 z-50 p-4">
+                        <AIAssistantPanel
+                            connectionId={connectionId || ''}
+                            connectionInfo={connectionInfo}
+                            schemas={schemas.map(s => s.name)}
+                            tables={Array.from(schemaTables.entries()).flatMap(([schema, tables]) =>
+                                tables.map(t => ({ schema, name: t.name }))
+                            )}
+                            onInsertQuery={(sql) => setQuery(sql)}
+                            onRunQuery={(sql) => {
+                                setQuery(sql);
+                                setTimeout(() => executeQuery(), 100);
+                            }}
+                        />
+                    </div>
+                )
+            }
+        </div >
     );
 }
 

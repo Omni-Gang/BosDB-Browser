@@ -62,44 +62,64 @@ const redisConfig = parseConnectionUrl(process.env.CLOUD_REDIS_URL || 'redis://d
 const mongoConfig = parseConnectionUrl(process.env.CLOUD_MONGO_URL || 'mongodb://mongo:QpXFweoQZsmLYXxwgwlDyINSBpLLVbLq@mainline.proxy.rlwy.net:12858', 'mainline.proxy.rlwy.net', 12858);
 const oracleConfig = parseConnectionUrl(process.env.CLOUD_ORACLE_URL || 'oracle://system:bosdb_secret@trolley.proxy.rlwy.net:49717/XE', 'trolley.proxy.rlwy.net', 49717);
 
+// Known Railway Port Map for Sanitization
+const RAILWAY_PORT_MAP: Record<number, string> = {
+    50346: 'switchyard.proxy.rlwy.net',
+    55276: 'metro.proxy.rlwy.net',
+    54136: 'metro.proxy.rlwy.net',
+    34540: 'centerbeam.proxy.rlwy.net',
+    12858: 'mainline.proxy.rlwy.net',
+    49717: 'trolley.proxy.rlwy.net'
+};
+
+export function sanitizeHost(host: string, port: number): string {
+    // If host is localhost/127.0.0.1 but port is a known Railway port, force the correct proxy
+    if ((host === 'localhost' || host === '127.0.0.1') && RAILWAY_PORT_MAP[port]) {
+        console.warn(`[CloudProvisioner] Detected misconfigured localhost for port ${port}. Forcing host to ${RAILWAY_PORT_MAP[port]}`);
+        return RAILWAY_PORT_MAP[port];
+    }
+    console.log(`[CloudProvisioner] Sanitizing host: ${host} -> ${host} (Port: ${port})`);
+    return host;
+}
+
 // Shared Railway database credentials (admin access)
 export const CLOUD_DATABASES = {
     postgres: {
-        host: pgConfig.host,
+        host: sanitizeHost(pgConfig.host, pgConfig.port),
         port: pgConfig.port,
         adminUser: pgConfig.username || 'postgres',
         adminPassword: pgConfig.password || '',
         ssl: true,
     },
     mysql: {
-        host: mysqlConfig.host,
+        host: sanitizeHost(mysqlConfig.host, mysqlConfig.port),
         port: mysqlConfig.port,
         adminUser: mysqlConfig.username || 'root',
         adminPassword: mysqlConfig.password || '',
         ssl: true,
     },
     mariadb: {
-        host: mariadbConfig.host,
+        host: sanitizeHost(mariadbConfig.host, mariadbConfig.port),
         port: mariadbConfig.port,
         adminUser: mariadbConfig.username || 'root',
         adminPassword: mariadbConfig.password || '',
         ssl: true,
     },
     redis: {
-        host: redisConfig.host,
+        host: sanitizeHost(redisConfig.host, redisConfig.port),
         port: redisConfig.port,
         password: redisConfig.password || '',
         ssl: true,
     },
     mongodb: {
-        host: mongoConfig.host,
+        host: sanitizeHost(mongoConfig.host, mongoConfig.port),
         port: mongoConfig.port,
         adminUser: mongoConfig.username || 'mongo',
         adminPassword: mongoConfig.password || '',
         ssl: false,
     },
     oracle: {
-        host: oracleConfig.host,
+        host: sanitizeHost(oracleConfig.host, oracleConfig.port),
         port: oracleConfig.port,
         adminUser: oracleConfig.username || 'system',
         adminPassword: oracleConfig.password || '',
@@ -201,6 +221,9 @@ function generatePassword(): string {
 /**
  * Provision a PostgreSQL database on the shared cloud instance
  */
+/**
+ * Provision a PostgreSQL database on the shared cloud instance
+ */
 async function provisionPostgres(name: string, userId: string): Promise<CloudProvisionResult> {
     const config = CLOUD_DATABASES.postgres;
     const dbName = generateDatabaseName('pg', userId);
@@ -215,21 +238,31 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
         // Dynamic import to avoid build issues
         const { Pool } = await import('pg');
 
+        // STRICT SANITIZATION: Force correct host retrieval at runtime
+        const effectiveHost = sanitizeHost(config.host, config.port);
+        console.log(`[CloudProvisioner] Postgres Admin connecting to: ${effectiveHost}:${config.port}`);
+
+        // Connect to default 'postgres' database to issue CREATE DATABASE command
         const pool = new Pool({
-            host: config.host,
+            host: effectiveHost,
             port: config.port,
             user: config.adminUser,
             password: config.adminPassword,
-            database: 'railway',
+            database: 'postgres', // Connect to default admin DB
             ssl: config.ssl ? { rejectUnauthorized: false } : false,
         });
 
-        // Create user and database
-        // Note: We use the shared 'railway' database and create schemas instead
-        // This is safer for shared hosting
-        const schemaName = dbName;
+        // Create Database and User
+        // Note: Postgres cannot run CREATE DATABASE inside a transaction block
+        try {
+            await pool.query(`CREATE DATABASE "${dbName}"`);
+            console.log(`[CloudProvisioner] Created Postgres DB: ${dbName}`);
+        } catch (e: any) {
+            // Ignore if already exists (shouldn't happen with timestamp)
+            console.warn(`[CloudProvisioner] Warning creating DB ${dbName}:`, e.message);
+        }
 
-        await pool.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+        // Create User
         await pool.query(`
             DO $$
             BEGIN
@@ -238,8 +271,12 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
                 END IF;
             END $$;
         `);
-        await pool.query(`GRANT ALL PRIVILEGES ON SCHEMA "${schemaName}" TO "${username}"`);
-        await pool.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA "${schemaName}" GRANT ALL ON TABLES TO "${username}"`);
+        console.log(`[CloudProvisioner] Created Postgres User: ${username}`);
+
+        // Grant privileges - we must connect to the NEW database to grant schema privileges
+        // but typically the owner of the DB has full rights.
+        // Let's make the new user the owner of the database
+        await pool.query(`ALTER DATABASE "${dbName}" OWNER TO "${username}"`);
 
         await pool.end();
 
@@ -249,13 +286,13 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
                 id: `cloud_pg_${Date.now()}`,
                 type: 'postgres',
                 name,
-                host: config.host,
+                host: effectiveHost, // Use sanitized host
                 port: config.port,
-                database: 'railway',
-                username: config.adminUser, // Use admin for now (schema-based isolation)
-                password: config.adminPassword,
+                database: dbName,
+                username: username,
+                password: password,
                 ssl: config.ssl,
-                connectionString: `postgresql://${config.adminUser}:${config.adminPassword}@${config.host}:${config.port}/railway?schema=${schemaName}`,
+                connectionString: `postgresql://${username}:${password}@${effectiveHost}:${config.port}/${dbName}`,
             },
         };
     } catch (error: any) {
@@ -267,13 +304,41 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
 /**
  * Provision a MySQL database on the shared cloud instance
  */
+/**
+ * Provision a MySQL database on the shared cloud instance
+ */
 async function provisionMySQL(name: string, userId: string): Promise<CloudProvisionResult> {
     const config = CLOUD_DATABASES.mysql;
     const dbName = generateDatabaseName('mysql', userId);
+    const username = `u_${dbName.slice(-12)}`; // Limit char length
+    const password = generatePassword();
 
     try {
-        // We use the shared 'railway' database for MySQL as well
-        // For true isolation, we'd create separate databases, but Railway free tier has limits
+        const mysql = await import('mysql2/promise');
+
+        // STRICT SANITIZATION
+        const effectiveHost = sanitizeHost(config.host, config.port);
+        console.log(`[CloudProvisioner] MySQL Admin connecting to: ${effectiveHost}:${config.port}`);
+
+        const connection = await mysql.createConnection({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+        });
+
+        console.log(`[CloudProvisioner] Creating MySQL DB: ${dbName}`);
+        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+
+        console.log(`[CloudProvisioner] Creating MySQL User: ${username}`);
+        await connection.query(`CREATE USER '${username}'@'%' IDENTIFIED BY '${password}'`);
+
+        console.log(`[CloudProvisioner] Granting Privileges`);
+        await connection.query(`GRANT ALL PRIVILEGES ON \`${dbName}\`.* TO '${username}'@'%'`);
+        await connection.query('FLUSH PRIVILEGES');
+
+        await connection.end();
 
         return {
             success: true,
@@ -281,13 +346,13 @@ async function provisionMySQL(name: string, userId: string): Promise<CloudProvis
                 id: `cloud_mysql_${Date.now()}`,
                 type: 'mysql',
                 name,
-                host: config.host,
+                host: effectiveHost, // Use sanitized host
                 port: config.port,
-                database: 'railway',
-                username: config.adminUser,
-                password: config.adminPassword,
+                database: dbName,
+                username: username,
+                password: password,
                 ssl: config.ssl,
-                connectionString: `mysql://${config.adminUser}:${config.adminPassword}@${config.host}:${config.port}/railway`,
+                connectionString: `mysql://${username}:${password}@${effectiveHost}:${config.port}/${dbName}`,
             },
         };
     } catch (error: any) {
@@ -503,4 +568,194 @@ export function isCloudProvisioningSupported(type: string): boolean {
  */
 export function getCloudSupportedTypes(): string[] {
     return Object.keys(CLOUD_TYPE_MAPPING);
+}
+
+/**
+ * Destroy a PostgreSQL database
+ */
+async function destroyPostgres(dbName: string, username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.postgres;
+
+    try {
+        const { Pool } = await import('pg');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const pool = new Pool({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            database: 'postgres',
+            ssl: config.ssl ? { rejectUnauthorized: false } : false,
+        });
+
+        // Terminate existing connections first
+        await pool.query(`
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = '${dbName}'
+            AND pid <> pg_backend_pid()
+        `);
+
+        await pool.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+        console.log(`[CloudProvisioner] Dropped Postgres DB: ${dbName}`);
+
+        if (username) {
+            try {
+                await pool.query(`DROP USER IF EXISTS "${username}"`);
+                console.log(`[CloudProvisioner] Dropped Postgres User: ${username}`);
+            } catch (e: any) {
+                // User might own other objects or not exist
+                console.warn(`[CloudProvisioner] Warning dropping user ${username}:`, e.message);
+            }
+        }
+
+        await pool.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy Postgres DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MySQL database
+ */
+async function destroyMySQL(dbName: string, username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.mysql;
+
+    try {
+        const mysql = await import('mysql2/promise');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const connection = await mysql.createConnection({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+        });
+
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+        console.log(`[CloudProvisioner] Dropped MySQL DB: ${dbName}`);
+
+        if (username) {
+            await connection.query(`DROP USER IF EXISTS '${username}'@'%'`);
+            console.log(`[CloudProvisioner] Dropped MySQL User: ${username}`);
+        }
+
+        await connection.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MySQL DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MariaDB database
+ */
+async function destroyMariaDB(dbName: string, username?: string): Promise<void> {
+    // Very similar to MySQL
+    const config = CLOUD_DATABASES.mariadb;
+
+    try {
+        const mysql = await import('mysql2/promise');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const connection = await mysql.createConnection({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+        });
+
+        // MariaDB usually allows DROP DATABASE, but let's be safe
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+
+        if (username) {
+            await connection.query(`DROP USER IF EXISTS '${username}'@'%'`);
+        }
+
+        await connection.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MariaDB DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MongoDB database
+ */
+async function destroyMongoDB(dbName: string, _username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.mongodb;
+
+    try {
+        const { MongoClient } = await import('mongodb');
+        const uri = config.adminPassword
+            ? `mongodb://${config.adminUser}:${config.adminPassword}@${config.host}:${config.port}/?authSource=admin`
+            : `mongodb://${config.host}:${config.port}/`;
+
+        const client = new MongoClient(uri, {
+            tls: config.ssl,
+        });
+
+        await client.connect();
+        const db = client.db(dbName);
+        await db.dropDatabase();
+        console.log(`[CloudProvisioner] Dropped MongoDB DB: ${dbName}`);
+
+        // MongoDB users are often db-specific, dropping DB might drop users if they are created for that DB.
+        // If we created a user in the 'admin' DB for this specific DB, we should remove it, 
+        // but our provisioner logic (from reading above) seemed to rely on connection string auth or didn't explicitly show creating a separate auth user in admin for every DB 
+        // (provisionMongoDB above shows: it returns a connection string. It relies on the 'admin' user usually or creates one-off? 
+        // Actually looking at 'provisionMongoDB', it returns credentials using the shared admin user for the connection string usually?
+        // Wait, line 406 says `username: config.adminUser`. So it doesn't create a new user. 
+        // So we just need to drop the database.
+
+        await client.close();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MongoDB DB:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Destroy a cloud database
+ */
+export async function destroyCloudDatabase(
+    type: string,
+    dbName: string,
+    username?: string
+): Promise<void> {
+    console.log(`[CloudProvisioner] Destroying ${type} database: ${dbName}`);
+
+    const cloudType = CLOUD_TYPE_MAPPING[type.toLowerCase()];
+
+    if (!cloudType) {
+        console.warn(`[CloudProvisioner] Cannot destroy unknown type: ${type}`);
+        return;
+    }
+
+    try {
+        switch (cloudType) {
+            case 'postgres':
+                await destroyPostgres(dbName, username);
+                break;
+            case 'mysql':
+                await destroyMySQL(dbName, username);
+                break;
+            case 'mariadb':
+                await destroyMariaDB(dbName, username);
+                break;
+            case 'mongodb':
+                await destroyMongoDB(dbName, username);
+                break;
+            default:
+                console.warn(`[CloudProvisioner] Destroy not implemented for ${type}`);
+        }
+    } catch (error) {
+        // Don't throw, just log. We want the connection deletion in the app to succeed even if cloud cleanup fails.
+        console.error(`[CloudProvisioner] Error destroying cloud database ${dbName}:`, error);
+    }
 }
