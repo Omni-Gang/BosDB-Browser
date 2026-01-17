@@ -181,13 +181,41 @@
     "id": "conn_1768133497375_19syg9j57",
     "name": "My Postgres Database",
     "type": "postgres",
-    "host": "localhost",
+    "host": "switchyard.proxy.rlwy.net",
     "port": 50346,
     "database": "railway",
     "credentials": "wLQR2KJ7fyU1+f5R+Y/fM5O+mIZpsycmILkdprvvoF08/L8jPQQ0c0bZD3eMG9pza9E75C2HqGKJHyBkY7nCkX7It+JeKvMDZ9YmX8c5byti0GLqkuvnAlEcodUHNxfpDpxLOzg=",
     "readOnly": false,
     "userEmail": "demo@gmail.com",
     "organizationId": "demo-individual-org",
-    "createdAt": "2026-01-11T12:11:37.375Z"
+    "createdAt": "2026-01-11T12:11:37.375Z",
+    "ssl": true
+  },
+  "conn_1768151902861_4ikcmeenj": {
+    "id": "conn_1768151902861_4ikcmeenj",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "switchyard.proxy.rlwy.net",
+    "port": 50346,
+    "database": "railway",
+    "credentials": "RDQFEr2u0Q99utI/D9ct/rOqQdu7csFZH/ZesFQWGDHHXYts6h9ZJ6zmCMLmfiaKMpSORXvoU/OEzLzw6o71uk8u9yx8QdLX+zPbEF5T3BP2wkKcms9C1MT599NXSzPAA0UHXj8=",
+    "readOnly": false,
+    "userEmail": "LT@bosdb.com",
+    "organizationId": "ind-LT",
+    "createdAt": "2026-01-11T17:18:22.861Z",
+    "ssl": true
+  },
+  "conn_1768670750712_p7hxsljv6": {
+    "id": "conn_1768670750712_p7hxsljv6",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 50346,
+    "database": "railway",
+    "credentials": "Hp1aTMlwG9wWQtRQM7/VZFKBvAr7y9Is1gXVYbqk+n0s3gPiW4evGceC4UMVH3VuQUP93MqBxhbCDSDVQ9UeHmcG9ECmYMAI2W8x88cYmyUuUQ60VjFhAPDYSVYhtG2WN8r4s8E=",
+    "readOnly": false,
+    "userEmail": "goandbuyeasy77@gmail.com",
+    "organizationId": "ind-goandbuyeasy77",
+    "createdAt": "2026-01-17T17:25:50.712Z"
   }
 }
