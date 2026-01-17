@@ -1,29 +1,5 @@
 [
   {
-    "connectionId": "conn_1768133491813_6jhckgwqg",
-    "connectionName": "My Postgres Database",
-    "query": "SELECT * FROM information_schema.tables LIMIT 10",
-    "executedAt": "2026-01-11T12:11:42.041Z",
-    "executionTime": 938,
-    "rowCount": 10,
-    "success": true,
-    "userEmail": "demo@gmail.com",
-    "orgId": "demo-individual-org",
-    "id": "history_1768133502041_g37dd2jub"
-  },
-  {
-    "connectionId": "conn_1768133497375_19syg9j57",
-    "connectionName": "My Postgres Database",
-    "query": "drop table students",
-    "executedAt": "2026-01-11T12:11:58.731Z",
-    "executionTime": 956,
-    "rowCount": 0,
-    "success": true,
-    "userEmail": "demo@gmail.com",
-    "orgId": "demo-individual-org",
-    "id": "history_1768133518732_pcdg9ywnj"
-  },
-  {
     "connectionId": "conn_1768238128481_4ww2qc02l",
     "connectionName": "My Mysql Database",
     "query": "SELECT * FROM railway.students LIMIT 100",
@@ -1169,5 +1145,65 @@
     "userEmail": "testy@gmail.com",
     "orgId": "ind-testy",
     "id": "history_1768508102061_y1bnlwnd1"
+  },
+  {
+    "connectionId": "conn_1768670956437_s6kv4fqjl",
+    "connectionName": "My Postgres Database",
+    "query": "CREATE TABLE students (\r\n    id SERIAL PRIMARY KEY,\r\n    name VARCHAR(100) NOT NULL,\r\n    age INT,\r\n    email VARCHAR(150) UNIQUE,\r\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\r\n)",
+    "executedAt": "2026-01-17T17:30:01.413Z",
+    "executionTime": 621,
+    "rowCount": 0,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768671001415_mhnctt6ba"
+  },
+  {
+    "connectionId": "conn_1768670956437_s6kv4fqjl",
+    "connectionName": "My Postgres Database",
+    "query": "INSERT INTO students (name, age, email)\r\nVALUES\r\n    ('Amit Kumar', 22, 'amit@gmail.com'),\r\n    ('Priya Singh', 21, 'priya@gmail.com'),\r\n    ('Neha Verma', 23, 'neha@gmail.com')",
+    "executedAt": "2026-01-17T17:30:07.098Z",
+    "executionTime": 584,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768671007098_n1wnlk18y"
+  },
+  {
+    "connectionId": "conn_1768670956437_s6kv4fqjl",
+    "connectionName": "My Postgres Database",
+    "query": "select * from students",
+    "executedAt": "2026-01-17T17:30:11.836Z",
+    "executionTime": 695,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768671011836_2jzj20zxo"
+  },
+  {
+    "connectionId": "conn_1768670956437_s6kv4fqjl",
+    "connectionName": "My Postgres Database",
+    "query": "UPDATE students SET age = '99' WHERE id = 2",
+    "executedAt": "2026-01-17T17:30:22.152Z",
+    "executionTime": 626,
+    "rowCount": 1,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768671022152_35hgcfyqg"
+  },
+  {
+    "connectionId": "conn_1768670956437_s6kv4fqjl",
+    "connectionName": "My Postgres Database",
+    "query": "select * from students",
+    "executedAt": "2026-01-17T17:30:22.855Z",
+    "executionTime": 612,
+    "rowCount": 3,
+    "success": true,
+    "userEmail": "testy@gmail.com",
+    "orgId": "ind-testy",
+    "id": "history_1768671022856_v83yppmoo"
   }
 ]

@@ -569,3 +569,193 @@ export function isCloudProvisioningSupported(type: string): boolean {
 export function getCloudSupportedTypes(): string[] {
     return Object.keys(CLOUD_TYPE_MAPPING);
 }
+
+/**
+ * Destroy a PostgreSQL database
+ */
+async function destroyPostgres(dbName: string, username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.postgres;
+
+    try {
+        const { Pool } = await import('pg');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const pool = new Pool({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            database: 'postgres',
+            ssl: config.ssl ? { rejectUnauthorized: false } : false,
+        });
+
+        // Terminate existing connections first
+        await pool.query(`
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = '${dbName}'
+            AND pid <> pg_backend_pid()
+        `);
+
+        await pool.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+        console.log(`[CloudProvisioner] Dropped Postgres DB: ${dbName}`);
+
+        if (username) {
+            try {
+                await pool.query(`DROP USER IF EXISTS "${username}"`);
+                console.log(`[CloudProvisioner] Dropped Postgres User: ${username}`);
+            } catch (e: any) {
+                // User might own other objects or not exist
+                console.warn(`[CloudProvisioner] Warning dropping user ${username}:`, e.message);
+            }
+        }
+
+        await pool.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy Postgres DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MySQL database
+ */
+async function destroyMySQL(dbName: string, username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.mysql;
+
+    try {
+        const mysql = await import('mysql2/promise');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const connection = await mysql.createConnection({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+        });
+
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+        console.log(`[CloudProvisioner] Dropped MySQL DB: ${dbName}`);
+
+        if (username) {
+            await connection.query(`DROP USER IF EXISTS '${username}'@'%'`);
+            console.log(`[CloudProvisioner] Dropped MySQL User: ${username}`);
+        }
+
+        await connection.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MySQL DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MariaDB database
+ */
+async function destroyMariaDB(dbName: string, username?: string): Promise<void> {
+    // Very similar to MySQL
+    const config = CLOUD_DATABASES.mariadb;
+
+    try {
+        const mysql = await import('mysql2/promise');
+        const effectiveHost = sanitizeHost(config.host, config.port);
+
+        const connection = await mysql.createConnection({
+            host: effectiveHost,
+            port: config.port,
+            user: config.adminUser,
+            password: config.adminPassword,
+            ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+        });
+
+        // MariaDB usually allows DROP DATABASE, but let's be safe
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+
+        if (username) {
+            await connection.query(`DROP USER IF EXISTS '${username}'@'%'`);
+        }
+
+        await connection.end();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MariaDB DB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Destroy a MongoDB database
+ */
+async function destroyMongoDB(dbName: string, _username?: string): Promise<void> {
+    const config = CLOUD_DATABASES.mongodb;
+
+    try {
+        const { MongoClient } = await import('mongodb');
+        const uri = config.adminPassword
+            ? `mongodb://${config.adminUser}:${config.adminPassword}@${config.host}:${config.port}/?authSource=admin`
+            : `mongodb://${config.host}:${config.port}/`;
+
+        const client = new MongoClient(uri, {
+            tls: config.ssl,
+        });
+
+        await client.connect();
+        const db = client.db(dbName);
+        await db.dropDatabase();
+        console.log(`[CloudProvisioner] Dropped MongoDB DB: ${dbName}`);
+
+        // MongoDB users are often db-specific, dropping DB might drop users if they are created for that DB.
+        // If we created a user in the 'admin' DB for this specific DB, we should remove it, 
+        // but our provisioner logic (from reading above) seemed to rely on connection string auth or didn't explicitly show creating a separate auth user in admin for every DB 
+        // (provisionMongoDB above shows: it returns a connection string. It relies on the 'admin' user usually or creates one-off? 
+        // Actually looking at 'provisionMongoDB', it returns credentials using the shared admin user for the connection string usually?
+        // Wait, line 406 says `username: config.adminUser`. So it doesn't create a new user. 
+        // So we just need to drop the database.
+
+        await client.close();
+    } catch (error: any) {
+        console.error('[CloudProvisioner] Failed to destroy MongoDB DB:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Destroy a cloud database
+ */
+export async function destroyCloudDatabase(
+    type: string,
+    dbName: string,
+    username?: string
+): Promise<void> {
+    console.log(`[CloudProvisioner] Destroying ${type} database: ${dbName}`);
+
+    const cloudType = CLOUD_TYPE_MAPPING[type.toLowerCase()];
+
+    if (!cloudType) {
+        console.warn(`[CloudProvisioner] Cannot destroy unknown type: ${type}`);
+        return;
+    }
+
+    try {
+        switch (cloudType) {
+            case 'postgres':
+                await destroyPostgres(dbName, username);
+                break;
+            case 'mysql':
+                await destroyMySQL(dbName, username);
+                break;
+            case 'mariadb':
+                await destroyMariaDB(dbName, username);
+                break;
+            case 'mongodb':
+                await destroyMongoDB(dbName, username);
+                break;
+            default:
+                console.warn(`[CloudProvisioner] Destroy not implemented for ${type}`);
+        }
+    } catch (error) {
+        // Don't throw, just log. We want the connection deletion in the app to succeed even if cloud cleanup fails.
+        console.error(`[CloudProvisioner] Error destroying cloud database ${dbName}:`, error);
+    }
+}
