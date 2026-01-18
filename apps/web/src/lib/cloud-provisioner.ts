@@ -262,8 +262,13 @@ async function provisionPostgres(name: string, userId: string): Promise<CloudPro
             await pool.query(`CREATE DATABASE "${dbName}"`);
             console.log(`[CloudProvisioner] Created Postgres DB: ${dbName}`);
         } catch (e: any) {
-            // Ignore if already exists (shouldn't happen with timestamp)
-            console.warn(`[CloudProvisioner] Warning creating DB ${dbName}:`, e.message);
+            // Ignore if already exists (42P04)
+            if (e.code === '42P04') {
+                console.warn(`[CloudProvisioner] DB ${dbName} already exists, continuing...`);
+            } else {
+                console.error(`[CloudProvisioner] Failed to create DB ${dbName}:`, e);
+                throw e; // Fatal error
+            }
         }
 
         // Create User
