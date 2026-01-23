@@ -573,7 +573,7 @@ function LoginForm() {
                             onSuccess={handleGoogleSuccess}
                             onError={() => setError('Google Login Failed')}
                             theme="filled_black"
-                            shape="rect"
+                            shape="rectangular"
                             size="large"
                             width="350"
                           />

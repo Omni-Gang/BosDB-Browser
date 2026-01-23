@@ -60,10 +60,24 @@ export async function rewindSession(sessionId: string, _runner?: any): Promise<v
     }
 }
 
+export interface IDebugEngine {
+    getSession: (id: string) => DebugSession | null;
+    createSession: (connectionId: string, query: string, breakpoints: number[], userId?: string | null) => DebugSession;
+    stepOver: (sessionId: string) => Promise<{ success: boolean; currentStatement?: DebugStatement; completed?: boolean; error?: string }>;
+    continue: (sessionId: string) => Promise<{ success: boolean; pausedAt?: number; completed?: boolean; error?: string }>;
+    pause: (sessionId: string) => void;
+    resume: (sessionId: string) => void;
+    rewind: (sessionId: string, _runner?: any) => Promise<void>;
+    deleteSession: (sessionId: string) => void;
+    getAllSessions: () => DebugSession[];
+    setBreakpoint: (sessionId: string, type: string, config: any) => { id: string; type: string; config: any } | null;
+    getBreakpoints: (sessionId: string) => { id: string; type: string; config: { line: number } }[];
+}
+
 /**
  * Compatibility Wrapper for routes using getDebugEngine()
  */
-export function getDebugEngine() {
+export function getDebugEngine(): IDebugEngine {
     return {
         getSession: (id: string) => getDebugSession(id),
         createSession: createDebugSession,

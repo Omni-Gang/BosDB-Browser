@@ -209,13 +209,28 @@
     "id": "conn_1768670750712_p7hxsljv6",
     "name": "My Postgres Database",
     "type": "postgres",
-    "host": "localhost",
+    "host": "switchyard.proxy.rlwy.net",
     "port": 50346,
     "database": "railway",
     "credentials": "Hp1aTMlwG9wWQtRQM7/VZFKBvAr7y9Is1gXVYbqk+n0s3gPiW4evGceC4UMVH3VuQUP93MqBxhbCDSDVQ9UeHmcG9ECmYMAI2W8x88cYmyUuUQ60VjFhAPDYSVYhtG2WN8r4s8E=",
     "readOnly": false,
     "userEmail": "goandbuyeasy77@gmail.com",
     "organizationId": "ind-goandbuyeasy77",
-    "createdAt": "2026-01-17T17:25:50.712Z"
+    "createdAt": "2026-01-17T17:25:50.712Z",
+    "ssl": true
+  },
+  "conn_1769200240512_g0fr09e7q": {
+    "id": "conn_1769200240512_g0fr09e7q",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "switchyard.proxy.rlwy.net",
+    "port": 50346,
+    "database": "bosdb_pg_indgoand_mkrc51rt",
+    "credentials": "3GbFnNG0+lvjMuh7yWqchVPnT1tUy4TzaaAB0eP2fBXimKfVzfzQSb+mBdWrt5upiz85zGNfyPZa9q1yByGfU4N/z4sCbPbY35xwbLWYiPtfC2DRdPWjsljEADgaqWLoHwPoQQ9c",
+    "readOnly": false,
+    "userEmail": "goandbuyeasy77@gmail.com",
+    "organizationId": "ind-goandbuyeasy77",
+    "createdAt": "2026-01-23T20:30:40.513Z",
+    "isProvisioned": false
   }
 }
