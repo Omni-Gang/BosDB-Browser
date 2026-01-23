@@ -111,6 +111,31 @@ export async function clearPendingChanges(connectionId: string): Promise<void> {
 }
 
 /**
+ * Remove specific pending changes
+ */
+export async function removePendingChanges(connectionId: string, changeIds: string[]): Promise<void> {
+    let current = await getPendingChangesFromStorage(connectionId);
+    
+    // Filter out the committed changes
+    current = current.filter(c => !changeIds.includes(c.id || ''));
+    
+    inMemoryPendingChanges.set(connectionId, current);
+
+    // Persist to file system in local dev
+    if (typeof window === 'undefined' && !process.env.VERCEL) {
+        try {
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const vcsDir = path.join(process.cwd(), '.bosdb-vcs', connectionId);
+            const pendingPath = path.join(vcsDir, 'pending.json');
+            await fs.writeFile(pendingPath, JSON.stringify({ changes: current }, null, 2));
+        } catch (error) {
+            console.error('[VCS] Failed to persist pending changes removal:', error);
+        }
+    }
+}
+
+/**
  * Create a commit
  */
 export async function createCommit(commit: VCSCommit): Promise<void> {
@@ -118,8 +143,14 @@ export async function createCommit(commit: VCSCommit): Promise<void> {
     commits.push(commit);
     inMemoryCommits.set(commit.connectionId, commits);
 
-    // Clear pending changes after commit
-    await clearPendingChanges(commit.connectionId);
+    // Clear ONLY the committed changes
+    if (commit.changes && commit.changes.length > 0) {
+        const changeIds = commit.changes.map(c => c.id || '').filter(id => id !== '');
+        await removePendingChanges(commit.connectionId, changeIds);
+    } else {
+        // Fallback for safety - clear all if no specific changes tracked (should not happen in new flow)
+        await clearPendingChanges(commit.connectionId);
+    }
 
     // Persist to file system in local dev
     if (typeof window === 'undefined' && !process.env.VERCEL) {

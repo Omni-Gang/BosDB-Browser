@@ -12,7 +12,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Get pending changes
-        const changes = await getPendingChangesFromStorage(connectionId);
+        // Use provided changes (partial commit) or fetch all pending (commit all)
+        const changes = body.changes || await getPendingChangesFromStorage(connectionId);
 
         if (changes.length === 0) {
             return NextResponse.json({ error: 'No pending changes to commit' }, { status: 400 });

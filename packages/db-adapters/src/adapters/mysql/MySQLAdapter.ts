@@ -119,7 +119,7 @@ export class MySQLAdapter extends BaseDBAdapter {
                     SCHEMA_NAME as name,
                     DEFAULT_CHARACTER_SET_NAME as charset
                 FROM information_schema.SCHEMATA
-                WHERE SCHEMA_NAME NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')
+                WHERE SCHEMA_NAME = DATABASE()
                 ORDER BY SCHEMA_NAME
             `);
 

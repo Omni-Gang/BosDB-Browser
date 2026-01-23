@@ -249,7 +249,7 @@ function VersionControlContent() {
         }
 
         try {
-            const res = await fetch(`/api/vcs/rollback/diff?connectionId=${connectionId}&fromRevision=${compareFrom}&toRevision=${compareTo}`);
+            const res = await fetch(`/api/vcs/rollback?connectionId=${connectionId}&fromRevision=${compareFrom}&toRevision=${compareTo}`);
             const result = await res.json();
 
             if (res.ok) {
