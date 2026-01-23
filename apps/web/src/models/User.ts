@@ -13,6 +13,8 @@ export interface IUser {
     organizationId: string;
     permissions?: any[];
     subscription?: any;
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
     createdAt: Date;
 }
 
@@ -28,6 +30,8 @@ const UserSchema = new Schema<IUser>({
     organizationId: { type: String, required: true },
     permissions: [{ type: Schema.Types.Mixed }],
     subscription: { type: Schema.Types.Mixed },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
     createdAt: { type: Date, default: Date.now },
 });
 
