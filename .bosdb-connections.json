@@ -110,20 +110,6 @@
     "createdAt": "2026-01-11T09:07:03.598Z",
     "ssl": true
   },
-  "conn_1768132065658_meza590hf": {
-    "id": "conn_1768132065658_meza590hf",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "switchyard.proxy.rlwy.net",
-    "port": 50346,
-    "database": "railway",
-    "credentials": "jhH5dEVw0gF4oE/5+gyVn+9rLGX9fBRo3CTnXHe6DwiRIcFs0Kj/ryQulofZcmKKne9ZSGAyWEUxD1aBpFjVSQojSnidVp/Xn9n3Ku4XlfWwS4D2w3oR3A200VdJtLi1fqD4Xjk=",
-    "readOnly": false,
-    "userEmail": "ayush@flipkart.com",
-    "organizationId": "flipkart.com",
-    "createdAt": "2026-01-11T11:47:45.658Z",
-    "ssl": true
-  },
   "conn_1768669248551_dsxoa1y9h": {
     "id": "conn_1768669248551_dsxoa1y9h",
     "name": "My Postgres Database",
@@ -149,36 +135,6 @@
     "readOnly": false,
     "userEmail": "demo@gmail.com",
     "organizationId": "demo-individual-org",
-    "createdAt": "2026-01-11T12:11:37.375Z",
-    "ssl": true
-  },
-  "conn_1768676014384_1d113kd3p": {
-    "id": "conn_1768676014384_1d113kd3p",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "switchyard.proxy.rlwy.net",
-    "port": 50346,
-    "database": "bosdb_pg_indtesty_mkio13uk",
-    "credentials": "ldwS5ZWJ1vn9hhLyzdkIElJdfNwg9NkfHLWuM4IaSDzYQFOrPidO2yNrCC9LwF2BHUmRx5dXF7e6om/g9mmXnhknTBGdrzG6sn9iH04NbudlCtuR5tG++DYO7W0UP3mTsPCvX0Fk",
-    "readOnly": false,
-    "userEmail": "testy@gmail.com",
-    "organizationId": "ind-testy",
-    "createdAt": "2026-01-17T18:53:34.384Z",
-    "isProvisioned": false,
-    "ssl": true
-  },
-  "conn_1768676213256_ba7dxwp4j": {
-    "id": "conn_1768676213256_ba7dxwp4j",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "switchyard.proxy.rlwy.net",
-    "port": 50346,
-    "database": "bosdb_pg_indtesty_mkio5e0u",
-    "credentials": "TsICXCOqY87E1S2Ki1aaUg+D6yYjwCuuY8c8pedr/RQ6wd0K/Uy0MINsPqIs+jF51Fvlzb7976nIkuKLwZZZ2vWEDgwWhtFya4sEq3ZWYD9ibbJrVzI59awM680KrRRI91qxqT9r",
-    "readOnly": false,
-    "userEmail": "testy@gmail.com",
-    "organizationId": "ind-testy",
-    "createdAt": "2026-01-17T18:56:53.256Z",
-    "isProvisioned": false
+    "createdAt": "2026-01-11T12:11:37.375Z"
   }
 }
