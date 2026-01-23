@@ -110,45 +110,28 @@ export async function getOrCreateOrgForUser(email: string, accountType: 'individ
         const isCommon = COMMON_EMAIL_DOMAINS.includes(domain);
 
         if (isCommon) {
-            const userId = email.split('@')[0];
-            const orgId = `ind-${userId}`;
-            org = await getOrganizationById(orgId);
-
-            if (!org) {
-                const newOrg = {
-                    id: orgId,
-                    name: `${userId}'s Personal Workspace`,
-                    type: 'individual' as const,
-                    domain: 'personal',
-                    adminUserId: userId,
-                    subscription: { plan: 'free' as const, isTrial: false },
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-                await Organization.create(newOrg);
-                org = await getOrganizationById(orgId);
-                isNew = true;
-            }
-        } else {
-            // Real Enterprise Domain
-            org = await findOrganizationByDomain(domain);
-
-            if (!org) {
-                const newOrg = {
-                    id: domain,
-                    name: `@${domain}`, // Use email domain format: @bosdb.com, @flipkart.com
-                    type: 'enterprise' as const,
-                    domain: domain,
-                    adminUserId: null,
-                    subscription: { plan: 'free' as const, isTrial: true, planType: 'trial' as const },
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-                await Organization.create(newOrg);
-                org = await getOrganizationById(domain);
-                isNew = true;
-            }
+            throw new Error("Public email domains (Gmail, Yahoo, etc.) are not allowed for Company registration. Please use your work email.");
         }
+
+        // Real Enterprise Domain
+        org = await findOrganizationByDomain(domain);
+
+        if (!org) {
+            const newOrg = {
+                id: domain,
+                name: `@${domain}`, // Use email domain format: @bosdb.com, @flipkart.com
+                type: 'enterprise' as const,
+                domain: domain,
+                adminUserId: null,
+                subscription: { plan: 'free' as const, isTrial: true, planType: 'trial' as const },
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            await Organization.create(newOrg);
+            org = await getOrganizationById(domain);
+            isNew = true;
+        }
+
     }
 
     if (!org) throw new Error("Failed to create org");
