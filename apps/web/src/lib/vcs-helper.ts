@@ -10,7 +10,7 @@ export interface DatabaseChange {
     target: string;
     description: string;
     query: string;
-    rollbackSQL: string | 'MANUAL';
+    rollbackSQL: string | 'MANUAL' | null;
     status: 'APPLIED' | 'REVERTED';
     tableName?: string;
     affectedRows?: number;
@@ -136,8 +136,8 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
 
     // Table Schema changes
     if (normalizedQuery.includes('CREATE TABLE')) {
-        const match = cleanQuery.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'SCHEMA',
             operation: 'CREATE',
@@ -151,8 +151,8 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
     }
 
     if (normalizedQuery.includes('ALTER TABLE')) {
-        const match = cleanQuery.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'SCHEMA',
             operation: 'ALTER',
@@ -166,8 +166,8 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
     }
 
     if (normalizedQuery.includes('DROP TABLE')) {
-        const match = cleanQuery.match(/DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'SCHEMA',
             operation: 'DROP',
@@ -267,8 +267,8 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
     // Data changes (DML)
     if (normalizedQuery.startsWith('INSERT INTO') || normalizedQuery.startsWith('MERGE')) {
         const isMerge = normalizedQuery.startsWith('MERGE');
-        const match = cleanQuery.match(/(?:INSERT\s+INTO|MERGE\s+INTO?)\s+([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/(?:INSERT\s+INTO|MERGE\s+INTO?)\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'DATA',
             operation: isMerge ? 'ALTER' as any : 'INSERT',
@@ -277,7 +277,7 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
             description: `${isMerge ? 'Merge' : 'Insert'} ${affectedRows || 1} row(s) into ${tableName}`,
             query,
             affectedRows,
-            rollbackSQL: 'MANUAL',
+            rollbackSQL: null,
             status: 'APPLIED'
         };
     }
@@ -310,8 +310,8 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
     }
 
     if (normalizedQuery.startsWith('UPDATE')) {
-        const match = cleanQuery.match(/UPDATE\s+([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/UPDATE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'DATA',
             operation: 'UPDATE',
@@ -320,14 +320,14 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
             description: `Update ${affectedRows || 'unknown'} row(s) in ${tableName}`,
             query,
             affectedRows,
-            rollbackSQL: 'MANUAL',
+            rollbackSQL: null,
             status: 'APPLIED'
         };
     }
 
     if (normalizedQuery.startsWith('DELETE FROM')) {
-        const match = cleanQuery.match(/DELETE\s+FROM\s+([`"]?)(\w+)\1/i);
-        const tableName = match ? match[2] : 'unknown';
+        const match = cleanQuery.match(/DELETE\s+FROM\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        const tableName = match ? match[1] : 'unknown';
         return {
             type: 'DATA',
             operation: 'DELETE',
@@ -336,7 +336,7 @@ export function parseQueryForChanges(query: string, affectedRows?: number): Data
             description: `Delete ${affectedRows || 'unknown'} row(s) from ${tableName}`,
             query,
             affectedRows,
-            rollbackSQL: 'MANUAL',
+            rollbackSQL: null,
             status: 'APPLIED'
         };
     }
@@ -380,55 +380,55 @@ export function generateRollbackSQL(query: string, metadata?: any): string | 'MA
 
     // 3. TABLE OPERATIONS
     if (upper.startsWith('CREATE TABLE')) {
-        const name = getMatch(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"]?)(\w+)\1/i);
+        const name = getMatch(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i, 1);
         return name ? `DROP TABLE IF EXISTS ${name};` : 'MANUAL';
     }
     if (upper.startsWith('DROP TABLE')) return metadata?.originalCreateSQL || 'MANUAL';
     if (upper.startsWith('TRUNCATE')) return 'MANUAL';
 
-    if (upper.match(/(RENAME\s+TABLE|ALTER\s+TABLE)\s+([`"]?)(\w+)\2\s+RENAME\s+TO\s+([`"]?)(\w+)\4/i)) {
-        const m = q.match(/(RENAME\s+TABLE|ALTER\s+TABLE)\s+([`"]?)(\w+)\2\s+RENAME\s+TO\s+([`"]?)(\w+)\4/i);
-        return m ? `ALTER TABLE ${m[5]} RENAME TO ${m[3]};` : 'MANUAL';
+    if (upper.match(/(?:RENAME\s+TABLE|ALTER\s+TABLE)\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+RENAME\s+TO\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i)) {
+        const m = q.match(/(?:RENAME\s+TABLE|ALTER\s+TABLE)\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+RENAME\s+TO\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        return m ? `ALTER TABLE ${m[2]} RENAME TO ${m[1]};` : 'MANUAL';
     }
 
-    if (upper.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+OWNER\s+TO\s+/i)) {
+    if (upper.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+OWNER\s+TO\s+/i)) {
         if (metadata?.oldOwner) {
-            const m = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1/i);
-            return m ? `ALTER TABLE ${m[2]} OWNER TO ${metadata.oldOwner};` : 'MANUAL';
+            const m = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+            return m ? `ALTER TABLE ${m[1]} OWNER TO ${metadata.oldOwner};` : 'MANUAL';
         }
         return 'MANUAL';
     }
 
     // 4. COLUMN OPERATIONS
     if (upper.includes('ALTER TABLE') && upper.includes('ADD')) {
-        const mt = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+ADD\s+(?:COLUMN\s+)?([`"]?)(\w+)\3/i);
-        return mt ? `ALTER TABLE ${mt[2]} DROP COLUMN ${mt[4]};` : 'MANUAL';
+        const mt = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+ADD\s+(?:COLUMN\s+)?([`"]?)(\w+)\2/i);
+        return mt ? `ALTER TABLE ${mt[1]} DROP COLUMN ${mt[3]};` : 'MANUAL';
     }
     if (upper.includes('ALTER TABLE') && upper.includes('DROP COLUMN')) {
-        const mt = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+DROP\s+COLUMN\s+([`"]?)(\w+)\3/i);
-        return (mt && metadata?.columnDefinition) ? `ALTER TABLE ${mt[2]} ADD COLUMN ${metadata.columnDefinition};` : 'MANUAL';
+        const mt = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+DROP\s+COLUMN\s+([`"]?)(\w+)\2/i);
+        return (mt && metadata?.columnDefinition) ? `ALTER TABLE ${mt[1]} ADD COLUMN ${metadata.columnDefinition};` : 'MANUAL';
     }
     if (upper.includes('ALTER TABLE') && upper.includes('RENAME COLUMN')) {
-        const mt = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+RENAME\s+COLUMN\s+([`"]?)(\w+)\3\s+TO\s+([`"]?)(\w+)\5/i);
-        return mt ? `ALTER TABLE ${mt[2]} RENAME COLUMN ${mt[6]} TO ${mt[4]};` : 'MANUAL';
+        const mt = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+RENAME\s+COLUMN\s+([`"]?)(\w+)\2\s+TO\s+([`"]?)(\w+)\4/i);
+        return mt ? `ALTER TABLE ${mt[1]} RENAME COLUMN ${mt[5]} TO ${mt[3]};` : 'MANUAL';
     }
     if (upper.includes('ALTER COLUMN') || upper.includes('MODIFY')) {
-        const mt = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+(?:ALTER\s+COLUMN|MODIFY)\s+([`"]?)(\w+)\3/i);
+        const mt = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+(?:ALTER\s+COLUMN|MODIFY)\s+([`"]?)(\w+)\2/i);
         if (mt) {
-            if (upper.includes('SET DEFAULT')) return metadata?.oldDefault !== undefined ? `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} SET DEFAULT ${metadata.oldDefault};` : `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} DROP DEFAULT;`;
-            if (upper.includes('DROP DEFAULT')) return metadata?.oldDefault !== undefined ? `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} SET DEFAULT ${metadata.oldDefault};` : 'MANUAL';
-            if (upper.includes('SET NOT NULL')) return `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} DROP NOT NULL;`;
-            if (upper.includes('DROP NOT NULL')) return `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} SET NOT NULL;`;
-            if (metadata?.oldColumnState) return `ALTER TABLE ${mt[2]} ALTER COLUMN ${mt[4]} ${metadata.oldColumnState};`;
+            if (upper.includes('SET DEFAULT')) return metadata?.oldDefault !== undefined ? `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} SET DEFAULT ${metadata.oldDefault};` : `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} DROP DEFAULT;`;
+            if (upper.includes('DROP DEFAULT')) return metadata?.oldDefault !== undefined ? `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} SET DEFAULT ${metadata.oldDefault};` : 'MANUAL';
+            if (upper.includes('SET NOT NULL')) return `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} DROP NOT NULL;`;
+            if (upper.includes('DROP NOT NULL')) return `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} SET NOT NULL;`;
+            if (metadata?.oldColumnState) return `ALTER TABLE ${mt[1]} ALTER COLUMN ${mt[3]} ${metadata.oldColumnState};`;
         }
         return 'MANUAL';
     }
 
     // 5. CONSTRAINTS
     if (upper.includes('ADD PRIMARY KEY') || upper.includes('ADD CONSTRAINT')) {
-        const mt = q.match(/ALTER\s+TABLE\s+([`"]?)(\w+)\1\s+ADD\s+(?:CONSTRAINT\s+([`"]?)(\w+)\3\s+)?(?:PRIMARY\s+KEY|FOREIGN\s+KEY|UNIQUE|CHECK)/i);
-        const name = mt ? (mt[4] || 'pk') : null; // Need to know constraint name to drop it
-        return (mt && name) ? `ALTER TABLE ${mt[2]} DROP CONSTRAINT ${name};` : 'MANUAL';
+        const mt = q.match(/ALTER\s+TABLE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+ADD\s+(?:CONSTRAINT\s+([`"]?)(\w+)\2\s+)?(?:PRIMARY\s+KEY|FOREIGN\s+KEY|UNIQUE|CHECK)/i);
+        const name = mt ? (mt[3] || 'pk') : null; // Need to know constraint name to drop it
+        return (mt && name) ? `ALTER TABLE ${mt[1]} DROP CONSTRAINT ${name};` : 'MANUAL';
     }
 
     // 6. INDEXES
@@ -482,33 +482,33 @@ export function generateRollbackSQL(query: string, metadata?: any): string | 'MA
     // 12. DATA (DML)
     if (upper.startsWith('MERGE')) return 'MANUAL'; // Complex inverse
     if (upper.startsWith('INSERT INTO')) {
-        const match = q.match(/INSERT\s+INTO\s+([`"]?)(\w+)\1/i);
+        const match = q.match(/INSERT\s+INTO\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
         if (match && metadata?.primaryKey) {
             const pk = metadata.primaryKey;
             const conds = Object.entries(pk).map(([c, v]) => `${c} = ${typeof v === 'string' ? `'${v}'` : v}`).join(' AND ');
-            return `DELETE FROM ${match[2]} WHERE ${conds};`;
+            return `DELETE FROM ${match[1]} WHERE ${conds};`;
         }
         return 'MANUAL';
     }
     if (upper.startsWith('DELETE FROM')) {
-        const match = q.match(/DELETE\s+FROM\s+([`"]?)(\w+)\1/i);
-        if (match && metadata?.rows) {
-            return metadata.rows.map((row: any) => {
+        const match = q.match(/DELETE\s+FROM\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
+        if (match && metadata?.oldRows) {
+            return metadata.oldRows.map((row: any) => {
                 const cols = Object.keys(row).join(', ');
                 const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(', ');
-                return `INSERT INTO ${match[2]} (${cols}) VALUES (${vals});`;
+                return `INSERT INTO ${match[1]} (${cols}) VALUES (${vals});`;
             }).join('\n');
         }
         return 'MANUAL';
     }
     if (upper.startsWith('UPDATE')) {
-        const match = q.match(/UPDATE\s+([`"]?)(\w+)\1/i);
+        const match = q.match(/UPDATE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)/i);
         if (match && metadata?.oldRows) {
             return metadata.oldRows.map((row: any) => {
                 const pk = metadata.primaryKeyFields.reduce((acc: any, f: string) => ({ ...acc, [f]: row[f] }), {});
                 const set = Object.entries(row).map(([c, v]) => `${c} = ${typeof v === 'string' ? `'${v}'` : v}`).join(', ');
                 const where = Object.entries(pk).map(([c, v]) => `${c} = ${typeof v === 'string' ? `'${v}'` : v}`).join(' AND ');
-                return `UPDATE ${match[2]} SET ${set} WHERE ${where};`;
+                return `UPDATE ${match[1]} SET ${set} WHERE ${where};`;
             }).join('\n');
         }
         return 'MANUAL';

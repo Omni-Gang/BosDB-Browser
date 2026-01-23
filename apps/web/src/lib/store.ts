@@ -377,7 +377,7 @@ export function deleteConnection(connectionId: string) {
         // Best effort close
         try {
             if (entry.adapter && typeof entry.adapter.disconnect === 'function') {
-                entry.adapter.disconnect();
+                entry.adapter.disconnect(connectionId);
             }
         } catch (e) {
             console.error(`[Store] Failed to disconnect adapter for ${connectionId}`, e);
