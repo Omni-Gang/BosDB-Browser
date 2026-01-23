@@ -1005,26 +1005,27 @@ function QueryPageContent() {
                 allResults.push(resultWithColumns);
 
                 // Track database changes for version control
-                const change = parseQueryForChanges(q, data.rowCount);
-                if (change) {
-                    // Enrich change with metadata and pre-generated rollback SQL
-                    change.metadata = metadata;
-                    change.rollbackSQL = generateRollbackSQL(q, metadata);
-                    await trackChange(connectionId, change);
+                // NOTE: Tracking is now handled by the backend API to prevent duplicates
+                // const change = parseQueryForChanges(q, data.rowCount);
+                // if (change) {
+                //     // Enrich change with metadata and pre-generated rollback SQL
+                //     change.metadata = metadata;
+                //     change.rollbackSQL = generateRollbackSQL(q, metadata);
+                //     await trackChange(connectionId, change);
 
-                    // Trigger VCS Notification
-                    toast.success(
-                        `Change tracked in VCS: ${change.operation} on ${extractTableName(q) || 'database'}`,
-                        <Link
-                            href={`/version-control?connection=${connectionId}`}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-semibold transition"
-                        >
-                            Review & Commit
-                            <GitBranch className="w-3 h-3" />
-                        </Link>,
-                        6000 // Show for 6 seconds
-                    );
-                }
+                //     // Trigger VCS Notification
+                //     toast.success(
+                //         `Change tracked in VCS: ${change.operation} on ${extractTableName(q) || 'database'}`,
+                //         <Link
+                //             href={`/version-control?connection=${connectionId}`}
+                //             className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-semibold transition"
+                //         >
+                //             Review & Commit
+                //             <GitBranch className="w-3 h-3" />
+                //         </Link>,
+                //         6000 // Show for 6 seconds
+                //     );
+                // }
 
                 // Add to history
                 const historyItem = {
@@ -1333,7 +1334,7 @@ function QueryPageContent() {
                             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
                         >
                             <Play className="w-4 h-4" />
-                            {executing ? 'Executing...' : 'Run (Ctrl+E)'}
+                            {executing ? 'Executing...' : 'Run'}
                         </button>
 
                         <button

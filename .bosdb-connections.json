@@ -110,20 +110,6 @@
     "createdAt": "2026-01-11T09:07:03.598Z",
     "ssl": true
   },
-  "conn_1768132065658_meza590hf": {
-    "id": "conn_1768132065658_meza590hf",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "switchyard.proxy.rlwy.net",
-    "port": 50346,
-    "database": "railway",
-    "credentials": "jhH5dEVw0gF4oE/5+gyVn+9rLGX9fBRo3CTnXHe6DwiRIcFs0Kj/ryQulofZcmKKne9ZSGAyWEUxD1aBpFjVSQojSnidVp/Xn9n3Ku4XlfWwS4D2w3oR3A200VdJtLi1fqD4Xjk=",
-    "readOnly": false,
-    "userEmail": "ayush@flipkart.com",
-    "organizationId": "flipkart.com",
-    "createdAt": "2026-01-11T11:47:45.658Z",
-    "ssl": true
-  },
   "conn_1768669248551_dsxoa1y9h": {
     "id": "conn_1768669248551_dsxoa1y9h",
     "name": "My Postgres Database",
@@ -149,6 +135,6 @@
     "readOnly": false,
     "userEmail": "demo@gmail.com",
     "organizationId": "demo-individual-org",
-    "createdAt": "2026-01-11T12:11:37.375Z"
+    "createdAt": "2026-01-17T17:01:54.378Z"
   }
 }
