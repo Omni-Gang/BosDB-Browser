@@ -110,20 +110,6 @@
     "createdAt": "2026-01-11T09:07:03.598Z",
     "ssl": true
   },
-  "conn_1768132065658_meza590hf": {
-    "id": "conn_1768132065658_meza590hf",
-    "name": "My Postgres Database",
-    "type": "postgres",
-    "host": "switchyard.proxy.rlwy.net",
-    "port": 50346,
-    "database": "railway",
-    "credentials": "jhH5dEVw0gF4oE/5+gyVn+9rLGX9fBRo3CTnXHe6DwiRIcFs0Kj/ryQulofZcmKKne9ZSGAyWEUxD1aBpFjVSQojSnidVp/Xn9n3Ku4XlfWwS4D2w3oR3A200VdJtLi1fqD4Xjk=",
-    "readOnly": false,
-    "userEmail": "ayush@flipkart.com",
-    "organizationId": "flipkart.com",
-    "createdAt": "2026-01-11T11:47:45.658Z",
-    "ssl": true
-  },
   "conn_1768669248551_dsxoa1y9h": {
     "id": "conn_1768669248551_dsxoa1y9h",
     "name": "My Postgres Database",
@@ -152,18 +138,18 @@
     "createdAt": "2026-01-17T17:01:54.378Z",
     "ssl": true
   },
-  "conn_1769177636128_3p544rfxu": {
-    "id": "conn_1769177636128_3p544rfxu",
+  "conn_1769189628787_5uk0wbk3y": {
+    "id": "conn_1769189628787_5uk0wbk3y",
     "name": "My Postgres Database",
     "type": "postgres",
     "host": "switchyard.proxy.rlwy.net",
     "port": 50346,
-    "database": "bosdb_pg_flipkart_mkqyolfb",
-    "credentials": "EHBDPBE+MFTXak2arHdOgxnEopk5IWEvERTz/c141FeNessA8Fb55FB6jpxc6ZWBs9Q4j2IiynwN6Dx31zxYrTu1zXMyGZPbRIp2g4myoywbGZV+KBL01QOr6e00v1v/V0yva967",
+    "database": "bosdb_pg_flipkart_mkr5tnu7",
+    "credentials": "wAbeKkovbLEzceJJE7L38IsVGvfhOgYazKZrUSlUCOk9SIphuzhHRt9teuVCPNoQ/QZuPlwgOkAZ9Qnc+A7cvz5jZ7jwREnmJCLf8dd47u7ioxAU1KKF/CMfVeZPPO/a+1BckPR9",
     "readOnly": false,
-    "userEmail": "ritvik@flipkart.com",
+    "userEmail": "ayush@flipkart.com",
     "organizationId": "flipkart.com",
-    "createdAt": "2026-01-23T14:13:56.128Z",
+    "createdAt": "2026-01-23T17:33:48.787Z",
     "isProvisioned": false
   }
 }

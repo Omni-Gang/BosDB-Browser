@@ -1334,7 +1334,7 @@ function QueryPageContent() {
                             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
                         >
                             <Play className="w-4 h-4" />
-                            {executing ? 'Executing...' : 'Run (Ctrl+E)'}
+                            {executing ? 'Executing...' : 'Run'}
                         </button>
 
                         <button
