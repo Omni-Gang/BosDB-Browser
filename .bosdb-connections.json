@@ -188,11 +188,8 @@
     "readOnly": false,
     "userEmail": "ayush@flipkart.com",
     "organizationId": "flipkart.com",
-<<<<<<< Updated upstream
     "createdAt": "2026-01-23T17:33:48.787Z",
-    "isProvisioned": false
-=======
-    "createdAt": "2026-01-11T11:47:45.658Z",
+    "isProvisioned": false,
     "ssl": true
   },
   "conn_1768133491813_6jhckgwqg": {
@@ -234,7 +231,21 @@
     "readOnly": false,
     "userEmail": "goandbuyeasy77@gmail.com",
     "organizationId": "ind-goandbuyeasy77",
-    "createdAt": "2026-01-17T18:18:27.595Z"
->>>>>>> Stashed changes
+    "createdAt": "2026-01-17T18:18:27.595Z",
+    "ssl": true
+  },
+  "conn_1769199733614_9v0amuze4": {
+    "id": "conn_1769199733614_9v0amuze4",
+    "name": "My Postgres Database",
+    "type": "postgres",
+    "host": "switchyard.proxy.rlwy.net",
+    "port": 50346,
+    "database": "bosdb_pg_indtesty_mkrbu8ox",
+    "credentials": "9eVuL7DriOVbztzhkjXj9MzNgufCMvjg+ltLmUcyhgeGlM+vkjoE7PporglB11Caz+TmTP6XAho7B3mRjX7vDyuZ119bb8VuRzQsmF9yMPG2yM9wAxODZuQsH4LltWsKVXEF7B/P",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-23T20:22:13.614Z",
+    "isProvisioned": false
   }
 }
