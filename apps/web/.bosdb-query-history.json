@@ -923,7 +923,6 @@
     "success": true,
     "userEmail": "testy@gmail.com",
     "orgId": "ind-testy",
-<<<<<<< HEAD
     "id": "history_1768501553811_j5a304psk"
   },
   {
@@ -1877,7 +1876,6 @@
     "success": false,
     "error": "Query execution failed: relation \"users\" already exists",
     "userEmail": "ayush@flipkart.com",
-=======
     "id": "history_1768239387257_hr99fshrg"
   },
   {
@@ -2963,7 +2961,6 @@
     "rowCount": 4,
     "success": true,
     "userEmail": "ritvik@flipkart.com",
->>>>>>> main
     "orgId": "flipkart.com",
     "id": "history_1767378085161_t1qvkhwgj"
   },
