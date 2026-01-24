@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Mail, Lock, Building, User as UserIcon, AlertCircle, CheckCircle, Chrome } from 'lucide-react';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 
 interface User {
   id: string;
@@ -494,6 +495,23 @@ function LoginForm() {
                       {loading ? 'Signing in...' : 'Sign In'}
                     </button>
 
+
+
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-700"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-gray-800 text-gray-400">Or continue with</span>
+                      </div>
+                    </div>
+
+                    <GoogleAuthButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError('Google Login Failed')}
+                      text="signin_with"
+                    />
+
                     {/* Demo Hints */}
                     <div className="mt-6 pt-4 border-t border-gray-700 text-center">
                       <p className="text-xs text-gray-500 mb-2">Demo Credentials:</p>
@@ -568,14 +586,11 @@ function LoginForm() {
                         <div className="my-4 border-t border-gray-700"></div>
 
                         {/* Google Login - ONLY FOR INDIVIDUAL */}
-                        <div className="w-full flex justify-center">
-                          <GoogleLogin
+                        <div className="mt-4">
+                          <GoogleAuthButton
                             onSuccess={handleGoogleSuccess}
                             onError={() => setError('Google Login Failed')}
-                            theme="filled_black"
-                            shape="rectangular"
-                            size="large"
-                            width="350"
+                            text="signup_with"
                           />
                         </div>
                       </div>
@@ -630,7 +645,7 @@ function LoginForm() {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 

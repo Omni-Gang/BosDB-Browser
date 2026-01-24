@@ -180,6 +180,10 @@ export async function POST(request: NextRequest) {
                             return NextResponse.json({ error: 'Your account is pending admin approval.' }, { status: 403 });
                         }
 
+                        if (existingUser.accountType === 'enterprise') {
+                            return NextResponse.json({ error: 'Company users must login with password.' }, { status: 403 });
+                        }
+
                         // Link Google Sub if missing
                         if (!existingUser.googleId) {
                             await updateUser(existingUser.id, { googleId: sub });
