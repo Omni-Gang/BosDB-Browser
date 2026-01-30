@@ -1,0 +1,79 @@
+
+# BOSDB – GSoC 2026 Ideas List
+
+BOSDB is an open-source ecosystem focused on building powerful, privacy-first developer tools. Our projects span browsers, debugging utilities, and web infrastructure. This ideas list outlines potential GSoC 2026 projects and gives contributors a clear view of where they can make meaningful impact.
+
+---
+
+## Project Idea: BOSDB Browser Core Improvements
+
+**Description**  
+Enhance the core functionality of the BOSDB Browser with a focus on performance, privacy, and extensibility. Contributors will work on browser internals, UI refinements, and security-oriented features.
+
+**Expected Outcomes**  
+- Improved browsing performance  
+- Stronger privacy controls by default  
+- Foundation for extension and plugin support  
+
+**Required Skills**  
+JavaScript, Web APIs, Browser Architecture
+
+**Difficulty**  
+Medium
+
+**Mentors**  
+BOSDB Core Team
+
+---
+
+## Project Idea: BOSDB Debugger & Developer Tools
+
+**Description**  
+Build and improve a unified debugging tool that helps developers inspect logs, runtime errors, and network activity within the BOSDB ecosystem.
+
+**Expected Outcomes**  
+- Simplified debugging workflow  
+- Clear visualization of application behavior  
+- Better developer productivity  
+
+**Required Skills**  
+JavaScript, Node.js, Web Debugging Concepts
+
+**Difficulty**  
+Medium–Hard
+
+**Mentors**  
+BOSDB Core Team
+
+---
+
+## Project Idea: Free SEO & Web Optimization Toolkit
+
+**Description**  
+Create open-source tools that help website owners improve SEO without paid services. Work includes sitemap validation, indexing checks, and performance optimization.
+
+**Expected Outcomes**  
+- Easy-to-use SEO tools  
+- Better web performance insights  
+- Open access for all users  
+
+**Required Skills**  
+JavaScript, Web Performance, SEO Fundamentals
+
+**Difficulty**  
+Medium
+
+**Mentors**  
+BOSDB Core Team
+
+---
+
+## General Information
+
+- Organization: BOSDB  
+- Website: https://www.bosdb.tech  
+- GitHub: https://github.com/bosdb-org  
+- Contact: opensource@bosdb.tech  
+
+Contributors are encouraged to propose their own ideas aligned with BOSDB’s mission and tool ecosystem.
+

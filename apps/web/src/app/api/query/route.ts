@@ -76,6 +76,66 @@ export async function POST(request: NextRequest) {
 
         const userEmail = request.headers.get('x-user-email');
 
+
+        // --- PRE-FETCH DATA FOR AUTOMATIC ROLLBACK ---
+        let dmlMetadata: any = {};
+        const upperQuery = query.trim().toUpperCase();
+        
+        // Only run for UPDATE/DELETE if not part of a transaction block
+        // (Transaction support is future work, basic single-statement DML support now)
+        if (upperQuery.startsWith('UPDATE') || upperQuery.startsWith('DELETE FROM')) {
+            try {
+                // Simple regex extraction - robust enough for basic single-table queries
+                // UPDATE table SET ... WHERE condition
+                // DELETE FROM table WHERE condition
+                let tableName, whereClause;
+                
+                if (upperQuery.startsWith('UPDATE')) {
+                    const match = query.match(/UPDATE\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+SET\s+[\s\S]+?\s+WHERE\s+([\s\S]+?)(?:;|$)/i);
+                    if (match) {
+                        tableName = match[1];
+                        whereClause = match[2];
+                    }
+                } else if (upperQuery.startsWith('DELETE FROM')) {
+                     const match = query.match(/DELETE\s+FROM\s+((?:"[^"]+"|[\w]+)(?:\.(?:"[^"]+"|[\w]+))*)\s+WHERE\s+([\s\S]+?)(?:;|$)/i);
+                     if (match) {
+                        tableName = match[1];
+                        whereClause = match[2];
+                     }
+                }
+
+                if (tableName && whereClause) {
+                    // Fetch primary key info
+                    const schemaParts = tableName.replace(/"/g, '').split('.');
+                    const schema = schemaParts.length > 1 ? schemaParts[0] : 'public';
+                    const table = schemaParts.length > 1 ? schemaParts[1] : schemaParts[0];
+                    
+                    const tableMeta = await adapter.describeTable(adapterConnectionId, schema, table);
+                    const primaryKeyFields = tableMeta.primaryKeys;
+
+                    // Fetch the data that is about to be changed
+                    const selectQuery = `SELECT * FROM ${tableName} WHERE ${whereClause}`;
+                    const selectResult = await adapter.executeQuery({
+                        connectionId: adapterConnectionId,
+                        query: selectQuery,
+                        timeout: 5000, // Short timeout for pre-fetch
+                        maxRows: 1000 // Cap to prevent massive memory usage
+                    });
+                    
+                    dmlMetadata = {
+                        oldRows: selectResult.rows,
+                        primaryKeyFields,
+                        originalCreateSQL: null // Not needed for DML
+                    };
+                    
+                    logger.info(`[AutoRollback] Pre-fetched ${selectResult.rows.length} rows for ${upperQuery.split(' ')[0]} on ${tableName}`);
+                }
+            } catch (preFetchError) {
+                // Non-blocking: If pre-fetch fails, we proceed but rollback will be MANUAL
+                logger.warn('Failed to pre-fetch data for automatic rollback. Rollback will be MANUAL.', preFetchError);
+            }
+        }
+
         // Execute query
         const queryRequest: QueryRequest = {
             connectionId: adapterConnectionId,
@@ -83,7 +143,7 @@ export async function POST(request: NextRequest) {
             timeout: timeout || 30000,
             maxRows: maxRows || 1000,
         };
-
+        
         const result = await adapter.executeQuery(queryRequest);
 
         logger.info(
@@ -103,9 +163,29 @@ export async function POST(request: NextRequest) {
                 userEmail: userEmail || undefined,
                 orgId: request.headers.get('x-org-id') || undefined,
             });
+
+            // TRACKING VCS CHANGES
+            // Parse query to see if it modifies the schema/data
+            const { parseQueryForChanges } = await import('@/lib/vcs-helper');
+            const { addPendingChange } = await import('@/lib/vcs-storage');
+            
+            const change = parseQueryForChanges(query, result.rowCount);
+            if (change) {
+                // Attach pre-fetched metadata for DML operations
+                if (dmlMetadata.oldRows) {
+                    change.metadata = { ...change.metadata, ...dmlMetadata };
+                }
+
+                await addPendingChange(connectionId, {
+                    ...change,
+                    timestamp: new Date().toISOString()
+                });
+                logger.info(`Tracked VCS change: ${change.type} - ${change.description}`);
+            }
+
         } catch (historyError) {
-            // Don't fail query if history fails
-            logger.error('Failed to save query history', historyError);
+            // Don't fail query if history/tracking fails
+            logger.error('Failed to save query history or track changes', historyError);
         }
 
         return NextResponse.json({

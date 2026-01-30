@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUsers, createUser, findUserById, findUserByEmail, getUsersByOrg, updateUser } from '@/lib/users-store';
+import { getUsers, createUser, findUserById, findUserByEmail, getUsersByOrg, updateUser, saveUsers } from '@/lib/users-store';
 import { hashPassword, verifyPassword, validatePassword } from '@/lib/auth';
 import { getOrCreateOrgForUser, findOrganizationById, findOrganizationByDomain, extractDomain, updateOrganization } from '@/lib/organization';
 import { generateTOTP, generateQRCode, verifyTOTP } from '@/lib/totp-manager';
@@ -143,34 +143,77 @@ export async function POST(request: NextRequest) {
 
         // --- REGISTER or GOOGLE LOGIN (New User) ---
         if (action === 'register' || action === 'google_login') {
-            const users = await getUsers();
 
-            if (!userData.email) {
+            // Standardize userData structure
+            let finalUserData: any = { ...userData };
+            let googleId: string | undefined = undefined;
+
+            // [NEW] Real Google OAuth Verification
+            if (action === 'google_login') {
+                const { idToken, userType } = body;
+                if (!idToken) return NextResponse.json({ error: 'Google ID Token is required' }, { status: 400 });
+
+                // Strictly enforce INDIVIDUAL only
+                if (userType === 'enterprise' || finalUserData.accountType === 'enterprise') {
+                    return NextResponse.json({ error: 'Google login is available only for individual accounts.' }, { status: 403 });
+                }
+
+                try {
+                    const { OAuth2Client } = await import('google-auth-library');
+                    const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE');
+
+                    const ticket = await client.verifyIdToken({
+                        idToken: idToken,
+                        audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE',
+                    });
+
+                    const payload = ticket.getPayload();
+                    if (!payload) throw new Error('Invalid Google Token payload');
+
+                    const { email, sub, name, email_verified } = payload;
+
+                    // Check if user exists
+                    const existingUser = await findUserByEmail(email!);
+
+                    if (existingUser) {
+                        if (existingUser.status === 'pending') {
+                            return NextResponse.json({ error: 'Your account is pending admin approval.' }, { status: 403 });
+                        }
+
+                        // Link Google Sub if missing
+                        if (!existingUser.googleId) {
+                            await updateUser(existingUser.id, { googleId: sub });
+                        }
+
+                        return NextResponse.json({ success: true, user: existingUser });
+                    }
+
+                    // New User -> Setup data for creation
+                    finalUserData.email = email;
+                    finalUserData.name = name;
+                    finalUserData.accountType = 'individual';
+                    googleId = sub;
+
+                } catch (err: any) {
+                    console.error('Google Verify Error:', err);
+                    return NextResponse.json({ error: 'Invalid Google Token: ' + err.message }, { status: 401 });
+                }
+            }
+
+            if (!finalUserData.email) {
                 return NextResponse.json({ error: 'Email is required' }, { status: 400 });
             }
 
-            // Check if user already exists
-            const existingUser = users.find(u => u.email === userData.email);
+            // Check if user already exists (Standard Register check - skipped if Google Login found user above)
+            const users = await getUsers();
+            const existingUser = users.find(u => u.email === finalUserData.email);
             if (existingUser) {
-                if (action === 'google_login') {
-                    // Logic: If user exists, treat as login
-                    // If existing user doesn't have googleId, maybe link it? For now, just allow if email matches.
-                    if (existingUser.status === 'pending') {
-                        return NextResponse.json({ error: 'Your account is pending admin approval.' }, { status: 403 });
-                    }
-                    return NextResponse.json({ success: true, user: existingUser });
-                }
                 return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
-            } else if (action === 'google_login') {
-                // New user via Google -> Require Registration
-                return NextResponse.json({
-                    requiresRegistration: true,
-                    googleData: {
-                        email: userData.email,
-                        name: userData.name,
-                        googleId: googleId
-                    }
-                });
+            }
+
+            // [NEW] Google Login Restriction: Company users cannot use Google Login
+            if (action === 'google_login' && finalUserData.accountType === 'enterprise') {
+                return NextResponse.json({ error: 'Google login is available only for individual accounts.' }, { status: 403 });
             }
 
             if (action === 'register') {
@@ -183,19 +226,20 @@ export async function POST(request: NextRequest) {
             const hashedPassword = (action === 'register' && password) ? await hashPassword(password) : undefined;
 
             // Determine account type
-            const domain = extractDomain(userData.email);
+            const domain = extractDomain(finalUserData.email);
             const isCommonDomain = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'].includes(domain);
 
-            let finalAccountType = userData.accountType || 'enterprise';
+            let finalAccountType = finalUserData.accountType || 'enterprise';
             if (isCommonDomain && finalAccountType === 'enterprise') {
-                finalAccountType = 'individual';
+                // Change requirement: now we REJECT instead of downgrade
+                return NextResponse.json({ error: 'Public email domains (Gmail, Yahoo, etc.) are not allowed for Company registration. Please use your work email.' }, { status: 400 });
             }
 
             // Get or Create Org
-            const { org, isNew } = await getOrCreateOrgForUser(userData.email, finalAccountType);
+            const { org, isNew } = await getOrCreateOrgForUser(finalUserData.email, finalAccountType);
 
-            // Generate User ID if not provided (Google Login)
-            const finalUserId = userData.id || (action === 'google_login' ? userData.email.split('@')[0] : userData.id);
+            // Generate User ID if not provided
+            const finalUserId = finalUserData.id || (action === 'google_login' ? finalUserData.email.split('@')[0] : finalUserData.id);
 
             // Note: User IDs don't need to be unique - email is the globally unique identifier
 
@@ -211,7 +255,7 @@ export async function POST(request: NextRequest) {
                 status = 'approved';
                 message = `Personal workspace "${org.name}" created.`;
             } else {
-                // Enterprise
+                // Enterprise Logic
                 const needsAdminVerification = isNew || !org.adminUserId;
 
                 if (needsAdminVerification) {
@@ -223,8 +267,8 @@ export async function POST(request: NextRequest) {
 
                     const newUserData = {
                         id: finalUserId,
-                        email: userData.email,
-                        name: userData.name || userData.email.split('@')[0],
+                        email: finalUserData.email,
+                        name: finalUserData.name || finalUserData.email.split('@')[0],
                         password: hashedPassword,
                         googleId: googleId,
                         accountType: finalAccountType,
@@ -235,14 +279,14 @@ export async function POST(request: NextRequest) {
                     };
 
                     // Generate TOTP Secret
-                    const { secret, otpauth } = generateTOTP(userData.email, org.name, org.id, newUserData);
+                    const { secret, otpauth } = generateTOTP(finalUserData.email, org.name, org.id, newUserData);
                     const qrCodeUrl = await generateQRCode(otpauth);
 
                     console.log(`[Auth] TOTP setup required for first user of org "${org.name}"`);
 
                     return NextResponse.json({
                         requiresTOTP: true,
-                        email: userData.email,
+                        email: finalUserData.email,
                         organizationName: org.name,
                         qrCode: qrCodeUrl,
                         secret: secret, // For manual entry if needed
@@ -259,13 +303,13 @@ export async function POST(request: NextRequest) {
 
             const newUser = {
                 id: finalUserId,
-                email: userData.email,
-                name: userData.name || userData.email.split('@')[0],
+                email: finalUserData.email,
+                name: finalUserData.name || finalUserData.email.split('@')[0],
                 password: hashedPassword,
                 googleId: googleId,
                 accountType: finalAccountType,
                 organizationId: org.id,
-                role: userData.role || role, // Respect the requested role from the UI
+                role: finalUserData.role || role, // Respect the requested role from the UI
                 status,
                 createdAt: new Date()
             };
@@ -370,6 +414,73 @@ export async function POST(request: NextRequest) {
                 organization: org,
                 message: `Organization "${org?.name}" created. You are now the Verified Admin.`
             });
+        }
+
+        // --- FORGOT PASSWORD ---
+        if (action === 'forgot_password') {
+            const { email } = body;
+            if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+
+            const user = await findUserByEmail(email);
+            if (!user) {
+                // Return success even if not found for security (or just say sent)
+                // But for this internal tool, generic message is fine.
+                return NextResponse.json({ message: 'If an account exists, a reset link has been sent.' });
+            }
+
+            if (user.googleId && !user.password) {
+                return NextResponse.json({ error: 'This account uses Google Login. Please sign in with Google.' }, { status: 400 });
+            }
+
+            // Generate Token (simple 6 digit OTP or UUID)
+            const crypto = require('crypto');
+            const token = crypto.randomBytes(20).toString('hex');
+            const expires = new Date(Date.now() + 3600000); // 1 hour
+
+            await updateUser(user.id, {
+                resetPasswordToken: token,
+                resetPasswordExpires: expires
+            });
+
+            // MOCK EMAIL SENDING
+            console.log('---------------------------------------------------');
+            console.log(`[Auth] 📬 MOCK EMAIL SENT TO: ${email}`);
+            console.log(`[Auth] Subject: Password Reset Request`);
+            console.log(`[Auth] Body: Click here to reset: http://localhost:3000/login?resetToken=${token}`);
+            console.log(`[Auth] Token: ${token}`);
+            console.log('---------------------------------------------------');
+
+            return NextResponse.json({ message: 'Reset link sent to your email.' });
+        }
+
+        // --- RESET PASSWORD ---
+        if (action === 'reset_password') {
+            const { token, newPassword } = body;
+            if (!token || !newPassword) return NextResponse.json({ error: 'Token and new password required' }, { status: 400 });
+
+            const users = await getUsers();
+            const user = users.find(u =>
+                u.resetPasswordToken === token &&
+                u.resetPasswordExpires &&
+                new Date(u.resetPasswordExpires) > new Date()
+            );
+
+            if (!user) {
+                return NextResponse.json({ error: 'Password reset token is invalid or has expired.' }, { status: 400 });
+            }
+
+            const validation = validatePassword(newPassword);
+            if (!validation.valid) return NextResponse.json({ error: validation.error }, { status: 400 });
+
+            const hashedPassword = await hashPassword(newPassword);
+
+            await updateUser(user.id, {
+                password: hashedPassword,
+                resetPasswordToken: undefined,
+                resetPasswordExpires: undefined
+            });
+
+            return NextResponse.json({ success: true, message: 'Password has been reset successfully.' });
         }
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

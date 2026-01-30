@@ -2,200 +2,197 @@
 > @bosdb/web@0.1.0 build
 > next build
 
-  ▲ Next.js 14.2.35
-  - Environments: .env
+[1G[0K  [1m[38;2;173;127;168m▲ Next.js 14.2.35[39m[22m
+  - Environments: .env.local, .env
 
-   Creating an optimized production build ...
- ✓ Compiled successfully
-   Linting and checking validity of types ...
-
+ [37m[1m [22m[39m Creating an optimized production build ...
+ [32m[1m✓[22m[39m Compiled successfully
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[?25h
 ./src/app/dashboard/page.tsx
-52:8  Warning: React Hook useEffect has a missing dependency: 'fetchConnections'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+54:8  Warning: React Hook useEffect has a missing dependency: 'fetchConnections'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/app/login/page.tsx
-230:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+215:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
 
 ./src/app/query/page.tsx
-300:8  Warning: React Hook useCallback has a missing dependency: 'syncBreakpointToBackend'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-641:8  Warning: React Hook useEffect has missing dependencies: 'fetchConnectionInfo', 'fetchHistory', 'fetchSchemas', and 'loadPendingChanges'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
-1013:8  Warning: React Hook useCallback has missing dependencies: 'handleDebugProcedure', 'loadPendingChanges', and 'setQuery'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
-1048:8  Warning: React Hook useEffect has a missing dependency: 'executeByCursor'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+301:8  Warning: React Hook useCallback has a missing dependency: 'syncBreakpointToBackend'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+664:8  Warning: React Hook useEffect has missing dependencies: 'fetchConnectionInfo', 'fetchHistory', 'fetchSchemas', and 'loadPendingChanges'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1062:8  Warning: React Hook useCallback has missing dependencies: 'handleDebugProcedure', 'loadPendingChanges', 'setQuery', and 'toast'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1097:8  Warning: React Hook useEffect has a missing dependency: 'executeByCursor'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/app/saved-queries/page.tsx
 27:8  Warning: React Hook useEffect has a missing dependency: 'fetchQueries'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
+./src/app/super-admin/page.tsx
+88:8  Warning: React Hook useEffect has a missing dependency: 'fetchDashboardData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
 ./src/app/version-control/page.tsx
-28:8  Warning: React Hook useEffect has a missing dependency: 'loadAllData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+30:8  Warning: React Hook useEffect has a missing dependency: 'loadAllData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/components/DebuggerPanel.tsx
-65:8  Warning: React Hook useEffect has missing dependencies: 'setCurrentLine' and 'setStatus'. Either include them or remove the dependency array. If 'setStatus' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
+67:8  Warning: React Hook useEffect has missing dependencies: 'setCurrentLine' and 'setStatus'. Either include them or remove the dependency array. If 'setStatus' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
 
 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
-   Collecting page data ...
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-    at 10920 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\admin\assign\route.js:1:695)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\admin\assign\route.js:1:6073)
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\data\update\route.js:1:2357
-    at t.a (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:891)
-    at 90024 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\data\update\route.js:1:2292)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Initialized with 10 connections
-[Store] Initialized with 10 connections
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\connections\route.js:1:2407
-    at t.a (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:891)
-    at 30149 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\connections\route.js:1:2286)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Initialized with 10 connections
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at 55264 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\query\route.js:1:1725)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\query\route.js:1:7565)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Initialized with 10 connections
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Linting and checking validity of types     [32m[1m✓[22m[39m Linting and checking validity of types 
+[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
+[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
+[2K[1G [37m[1m [22m[39m Collecting page data  [36m.[39m[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
+[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
 [MongoDB] Attempting to connect to MongoDB Atlas...
 [MongoDB] Attempting to connect to MongoDB Atlas...
 [MongoDB] Attempting to connect to MongoDB Atlas...
 [MongoDB] Attempting to connect to MongoDB Atlas...
+[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
+[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
+[Store] Initialized with Project Root: /Users/yuvalsharma/Desktop/BosDB-Browser (Vercel: false)
+[Store] Found 13 connections at /Users/yuvalsharma/Desktop/BosDB-Browser/.bosdb-connections.json
+[Store] Consolidated 13 connections to root.
+[Store] Auto-enabling SSL for: conn_1768674418201_v3achc9ni (switchyard.proxy.rlwy.net)
+[Store] Initialized with 13 connections
 [MongoDB] Attempting to connect to MongoDB Atlas...
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\vcs\rollback\route.js:1:2420
-    at t.a (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:891)
-    at 97997 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\vcs\rollback\route.js:1:2292)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Initialized with 10 connections
+[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[MongoDB] Attempting to connect to MongoDB Atlas...
 [MongoDB] Attempting to connect to MongoDB Atlas...
+[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
+[?25l [37m[1m [22m[39m Generating static pages (0/51)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/51)  [36m[=   ][39m[CloudProvisioner] Sanitizing host: switchyard.proxy.rlwy.net -> switchyard.proxy.rlwy.net (Port: 50346)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 55276)
+[CloudProvisioner] Sanitizing host: metro.proxy.rlwy.net -> metro.proxy.rlwy.net (Port: 54136)
+[CloudProvisioner] Sanitizing host: centerbeam.proxy.rlwy.net -> centerbeam.proxy.rlwy.net (Port: 34540)
+[CloudProvisioner] Sanitizing host: mainline.proxy.rlwy.net -> mainline.proxy.rlwy.net (Port: 12858)
+[CloudProvisioner] Sanitizing host: trolley.proxy.rlwy.net -> trolley.proxy.rlwy.net (Port: 49717)
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
-   Generating static pages (0/36) ...
-   Generating static pages (9/36) 
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
-   Generating static pages (18/36) 
-[MongoDB] Attempting to connect to MongoDB Atlas...
 [MongoDB] ✅ Connected to MongoDB Atlas successfully!
-   Generating static pages (27/36) 
-[Store] Initialized with Project Root: C:\Users\Arush Gupta\Downloads\BosDB-Browser (Vercel: false)
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Found 7 connections at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.bosdb-connections.json
-[Store] Initialized with 10 connections
-[Store] Error reading legacy file at C:\Users\Arush Gupta\Downloads\BosDB-Browser\.bosdb-connections.json: SyntaxError: Expected double-quoted property name in JSON at position 21869 (line 572 column 1)
-    at JSON.parse (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5413
-    at Array.forEach (<anonymous>)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5335
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:5899
-    at 24672 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\chunks\4672.js:8:7678)
-    at t (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:128)
-    at C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\vcs\rollback\route.js:1:2420
-    at t.a (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\webpack-runtime.js:1:891)
-    at 97997 (C:\Users\Arush Gupta\Downloads\BosDB-Browser\apps\web\.next\server\app\api\vcs\rollback\route.js:1:2292)
- ✓ Generating static pages (36/36)
-   Finalizing page optimization ...
-   Collecting build traces ...
+[2K[1G [37m[1m [22m[39m Generating static pages (10/51)  [36m[==  ][39m[2K[1G [37m[1m [22m[39m Generating static pages (22/51)  [36m[=== ][39m[2K[1G [37m[1m [22m[39m Generating static pages (26/51)  [36m[ ===][39m[2K[1G [37m[1m [22m[39m Generating static pages (34/51)  [36m[  ==][39m[2K[1G [37m[1m [22m[39m Generating static pages (48/51)  [36m[   =][39m[2K[1G [37m[1m [22m[39m Generating static pages (50/51)  [36m[    ][39m[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (51/51)
+[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
+[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
 
-Route (app)                                           Size     First Load JS
-┌ ○ /                                                 181 B          96.2 kB
-├ ○ /_not-found                                       138 B          87.4 kB
-├ ○ /admin                                            4.68 kB         101 kB
-├ ƒ /api/admin/assign                                 0 B                0 B
-├ ƒ /api/admin/users                                  0 B                0 B
-├ ƒ /api/ai/generate-sql                              0 B                0 B
-├ ƒ /api/auth                                         0 B                0 B
-├ ƒ /api/auth/change-password                         0 B                0 B
-├ ƒ /api/connections                                  0 B                0 B
-├ ƒ /api/data/update                                  0 B                0 B
-├ ƒ /api/debug/sessions                               0 B                0 B
-├ ƒ /api/debug/sessions/[sessionId]                   0 B                0 B
-├ ƒ /api/debug/sessions/[sessionId]/breakpoints       0 B                0 B
-├ ƒ /api/debug/sessions/[sessionId]/continue          0 B                0 B
-├ ƒ /api/debug/sessions/[sessionId]/control/[action]  0 B                0 B
-├ ƒ /api/debug/sessions/[sessionId]/step              0 B                0 B
-├ ƒ /api/docker/[id]                                  0 B                0 B
-├ ƒ /api/docker/containers                            0 B                0 B
-├ ƒ /api/docker/provision                             0 B                0 B
-├ ƒ /api/history                                      0 B                0 B
-├ ƒ /api/org/members                                  0 B                0 B
-├ ƒ /api/payment                                      0 B                0 B
-├ ƒ /api/procedures                                   0 B                0 B
-├ ƒ /api/query                                        0 B                0 B
-├ ƒ /api/saved-queries                                0 B                0 B
-├ ƒ /api/schema                                       0 B                0 B
-├ ƒ /api/schema/table                                 0 B                0 B
-├ ƒ /api/subscription                                 0 B                0 B
-├ ƒ /api/tables                                       0 B                0 B
-├ ƒ /api/vcs/branches                                 0 B                0 B
-├ ƒ /api/vcs/commit                                   0 B                0 B
-├ ƒ /api/vcs/pending                                  0 B                0 B
-├ ƒ /api/vcs/rollback                                 0 B                0 B
-├ ƒ /api/vcs/rollback/diff                            0 B                0 B
-├ ○ /dashboard                                        11.2 kB         107 kB
-├ ○ /docs                                             2.23 kB        98.2 kB
-├ ƒ /docs/[slug]                                      181 B          96.2 kB
-├ ○ /history                                          2.57 kB        98.6 kB
-├ ○ /login                                            3.63 kB        99.6 kB
-├ ○ /pricing                                          12.8 kB         109 kB
-├ ○ /query                                            201 kB          297 kB
-├ ○ /saved-queries                                    3.21 kB        99.2 kB
-├ ○ /settings                                         4.99 kB         101 kB
-├ ○ /vcs-test                                         876 B          88.2 kB
-└ ○ /version-control                                  5.62 kB         102 kB
-+ First Load JS shared by all                         87.3 kB
-  ├ chunks/117-6e5484d1a83a55e3.js                    31.7 kB
-  ├ chunks/fd9d1056-0d19444e3e44d8fd.js               53.6 kB
+[4mRoute (app)[24m                                           [4mSize[24m     [4mFirst Load JS[24m
+┌ ○ /                                                 178 B          [37m[1m96.2 kB[22m[39m
+├ ○ /_not-found                                       137 B          [37m[1m87.5 kB[22m[39m
+├ ○ /admin                                            5.64 kB         [37m[1m102 kB[22m[39m
+├ ƒ /api/admin/assign                                 0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/admin/users                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/ai/generate-sql                              0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/auth                                         0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/auth/change-password                         0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/connections                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/data/update                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions                               0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions/[sessionId]                   0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions/[sessionId]/breakpoints       0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions/[sessionId]/continue          0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions/[sessionId]/control/[action]  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/debug/sessions/[sessionId]/step              0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/docker/[id]                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/docker/containers                            0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/docker/provision                             0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/history                                      0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/org/members                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/payment                                      0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/procedures                                   0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/query                                        0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/saved-queries                                0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/schema                                       0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/schema/table                                 0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/subscription                                 0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/super-admin/dashboard                        0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/super-admin/mutate                           0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/tables                                       0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/vcs/branches                                 0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/vcs/commit                                   0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/vcs/pending                                  0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/vcs/rollback                                 0 B                [37m[1m0 B[22m[39m
+├ ƒ /api/vcs/rollback/diff                            0 B                [37m[1m0 B[22m[39m
+├ ○ /dashboard                                        12.2 kB         [37m[1m108 kB[22m[39m
+├ ○ /docs                                             2.3 kB         [37m[1m98.3 kB[22m[39m
+├ ○ /docs/architecture                                2.43 kB         [37m[1m342 kB[22m[39m
+├ ○ /docs/connections                                 2.13 kB        [37m[1m98.1 kB[22m[39m
+├ ○ /docs/data-privacy                                3.57 kB         [37m[1m344 kB[22m[39m
+├ ○ /docs/docker                                      1.82 kB        [37m[1m97.8 kB[22m[39m
+├ ○ /docs/installation                                1.65 kB         [37m[1m342 kB[22m[39m
+├ ○ /docs/query-editor                                2.17 kB        [37m[1m98.1 kB[22m[39m
+├ ○ /docs/quick-start                                 2.43 kB         [37m[1m342 kB[22m[39m
+├ ○ /docs/roles                                       3.42 kB         [37m[1m343 kB[22m[39m
+├ ○ /docs/security                                    1.97 kB        [37m[1m97.9 kB[22m[39m
+├ ○ /docs/system-design                               3.41 kB         [37m[1m343 kB[22m[39m
+├ ○ /docs/version-control                             4.47 kB         [37m[1m344 kB[22m[39m
+├ ○ /docs/visual-designer                             2.06 kB          [37m[1m98 kB[22m[39m
+├ ○ /history                                          2.56 kB        [37m[1m98.5 kB[22m[39m
+├ ○ /login                                            3.72 kB        [37m[1m99.7 kB[22m[39m
+├ ○ /pricing                                          13.9 kB         [37m[1m110 kB[22m[39m
+├ ○ /query                                            199 kB          [37m[1m295 kB[22m[39m
+├ ○ /saved-queries                                    3.2 kB         [37m[1m99.2 kB[22m[39m
+├ ○ /settings                                         4.98 kB         [37m[1m101 kB[22m[39m
+├ ○ /super-admin                                      8.23 kB         [37m[1m104 kB[22m[39m
+├ ○ /super-admin/login                                2.37 kB        [37m[1m98.3 kB[22m[39m
+├ ○ /vcs-test                                         875 B          [37m[1m88.2 kB[22m[39m
+└ ○ /version-control                                  7.13 kB         [37m[1m103 kB[22m[39m
++ First Load JS shared by all                         [37m[1m87.3 kB[22m[39m
+  ├ chunks/117-0ac430675e22b82b.js                    31.7 kB
+  ├ chunks/fd9d1056-c59628883fe83779.js               53.7 kB
   └ other shared chunks (total)                       1.92 kB
 
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
+[?25h[1G[0K⠙[1G[0K
