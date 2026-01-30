@@ -65,11 +65,12 @@ const oracleConfig = parseConnectionUrl(process.env.CLOUD_ORACLE_URL || 'oracle:
 // Known Railway Port Map for Sanitization
 const RAILWAY_PORT_MAP: Record<number, string> = {
     50346: 'switchyard.proxy.rlwy.net',
-    55276: 'metro.proxy.rlwy.net',
-    54136: 'metro.proxy.rlwy.net',
-    34540: 'centerbeam.proxy.rlwy.net',
-    12858: 'mainline.proxy.rlwy.net',
-    49717: 'trolley.proxy.rlwy.net'
+    14609: 'metro.proxy.rlwy.net',     // Postgres
+    49465: 'crossover.proxy.rlwy.net', // MySQL
+    47513: 'shortline.proxy.rlwy.net', // MariaDB
+    22189: 'interchange.proxy.rlwy.net', // Redis
+    31314: 'mainline.proxy.rlwy.net',   // MongoDB
+    49717: 'trolley.proxy.rlwy.net'     // Oracle
 };
 
 export function sanitizeHost(host: string, port: number): string {
