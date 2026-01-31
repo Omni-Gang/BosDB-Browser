@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Pause, StepForward, Square, Bug, Trash2, RotateCcw, X } from 'lucide-react';
+import { Play, Pause, StepForward, Square, Bug, Trash2, RotateCcw, X, Maximize2 } from 'lucide-react';
 import { useToast } from '@/components/ToastProvider';
 
 interface DebuggerPanelProps {
@@ -21,6 +21,7 @@ interface DebuggerPanelProps {
     currentLine: number | null;
     setCurrentLine: (line: number | null) => void;
     onClose?: () => void; // Optional close callback
+    onExpand?: () => void;
 }
 
 export default function DebuggerPanel({
@@ -35,8 +36,11 @@ export default function DebuggerPanel({
     currentLine,
     setCurrentLine,
     onClose, // Add close handler
+    onExpand,
 }: DebuggerPanelProps) {
-    const [variables, setVariables] = useState<{ name: string; value: any }[]>([]);
+    const [variables, setVariables] = useState<any[]>([]);
+    const [sandbox, setSandbox] = useState(true);
+    const [commitOnFinish, setCommitOnFinish] = useState(false);
     const toast = useToast();
 
 
@@ -126,8 +130,23 @@ export default function DebuggerPanel({
     };
 
     const handleRewind = async () => {
-        // Not implemented yet
-        toast.info('Step back feature coming soon!');
+        if (!sessionId) return;
+        try {
+            const res = await fetch(`/api/debug/sessions/${sessionId}/control/rewind`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.currentStatement) {
+                    setCurrentLine(data.currentStatement.lineNumber);
+                    setStatus('paused');
+                    toast.success('Stepped back');
+                } else if (data.error) {
+                    toast.error(`Step back failed: ${data.error}`);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to rewind:', e);
+            toast.error('Failed to step back');
+        }
     };
 
     const handleStop = async () => {
@@ -147,7 +166,9 @@ export default function DebuggerPanel({
                 body: JSON.stringify({
                     connectionId,
                     query: currentQuery,
-                    breakpoints
+                    breakpoints,
+                    sandbox,
+                    commitOnFinish
                 }),
             });
 
@@ -186,6 +207,15 @@ export default function DebuggerPanel({
                         Debugger
                     </h3>
                     <div className="flex items-center gap-2">
+                        {onExpand && (
+                            <button
+                                onClick={onExpand}
+                                className="p-1 hover:bg-accent rounded transition text-muted-foreground hover:text-foreground"
+                                title="Expand to Full Screen"
+                            >
+                                <Maximize2 className="w-4 h-4" />
+                            </button>
+                        )}
                         <div className={`px-2 py-0.5 text-xs rounded font-medium ${status === 'running' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                             status === 'paused' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
                                 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
@@ -202,6 +232,36 @@ export default function DebuggerPanel({
                             </button>
                         )}
                     </div>
+                </div>
+
+                {/* Sandbox Settings */}
+                <div className="flex flex-col gap-2 mb-3 bg-accent/20 p-2 rounded border border-border/50">
+                    <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight group-hover:text-foreground transition-colors flex items-center gap-1.5">
+                            🛡️ Sandbox Mode
+                        </span>
+                        <input
+                            type="checkbox"
+                            checked={sandbox}
+                            onChange={(e) => setSandbox(e.target.checked)}
+                            disabled={status !== 'stopped'}
+                            className="w-3 h-3 accent-blue-600"
+                        />
+                    </label>
+                    {sandbox && (
+                        <label className="flex items-center justify-between cursor-pointer group">
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight group-hover:text-foreground transition-colors">
+                                🚀 Commit on Finish
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={commitOnFinish}
+                                onChange={(e) => setCommitOnFinish(e.target.checked)}
+                                disabled={status !== 'stopped'}
+                                className="w-3 h-3 accent-green-600"
+                            />
+                        </label>
+                    )}
                 </div>
 
                 {/* Controls */}
@@ -324,12 +384,14 @@ export default function DebuggerPanel({
                 ) : (
                     <div className="space-y-1">
                         {variables.map((v, i) => (
-                            <div key={i} className="text-xs font-mono bg-accent/50 px-2 py-1 rounded">
-                                <span className="text-blue-600 dark:text-blue-400">{v.name}</span>
-                                {' = '}
-                                <span className="text-green-600 dark:text-green-400">
+                            <div key={i} className="text-xs font-mono bg-accent/30 hover:bg-accent/50 px-2 py-1.5 rounded border border-border/50 group transition-colors">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-blue-600 dark:text-blue-400 font-bold">{v.name}</span>
+                                    <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded uppercase">{v.type || typeof v.value}</span>
+                                </div>
+                                <div className="text-green-700 dark:text-green-400 break-all">
                                     {typeof v.value === 'object' ? JSON.stringify(v.value) : String(v.value)}
-                                </span>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -337,10 +399,16 @@ export default function DebuggerPanel({
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t border-border text-xs text-muted-foreground">
-                <p className="mb-1">
-                    {sessionId ? `Session: ${sessionId.slice(0, 8)}...` : 'No active session'}
-                </p>
+            <div className="p-3 border-t border-border text-xs text-muted-foreground bg-muted/30">
+                <div className="flex justify-between items-center mb-1">
+                    <span>{sessionId ? `Session: ${sessionId.slice(0, 8)}...` : 'No active session'}</span>
+                    {sessionId && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${sandbox ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            }`}>
+                            {sandbox ? 'SANDBOX ACTIVE' : 'LIVE MODE'}
+                        </span>
+                    )}
+                </div>
                 <p className="text-[10px] opacity-75">
                     Shortcuts: F5 Start, F8 Resume, F10 Step
                 </p>

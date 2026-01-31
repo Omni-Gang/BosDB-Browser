@@ -13,6 +13,9 @@ export declare class ExecutionController extends EventEmitter {
     private executionMode;
     private executionHistory;
     private pendingExecutions;
+    private snapshotEngine;
+    private cursorDebugger;
+    private triggerDebugger;
     constructor(breakpointManager: BreakpointManager, sessionManager: SessionManager);
     /**
      * Execute a query with debug instrumentation
@@ -21,7 +24,6 @@ export declare class ExecutionController extends EventEmitter {
     /**
      * Execute with instrumentation at each stage
      */
-    private execWithInstrumentation;
     /**
      * Simulate stage execution (placeholder for actual execution)
      */
@@ -47,7 +49,11 @@ export declare class ExecutionController extends EventEmitter {
      */
     stepOut(sessionId: string): Promise<void>;
     /**
-     * Rewind execution (execute inverse SQL of last statement)
+     * Step back (reverse execution)
+     */
+    stepBack(sessionId: string): Promise<void>;
+    /**
+     * Rewind execution (alias for stepBack, keeping backward compatibility)
      */
     rewind(sessionId: string, _runner: (sql: string) => Promise<any>): Promise<void>;
     /**

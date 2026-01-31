@@ -408,8 +408,4 @@ export class MongoDBAdapter extends BaseDBAdapter {
         return 'mixed';
     }
 
-    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
-        // External query tracking not yet implemented for MongoDB
-        return [];
-    }
 }

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { userId, connectionId, action, permissions } = body;
         // action: 'assign' | 'unassign' | 'revoke' | 'update'
-        // permissions: { canRead, canEdit, canCommit, canManageSchema }
+        // permissions: { canRead, canEdit, canCommit, canManageSchema, canDebug }
 
         if (!userId || !connectionId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
                 canRead: permissions.canRead ?? true,
                 canEdit: permissions.canEdit ?? false,
                 canCommit: permissions.canCommit ?? false,
-                canManageSchema: permissions.canManageSchema ?? false
+                canManageSchema: permissions.canManageSchema ?? false,
+                canDebug: permissions.canDebug ?? false
             };
 
             if (permIndex !== -1) {
@@ -87,7 +88,8 @@ export async function POST(request: NextRequest) {
                     canRead: true,
                     canEdit: false,
                     canCommit: false,
-                    canManageSchema: false
+                    canManageSchema: false,
+                    canDebug: false
                 });
                 await updateUser(userId, { permissions: userPermissions });
             }

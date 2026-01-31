@@ -94,6 +94,30 @@ export async function updateUser(id: string, updates: Partial<IUser>): Promise<I
     return updated as IUser | null;
 }
 
+// Update user by email
+export async function updateUserByEmail(email: string, updates: Partial<IUser>): Promise<IUser | null> {
+    await ensureDB();
+    const updated = await User.findOneAndUpdate(
+        { email },
+        { $set: updates },
+        { new: true }
+    ).lean();
+
+    return updated as IUser | null;
+}
+
+// Update user settings
+export async function updateUserSettings(email: string, settings: any): Promise<IUser | null> {
+    await ensureDB();
+    const updated = await User.findOneAndUpdate(
+        { email },
+        { $set: { settings: settings } },
+        { new: true }
+    ).lean();
+
+    return updated as IUser | null;
+}
+
 // For migration compatibility
 export async function saveUsers(_users: IUser[]) {
     // No-op or bulk write if needed

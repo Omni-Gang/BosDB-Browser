@@ -30,7 +30,11 @@ class SessionManager extends eventemitter3_1.EventEmitter {
             connectionId,
             createdAt: new Date(),
             config: this.getDefaultConfig(config),
-            state: this.getInitialState(),
+            state: {
+                status: 'CREATED',
+                activeBreakpoints: [],
+                callStack: [],
+            },
             metadata: this.getInitialMetadata(),
         };
         this.sessions.set(session.id, session);
@@ -87,22 +91,22 @@ class SessionManager extends eventemitter3_1.EventEmitter {
         return true;
     }
     /**
+     * Terminate a session (final state)
+     */
+    terminateSession(sessionId) {
+        return this.updateSessionState(sessionId, { status: 'TERMINATED' });
+    }
+    /**
      * Pause a session
      */
     pauseSession(sessionId) {
-        return this.updateSessionState(sessionId, { status: 'paused' });
+        return this.updateSessionState(sessionId, { status: 'PAUSED' });
     }
     /**
      * Resume a session
      */
     resumeSession(sessionId) {
-        return this.updateSessionState(sessionId, { status: 'running' });
-    }
-    /**
-     * Stop a session
-     */
-    stopSession(sessionId) {
-        return this.updateSessionState(sessionId, { status: 'stopped' });
+        return this.updateSessionState(sessionId, { status: 'RUNNING' });
     }
     /**
      * Delete a session
@@ -124,7 +128,7 @@ class SessionManager extends eventemitter3_1.EventEmitter {
         let cleaned = 0;
         for (const [sessionId, session] of this.sessions.entries()) {
             const sessionAge = now - session.createdAt.getTime();
-            if (session.state.status === 'stopped' &&
+            if ((session.state.status === 'COMPLETED' || session.state.status === 'TERMINATED' || session.state.status === 'ERROR') &&
                 sessionAge > maxAgeMs) {
                 this.deleteSession(sessionId);
                 cleaned++;
@@ -173,13 +177,15 @@ class SessionManager extends eventemitter3_1.EventEmitter {
     /**
      * Get initial session state
      */
-    getInitialState() {
+    /*
+    private _getInitialState(): SessionState {
         return {
-            status: 'running',
+            status: 'RUNNING',
             activeBreakpoints: [],
             callStack: [],
         };
     }
+    */
     /**
      * Get initial metadata
      */

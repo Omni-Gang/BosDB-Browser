@@ -26,6 +26,7 @@ import { DataEditor } from '@/components/DataEditor';
 import { AIAssistantPanel } from '@/components/AIAssistantPanel';
 import { QueryHistory } from '@/components/QueryHistory';
 import { useToast } from '@/components/ToastProvider';
+import DebugPerspective from '@/components/debugger/DebugPerspective';
 
 // Define QueryResult interface
 interface QueryResult {
@@ -191,6 +192,7 @@ function QueryPageContent() {
     const [showDebugger, setShowDebugger] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [tabsLoaded, setTabsLoaded] = useState(false);
+    const [isFullScreenDebug, setIsFullScreenDebug] = useState(false);
 
     // Current query is derived from active tab
     const query = tabs[activeTabIndex]?.query || '';
@@ -233,6 +235,13 @@ function QueryPageContent() {
     const [resourceErrors, setResourceErrors] = useState<Map<string, string>>(new Map());
     const [history, setHistory] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(false);
+
+    // User Preferences
+    const [fontSize, setFontSize] = useState(14);
+    const [queryLimit, setQueryLimit] = useState(100);
+    const [autoSave, setAutoSave] = useState(true);
+    const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+
     const [monacoInstance, setMonacoInstance] = useState<any>(null);
     const [debugSessionId, setDebugSessionId] = useState<string | null>(null);
     const [debugStatus, setDebugStatus] = useState<'stopped' | 'running' | 'paused'>('stopped');
@@ -342,21 +351,41 @@ function QueryPageContent() {
         });
     }, []);
 
-    // Load tabs from localStorage on mount
+    // Load tabs and settings from localStorage/API on mount
     useEffect(() => {
-        if (!connectionId || tabsLoaded) return;
+        if (!connectionId) return;
 
-        const saved = loadTabs(connectionId);
-        if (saved && saved.tabs.length > 0) {
-            setTabs(saved.tabs);
-            setActiveTabIndex(saved.activeIndex);
-            setTabsLoaded(true);
-        } else if (connectionInfo) {
-            const defaults = createDefaultTabs(connectionInfo.type);
-            setTabs(defaults.tabs);
-            setActiveTabIndex(defaults.activeIndex);
-            setTabsLoaded(true);
-        }
+        const loadContent = async () => {
+            if (!tabsLoaded) {
+                const saved = loadTabs(connectionId);
+                if (saved && saved.tabs.length > 0) {
+                    setTabs(saved.tabs);
+                    setActiveTabIndex(saved.activeIndex);
+                    setTabsLoaded(true);
+                } else if (connectionInfo) {
+                    const defaults = createDefaultTabs(connectionInfo.type);
+                    setTabs(defaults.tabs);
+                    setActiveTabIndex(defaults.activeIndex);
+                    setTabsLoaded(true);
+                }
+            }
+
+            // Load Settings
+            try {
+                const res = await fetch('/api/settings', { headers: getHeaders() });
+                const data = await res.json();
+                if (data.settings) {
+                    if (data.settings.fontSize) setFontSize(data.settings.fontSize);
+                    if (data.settings.queryLimit) setQueryLimit(data.settings.queryLimit);
+                    if (data.settings.autoSave !== undefined) setAutoSave(data.settings.autoSave);
+                    if (data.settings.density) setDensity(data.settings.density);
+                }
+            } catch (err) {
+                console.error('Failed to load settings', err);
+            }
+        };
+
+        loadContent();
     }, [connectionId, tabsLoaded, connectionInfo]);
 
     // Save tabs to localStorage on changes (debounced)
@@ -880,12 +909,10 @@ function QueryPageContent() {
                 return;
             }
 
-            // Fallback: Wrap generic SQL in a DO block for debugging
-            // This is useful for testing SELECTs logic or singular statements
-            const wrappedBlock = `DO $$\nBEGIN\n    -- Debugging generic statement\n    ${raw};\nEND $$;`;
-            setQuery(wrappedBlock);
+            // Fallback: Load generic SQL as-is
+            setQuery(raw);
             setShowDebugger(true);
-            setWarning('🐞 Debug Mode: Your SQL was wrapped in a DO block to enable stepping.');
+            setWarning('🐞 Debug Mode enabled. You can now step through your SQL statements.');
             return;
         }
 
@@ -1012,7 +1039,7 @@ function QueryPageContent() {
                         connectionId,
                         query: q,
                         timeout: 30000,
-                        maxRows: 1000,
+                        maxRows: queryLimit || 1000,
                     }),
                 });
 
@@ -1170,6 +1197,17 @@ function QueryPageContent() {
         );
     }
 
+    if (isFullScreenDebug) {
+        return (
+            <DebugPerspective
+                onClose={() => setIsFullScreenDebug(false)}
+                sessionId={debugSessionId}
+                connectionId={connectionId!}
+                query={query}
+            />
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Header */}
@@ -1195,9 +1233,9 @@ function QueryPageContent() {
                     >
                         <ChevronRight className={`w-3 h-3 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} />
                     </button>
-                    <div className={`flex-1 flex flex-col overflow-hidden ${sidebarCollapsed ? 'hidden' : 'p-4'}`}>
+                    <div className={`flex-1 flex flex-col overflow-hidden ${sidebarCollapsed ? 'hidden' : (density === 'compact' ? 'p-2' : 'p-4')}`}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold flex items-center gap-2">
+                            <h3 className={`font-semibold flex items-center gap-2 ${density === 'compact' ? 'text-xs' : ''}`}>
                                 <TableIcon className="w-4 h-4" />
                                 Explorer
                             </h3>
@@ -1209,13 +1247,15 @@ function QueryPageContent() {
                                 >
                                     <RefreshCw className="w-4 h-4" />
                                 </button>
-                                <button
-                                    onClick={() => setShowTableDesigner(true)}
-                                    className="p-1 hover:bg-accent rounded text-primary"
-                                    title="Create New Table"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </button>
+                                {connectionInfo?.permission?.canManageSchema !== false && (
+                                    <button
+                                        onClick={() => setShowTableDesigner(true)}
+                                        className="p-1 hover:bg-accent rounded text-primary"
+                                        title="Create New Table"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -1367,15 +1407,17 @@ function QueryPageContent() {
                             {executing ? 'Executing...' : 'Run'}
                         </button>
 
-                        <button
-                            onClick={() => executeQuery(undefined, true)}
-                            disabled={executing || !query.trim()}
-                            className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center gap-2"
-                            title="Run with Debugger (for CALL statements)"
-                        >
-                            <Bug className="w-4 h-4" />
-                            Debug
-                        </button>
+                        {connectionInfo?.permission?.canDebug !== false && (
+                            <button
+                                onClick={() => executeQuery(undefined, true)}
+                                disabled={executing || !query.trim()}
+                                className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center gap-2"
+                                title="Run with Debugger (for CALL statements)"
+                            >
+                                <Bug className="w-4 h-4" />
+                                Debug
+                            </button>
+                        )}
 
                         <div className="w-px h-6 bg-border" />
 
@@ -1391,14 +1433,16 @@ function QueryPageContent() {
 
                         <div className="w-px h-6 bg-border" />
 
-                        <button
-                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
-                            onClick={() => setShowSaveModal(true)}
-                            disabled={!query.trim()}
-                        >
-                            <Save className="w-4 h-4" />
-                            Save
-                        </button>
+                        {connectionInfo?.permission?.canEdit !== false && (
+                            <button
+                                className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                                onClick={() => setShowSaveModal(true)}
+                                disabled={!query.trim()}
+                            >
+                                <Save className="w-4 h-4" />
+                                Save
+                            </button>
+                        )}
 
 
 
@@ -1411,18 +1455,20 @@ function QueryPageContent() {
                             Sync External
                         </button>
 
-                        <Link
-                            href={`/version-control?connection=${connectionId}`}
-                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 relative"
-                        >
-                            <GitBranch className="w-4 h-4" />
-                            VCS
-                            {pendingChanges > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                    {pendingChanges}
-                                </span>
-                            )}
-                        </Link>
+                        {connectionInfo?.permission?.canCommit !== false && (
+                            <Link
+                                href={`/version-control?connection=${connectionId}`}
+                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 relative"
+                            >
+                                <GitBranch className="w-4 h-4" />
+                                VCS
+                                {pendingChanges > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {pendingChanges}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
 
                         <button
                             onClick={() => setShowHistory(!showHistory)}
@@ -1474,7 +1520,7 @@ function QueryPageContent() {
                             }}
                             options={{
                                 minimap: { enabled: false },
-                                fontSize: 14,
+                                fontSize: fontSize,
                                 lineNumbers: 'on',
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
@@ -1544,6 +1590,7 @@ function QueryPageContent() {
                                             <DataEditor
                                                 rows={filteredResults.get(activeTab) || results[activeTab].rows}
                                                 fields={results[activeTab].fields}
+                                                readOnly={connectionInfo?.permission?.canEdit === false}
                                                 onSave={async (updates) => {
                                                     // Get table name from result set
                                                     const tableName = results[activeTab].tableName;
@@ -1650,6 +1697,7 @@ function QueryPageContent() {
                             currentLine={debugCurrentLine}
                             setCurrentLine={setDebugCurrentLine}
                             onClose={() => setShowDebugger(false)}
+                            onExpand={() => setIsFullScreenDebug(true)}
                         />
                     )
                 }

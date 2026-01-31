@@ -5,6 +5,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TimeTravelEngine = void 0;
+// import { DebugOperation, QueryResult } from './types';
 class TimeTravelEngine {
     /**
      * Generate inverse SQL for a given operation

@@ -9,10 +9,13 @@ import { DebugEngine } from '@bosdb/debugger-core';
 import {
     ClientMessage,
     ServerMessage,
-    SessionCreatedMessage,
+    // SessionCreatedMessage, // Unused
     StoppedMessage,
     BreakpointHitMessage,
+    // ContinuedMessage, // Unused
+    // OutputMessage,   // Unused
 } from './protocol-types';
+import { StoppedEvent, /* BreakpointHitEvent, ContinuedEvent, */ QueryExecution } from '@bosdb/debugger-core';
 
 export class ProtocolServer extends EventEmitter {
     private wss: WebSocket.Server | null = null;
@@ -30,7 +33,7 @@ export class ProtocolServer extends EventEmitter {
     start(server: any): void {
         this.wss = new WebSocket.Server({ server });
 
-        this.wss.on('connection', (ws: WebSocket, req) => {
+        this.wss.on('connection', (ws: WebSocket, _req) => {
             const clientId = this.generateClientId();
             this.clients.set(clientId, ws);
 
@@ -192,19 +195,18 @@ export class ProtocolServer extends EventEmitter {
      * Set up listeners for debug engine events
      */
     private setupEngineListeners(): void {
-        this.debugEngine.on('paused', (event) => {
+        this.debugEngine.on('paused', (event: StoppedEvent) => {
             const message: StoppedMessage = {
                 type: 'stopped',
-                sessionId: event.sessionId,
+                sessionId: event.details.sessionId, // Adjusted based on StoppedEvent structure
                 reason: event.reason,
-                executionPoint: event.executionPoint,
                 details: event.details,
             };
 
-            this.broadcastToSession(event.sessionId, message);
+            this.broadcastToSession(event.details.sessionId, message);
         });
 
-        this.debugEngine.on('breakpointHit', (event) => {
+        this.debugEngine.on('breakpointHit', (event: { breakpoint: any, context: any }) => {
             const message: BreakpointHitMessage = {
                 type: 'breakpointHit',
                 sessionId: event.context.sessionId,
@@ -215,14 +217,14 @@ export class ProtocolServer extends EventEmitter {
             this.broadcastToSession(event.context.sessionId, message);
         });
 
-        this.debugEngine.on('resumed', (event) => {
+        this.debugEngine.on('resumed', (event: { sessionId: string }) => {
             this.broadcastToSession(event.sessionId, {
                 type: 'continued',
                 sessionId: event.sessionId,
             });
         });
 
-        this.debugEngine.on('queryStarted', (execution) => {
+        this.debugEngine.on('queryStarted', (execution: QueryExecution) => {
             const sessionId = execution.queryId; // Would need to track this properly
             this.broadcastToSession(sessionId, {
                 type: 'output',
@@ -231,7 +233,7 @@ export class ProtocolServer extends EventEmitter {
             });
         });
 
-        this.debugEngine.on('queryCompleted', (execution) => {
+        this.debugEngine.on('queryCompleted', (execution: QueryExecution) => {
             const sessionId = execution.queryId; // Would need to track this properly
             this.broadcastToSession(sessionId, {
                 type: 'output',

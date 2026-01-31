@@ -1,0 +1,62 @@
+[
+  {
+    "id": "postgres_my_postgres_database_1767370748829",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5463,
+    "username": "postgres",
+    "password": "My Postgres Database_le100s3a",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2026-01-02T16:19:20.362Z",
+    "lastUsedAt": "2026-01-02T16:19:20.362Z",
+    "organizationId": "marlo.com",
+    "containerId": "e60dc58c1230982932cc1e0557bc638578989c92bf1e5c9666d12089ac85f436"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767370761340",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5464,
+    "username": "postgres",
+    "password": "My Postgres Database_od67765s",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2026-01-02T16:19:23.008Z",
+    "lastUsedAt": "2026-01-02T16:19:23.008Z",
+    "organizationId": "marlo.com",
+    "containerId": "77b228ed206600c515a4e55599331e395b335ed604be3e4f2fa8178e4cd21320"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767370766101",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5465,
+    "username": "postgres",
+    "password": "My Postgres Database_b95lpfuv",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2026-01-02T16:19:33.732Z",
+    "lastUsedAt": "2026-01-02T16:19:33.732Z",
+    "organizationId": "marlo.com",
+    "containerId": "6fbd08d34a7a9a19c3a5257699ecee231e031ebd7db69e930eec760387e410f1"
+  },
+  {
+    "id": "postgres_my_postgres_database_1767370779036",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5466,
+    "username": "postgres",
+    "password": "My Postgres Database_20dbv0y3",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2026-01-02T16:19:43.755Z",
+    "lastUsedAt": "2026-01-02T16:19:56.768Z",
+    "organizationId": "marlo.com",
+    "containerId": "6b40998bd4720ea70831bcbd719ea3e106d77f14a7191497d5768444f33e766f"
+  }
+]

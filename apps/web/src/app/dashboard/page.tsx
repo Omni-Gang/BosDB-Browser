@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Database, Plus, Play, History, Save, LogOut, User, Shield, Zap, Star, Building, Lock, Trash2 } from 'lucide-react';
+import { Database, Plus, Play, History, Save, LogOut, User, Shield, Zap, Star, Building, Lock, Trash2, Globe } from 'lucide-react';
 import { VALID_DATABASE_TYPES } from '@/constants/database-types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, logout } from '@/lib/auth';
 import { fetchOrgSubscription, getOrgSubscriptionStatus, isDatabaseAllowed, isPro } from '@/lib/subscription';
 import { useToast } from '@/components/ToastProvider';
+import { PublicAccessModal } from '@/components/PublicAccessModal';
 
 interface Connection {
     id: string;
@@ -288,8 +289,10 @@ function QuickActionCard({
 }
 
 function ConnectionCard({ connection }: { connection: Connection }) {
+    const [showProxyModal, setShowProxyModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const toast = useToast();
+    const canShare = true; // Allow viewing connection details on web too
 
     const handleDelete = async () => {
         if (!confirm(`Delete connection "${connection.name}"? This action cannot be undone.`)) {
@@ -353,6 +356,15 @@ function ConnectionCard({ connection }: { connection: Connection }) {
                     >
                         {connection.status}
                     </span>
+                    {canShare && (
+                        <button
+                            onClick={() => setShowProxyModal(true)}
+                            className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition"
+                            title="Public Access"
+                        >
+                            <Globe className="w-4 h-4" />
+                        </button>
+                    )}
                     <button
                         onClick={handleDelete}
                         disabled={deleting}
@@ -384,6 +396,13 @@ function ConnectionCard({ connection }: { connection: Connection }) {
             >
                 Open Query Editor
             </Link>
+
+            {showProxyModal && (
+                <PublicAccessModal
+                    connection={connection}
+                    onClose={() => setShowProxyModal(false)}
+                />
+            )}
         </div>
     );
 }

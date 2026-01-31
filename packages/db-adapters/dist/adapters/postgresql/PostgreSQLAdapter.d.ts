@@ -1,4 +1,5 @@
 import type { ConnectionConfig, ConnectionResult, TestResult, QueryRequest, QueryResult, ExplainResult, Schema, Table, TableMetadata, Index, DatabaseInfo } from '@bosdb/core';
+import { Variable } from '@bosdb/debugger-core';
 import { BaseDBAdapter } from '../../interfaces/IDBAdapter';
 /**
  * PostgreSQL database adapter
@@ -17,13 +18,12 @@ export declare class PostgreSQLAdapter extends BaseDBAdapter {
     explainQuery(connectionId: string, query: string): Promise<ExplainResult>;
     getVersion(connectionId: string): Promise<string>;
     getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
+    startTransaction(connectionId: string): Promise<string>;
+    commitTransaction(transactionId: string): Promise<void>;
+    rollbackTransaction(transactionId: string): Promise<void>;
+    getVariables(connectionId: string): Promise<Variable[]>;
     private getColumns;
     private getForeignKeys;
     private mapDataType;
-    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
-        query: string;
-        executionTime: Date;
-        duration?: number;
-    }[]>;
 }
 //# sourceMappingURL=PostgreSQLAdapter.d.ts.map

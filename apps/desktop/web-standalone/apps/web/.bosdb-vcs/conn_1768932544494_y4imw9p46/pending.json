@@ -1,0 +1,43 @@
+{
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "CREATE",
+      "target": "accounts",
+      "tableName": "accounts",
+      "description": "Create table accounts",
+      "query": "CREATE TABLE accounts (\n    account_id INT PRIMARY KEY,\n    account_holder VARCHAR(100),\n    balance DECIMAL(10,2)\n)",
+      "rollbackSQL": "DROP TABLE IF EXISTS accounts;",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768932618068-4qprq42l0",
+      "timestamp": "2026-01-20T18:10:18.068Z"
+    },
+    {
+      "type": "DATA",
+      "operation": "INSERT",
+      "target": "accounts",
+      "tableName": "accounts",
+      "description": "Insert 2 row(s) into accounts",
+      "query": "INSERT INTO accounts (account_id, account_holder, balance) VALUES\n(1, 'Ayush', 5000.00),\n(2, 'Rohit', 3000.00)",
+      "affectedRows": 2,
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768932628154-di2fwy48h",
+      "timestamp": "2026-01-20T18:10:28.154Z"
+    },
+    {
+      "type": "SCHEMA",
+      "operation": "CREATE",
+      "target": "transfer_money",
+      "description": "Create procedure transfer_money",
+      "query": "CREATE OR REPLACE PROCEDURE transfer_money(\n    p_from_account INT,\n    p_to_account INT,\n    p_amount DECIMAL\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    from_balance DECIMAL;\nBEGIN\n    -- Fetch balance\n    SELECT balance INTO from_balance\n    FROM accounts\n    WHERE account_id = p_from_account;\n\n    -- ❌ BUG 1: No NULL check (account may not exist)\n\n    -- ❌ BUG 2: Wrong condition (should be < p_amount)\n    IF from_balance <= p_amount THEN\n        RAISE NOTICE 'Insufficient balance';\n    END IF;\n\n    -- ❌ BUG 3: Deducting from WRONG account\n    UPDATE accounts\n    SET balance = balance - p_amount\n    WHERE account_id = p_to_account;\n\n    -- ❌ BUG 4: Adding money to WRONG account\n    UPDATE accounts\n    SET balance = balance + p_amount\n    WHERE account_id = p_from_account;\n\n    -- ❌ BUG 5: No transaction safety / rollback\nEND;\n$$",
+      "rollbackSQL": "DROP PROCEDURE transfer_money;",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768932636404-1140hrrkm",
+      "timestamp": "2026-01-20T18:10:36.404Z"
+    }
+  ]
+}

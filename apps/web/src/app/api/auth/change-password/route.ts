@@ -7,6 +7,14 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { userId, currentPassword, newPassword } = body;
 
+        // SECURITY: Verify that the requester is the user whose password is being changed
+        const requesterId = request.headers.get('x-user-id');
+        if (!requesterId || requesterId !== userId) {
+            return NextResponse.json({
+                error: 'Unauthorized: You can only change your own password.'
+            }, { status: 403 });
+        }
+
         if (!userId || !currentPassword || !newPassword) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
         }

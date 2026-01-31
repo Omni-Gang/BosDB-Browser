@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCommit, getCommits, getPendingChangesFromStorage, getCurrentBranch } from '@/lib/vcs-storage';
 
+// Helper for CORS headers
+function cors(res: NextResponse) {
+    res.headers.set('Access-Control-Allow-Origin', '*');
+    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-email, x-org-id, x-user-role');
+    return res;
+}
+
+export async function OPTIONS() {
+    return cors(new NextResponse(null, { status: 200 }));
+}
+
 // POST /api/vcs/commit - Create a commit
 export async function POST(request: NextRequest) {
     try {
@@ -8,15 +20,33 @@ export async function POST(request: NextRequest) {
         const { connectionId, message, author } = body;
 
         if (!connectionId || !message) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            return cors(NextResponse.json({ error: 'Missing required fields' }, { status: 400 }));
         }
+
+        // --- ENFORCE USER PERMISSIONS ---
+        const userEmail = request.headers.get('x-user-email');
+        const userRole = request.headers.get('x-user-role');
+
+        if (userRole !== 'admin') {
+            const { findUserByEmail } = await import('@/lib/users-store');
+            if (userEmail) {
+                const user = await findUserByEmail(userEmail);
+                if (user) {
+                    const permission = user.permissions?.find(p => p.connectionId === connectionId);
+                    if (!permission || !permission.canCommit) {
+                        return cors(NextResponse.json({ error: 'Access denied: Commit permission required' }, { status: 403 }));
+                    }
+                }
+            }
+        }
+        // --- END ENFORCE USER PERMISSIONS ---
 
         // Get pending changes
         // Use provided changes (partial commit) or fetch all pending (commit all)
         const changes = body.changes || await getPendingChangesFromStorage(connectionId);
 
         if (changes.length === 0) {
-            return NextResponse.json({ error: 'No pending changes to commit' }, { status: 400 });
+            return cors(NextResponse.json({ error: 'No pending changes to commit' }, { status: 400 }));
         }
 
         // Get current branch
@@ -39,10 +69,10 @@ export async function POST(request: NextRequest) {
 
         await createCommit(commit);
 
-        return NextResponse.json({ success: true, commit });
+        return cors(NextResponse.json({ success: true, commit }));
     } catch (error) {
         console.error('Commit API error:', error);
-        return NextResponse.json({ error: String(error) }, { status: 500 });
+        return cors(NextResponse.json({ error: String(error) }, { status: 500 }));
     }
 }
 
@@ -52,14 +82,14 @@ export async function GET(request: NextRequest) {
     const connectionId = searchParams.get('connectionId');
 
     if (!connectionId) {
-        return NextResponse.json({ error: 'Connection ID required' }, { status: 400 });
+        return cors(NextResponse.json({ error: 'Connection ID required' }, { status: 400 }));
     }
 
     try {
         const commits = await getCommits(connectionId);
-        return NextResponse.json({ commits });
+        return cors(NextResponse.json({ commits }));
     } catch (error) {
         console.error('Get commits error:', error);
-        return NextResponse.json({ commits: [] });
+        return cors(NextResponse.json({ commits: [] }));
     }
 }

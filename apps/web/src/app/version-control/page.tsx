@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Save } from 'lucide-react';
 import { getCurrentUser, promptForUserIfNeeded } from '@/lib/user-context';
 import { useToast } from '@/components/ToastProvider';
 
@@ -22,6 +23,9 @@ function VersionControlContent() {
     const [compareFrom, setCompareFrom] = useState<number>(0);
     const [compareTo, setCompareTo] = useState<number>(-1);
     const [diffResult, setDiffResult] = useState<any>(null);
+    const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
+    const [commitMessage, setCommitMessage] = useState('');
+    const [pendingChangesToCommit, setPendingChangesToCommit] = useState<any[] | null>(null);
 
     useEffect(() => {
         if (connectionId) {
@@ -90,37 +94,102 @@ function VersionControlContent() {
         // Use stored user or prompt once
         const user = promptForUserIfNeeded();
 
-        const message = customMessage || prompt('Commit message:');
-        if (!message) return;
-
-        const author = {
-            name: user.name,
-            email: user.email,
-            userId: (user as any).userId || (user as any).id // Include user ID for tracking
-        };
-
-        const res = await fetch('/api/vcs/commit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                connectionId,
-                message,
-                author,
-                changes: changesToCommit || pending,
-                snapshot: { schema: { tables: {} }, data: { tables: {} }, timestamp: new Date() }
-            })
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-            toast.success(`Commit created by ${user.name} on branch ${currentBranch}!`);
-            await loadAllData();
-        } else {
-            const error = result as { error: string };
-            toast.error(`Failed to create commit: ${error.error || 'Unknown error'}`);
-            console.error('Commit error:', error);
+        const message = customMessage;
+        if (!message || message.trim().length === 0) {
+            toast.error('Commit message is required.');
+            return;
         }
+
+        setLoading(true);
+        try {
+            const author = {
+                name: user.name,
+                email: user.email,
+                userId: (user as any).userId || (user as any).id
+            };
+
+            const res = await fetch('/api/vcs/commit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    connectionId,
+                    message,
+                    author,
+                    changes: changesToCommit || pending,
+                    snapshot: { schema: { tables: {} }, data: { tables: {} }, timestamp: new Date() }
+                })
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                toast.success(`Commit created by ${user.name} on branch ${currentBranch}!`);
+                await loadAllData();
+            } else {
+                toast.error(`Failed to create commit: ${result.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Commit error:', error);
+            toast.error('An unexpected error occurred during commit.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const CommitModal = () => {
+        if (!isCommitModalOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 text-white">
+                    <div className="p-6 border-b border-gray-700">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Save className="w-5 h-5 text-blue-400" />
+                            Create Commit
+                        </h3>
+                        <p className="text-sm text-gray-400 mt-1">
+                            {pendingChangesToCommit ? `Committing 1 specific file change.` : `Committing all ${pending.length} pending changes.`}
+                        </p>
+                    </div>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Commit Message
+                        </label>
+                        <textarea
+                            autoFocus
+                            value={commitMessage}
+                            onChange={(e) => setCommitMessage(e.target.value)}
+                            className="w-full h-32 bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                            placeholder="Describe your changes..."
+                        />
+                        <div className="mt-4 flex gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsCommitModalOpen(false);
+                                    setCommitMessage('');
+                                    setPendingChangesToCommit(null);
+                                }}
+                                className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await createCommit(pendingChangesToCommit || undefined, commitMessage);
+                                    setIsCommitModalOpen(false);
+                                    setCommitMessage('');
+                                    setPendingChangesToCommit(null);
+                                }}
+                                disabled={!commitMessage.trim()}
+                                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition shadow-lg shadow-blue-900/20"
+                            >
+                                Confirm Commit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const revertCommit = async (commitId: string, message: string) => {
@@ -686,7 +755,7 @@ function VersionControlContent() {
                                 <div className="flex justify-between mb-4">
                                     <h2 className="text-2xl font-bold">Pending Changes</h2>
                                     <button
-                                        onClick={() => createCommit()}
+                                        onClick={() => setIsCommitModalOpen(true)}
                                         disabled={pending.length === 0}
                                         className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition"
                                     >
@@ -737,7 +806,10 @@ function VersionControlContent() {
                                                         )}
                                                     </div>
                                                     <button
-                                                        onClick={() => createCommit([change], `${change.operation} ${change.target}`)}
+                                                        onClick={() => {
+                                                            setPendingChangesToCommit([change]);
+                                                            setIsCommitModalOpen(true);
+                                                        }}
                                                         className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition shrink-0"
                                                         title="Commit this change only"
                                                     >
@@ -846,7 +918,7 @@ function VersionControlContent() {
                                     <p className="text-sm text-gray-400">Execute queries and track changes</p>
                                 </Link>
                                 <button
-                                    onClick={() => createCommit()}
+                                    onClick={() => setIsCommitModalOpen(true)}
                                     disabled={pending.length === 0}
                                     className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition text-left disabled:opacity-50"
                                 >
@@ -864,6 +936,8 @@ function VersionControlContent() {
                                 </button>
                             </div>
                         </div>
+
+                        <CommitModal />
                     </>
                 )}
             </div>

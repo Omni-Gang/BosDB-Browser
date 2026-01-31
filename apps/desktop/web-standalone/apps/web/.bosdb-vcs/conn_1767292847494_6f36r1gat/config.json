@@ -1,0 +1,17 @@
+{
+  "HEAD": "main",
+  "branches": {
+    "main": {
+      "name": "main",
+      "commitId": "",
+      "protected": true
+    }
+  },
+  "tags": {},
+  "config": {
+    "core": {
+      "autoGc": true,
+      "logAllRefUpdates": true
+    }
+  }
+}

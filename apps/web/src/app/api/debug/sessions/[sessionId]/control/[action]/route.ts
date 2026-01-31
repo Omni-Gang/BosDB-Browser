@@ -44,7 +44,7 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
                 return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
         }
 
-        return NextResponse.json({ success: true, status: session.status });
+        return NextResponse.json({ success: true, status: session.state.status.toLowerCase() });
     } catch (error: any) {
         console.error(`Error performing debug action ${params.action}:`, error);
         return NextResponse.json(

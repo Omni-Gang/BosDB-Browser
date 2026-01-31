@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.electron-padding {
+    padding-top: 2rem; /* 32px roughly matching the 8h title bar */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

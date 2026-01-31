@@ -1,0 +1,31 @@
+{
+  "id": "1767374786731-ri79i9hkn",
+  "message": "Revert: DROP traveling_list_items (17673747)",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T17:26:26.728Z"
+  },
+  "timestamp": "2026-01-02T17:26:26.731Z",
+  "parentIds": [
+    "1767374767686-otm95jsiv"
+  ],
+  "treeId": "1767374786731-ri79i9hkn",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "ROLLBACK",
+      "target": "traveling_list_items",
+      "tableName": "traveling_list_items",
+      "description": "Undone: Drop table traveling_list_items",
+      "query": "DROP TABLE IF EXISTS traveling_list_items",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T17:25:03.757Z",
+      "id": "change-1767374703757-ancffmx85"
+    }
+  ],
+  "branchName": "main"
+}

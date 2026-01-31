@@ -24,15 +24,15 @@ const session_manager_1 = require("./session-manager");
 const breakpoint_manager_1 = require("./breakpoint-manager");
 const execution_controller_1 = require("./execution-controller");
 const state_inspector_1 = require("./state-inspector");
-const time_travel_1 = require("./time-travel");
 class DebugEngine extends eventemitter3_1.EventEmitter {
+    // private _timeTravelEngine: TimeTravelEngine;
     constructor() {
         super();
         // Initialize managers
         this.sessionManager = new session_manager_1.SessionManager();
         this.breakpointManager = new breakpoint_manager_1.BreakpointManager();
         this.stateInspector = new state_inspector_1.StateInspector();
-        this.timeTravelEngine = new time_travel_1.TimeTravelEngine();
+        // this._timeTravelEngine = new TimeTravelEngine();
         this.executionController = new execution_controller_1.ExecutionController(this.breakpointManager, this.sessionManager);
         // Forward events
         this.forwardEvents();

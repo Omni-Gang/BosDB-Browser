@@ -1,0 +1,17 @@
+[
+  {
+    "id": "postgres_my_postgres_database_1767025587688",
+    "type": "postgres",
+    "name": "My Postgres Database",
+    "port": 5432,
+    "username": "postgres",
+    "password": "My Postgres Database_ro5x41t6",
+    "database": "my_postgres_database",
+    "status": "stopped",
+    "autoStart": true,
+    "createdAt": "2025-12-29T16:26:35.140Z",
+    "organizationId": "ind-testt",
+    "containerId": "43fe14c9c9ae0c6e28112f761fbe47d7aafbc121214d60327ec33ecf58c8aa89",
+    "lastUsedAt": "2026-01-01T18:41:35.379Z"
+  }
+]

@@ -8,6 +8,21 @@ class BaseDBAdapter {
     constructor() {
         this.connectionMap = new Map();
     }
+    async getRecentQueries(_connectionId, _lastTimestamp) {
+        return [];
+    }
+    async getVariables(_connectionId) {
+        return [];
+    }
+    async startTransaction(_connectionId) {
+        throw new Error('Transactions not supported by this adapter');
+    }
+    async commitTransaction(_transactionConnectionId) {
+        // No-op
+    }
+    async rollbackTransaction(_transactionConnectionId) {
+        // No-op
+    }
     /**
      * Generate a unique connection ID
      */

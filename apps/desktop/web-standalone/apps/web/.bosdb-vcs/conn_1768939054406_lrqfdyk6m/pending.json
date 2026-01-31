@@ -1,0 +1,16 @@
+{
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "CREATE",
+      "target": "calculate_employee_bonus",
+      "description": "Create procedure calculate_employee_bonus",
+      "query": "CREATE OR REPLACE PROCEDURE calculate_employee_bonus(\n    emp_id INT,\n    salary NUMERIC,\n    performance_rating INT\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    bonus_multiplier NUMERIC;\n    final_bonus NUMERIC;\nBEGIN\n    -- 1. Determine multiplier based on rating (Step here)\n    IF performance_rating >= 5 THEN\n        bonus_multiplier := 0.20;\n    ELSIF performance_rating >= 3 THEN\n        bonus_multiplier := 0.10;\n    ELSE\n        bonus_multiplier := 0.05;\n    END IF;\n\n    -- 2. Calculate the final bonus (Step again)\n    final_bonus := salary * bonus_multiplier;\n\n    -- 3. Update the record\n    UPDATE employees \n    SET last_bonus = final_bonus, \n        last_updated = NOW() \n    WHERE id = emp_id;\n\n    -- 4. Final check\n    RAISE NOTICE 'Bonus of % calculated for Employee %', final_bonus, emp_id;\nEND;\n$$",
+      "rollbackSQL": "DROP PROCEDURE calculate_employee_bonus;",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768939428573-7yoszv9d0",
+      "timestamp": "2026-01-20T20:03:48.573Z"
+    }
+  ]
+}

@@ -108,17 +108,25 @@ export async function POST(request: NextRequest) {
             // Validate allowed updates for User
             const updateData: any = {};
 
+            // Password handling - hash if provided
+            if (data.password) {
+                // SECURITY: Restrict password changes to account owner only
+                // id is the target user id, requestingUser.id is the current admin's id
+                if (!requestingUser || id !== requestingUser.id) {
+                    return NextResponse.json({
+                        error: 'Unauthorized: You can only change your own password.'
+                    }, { status: 403 });
+                }
+
+                const bcrypt = (await import('bcryptjs')).default;
+                updateData.password = await bcrypt.hash(data.password, 10);
+            }
+
             // Safe fields to update
             if (data.name) updateData.name = data.name;
             if (data.email) updateData.email = data.email;
             if (data.role) updateData.role = data.role;
             if (data.status) updateData.status = data.status;
-
-            // Password handling - hash if provided
-            if (data.password) {
-                const bcrypt = (await import('bcryptjs')).default;
-                updateData.password = await bcrypt.hash(data.password, 10);
-            }
 
             await updateUser(id, updateData);
             return NextResponse.json({ success: true, message: 'User updated successfully' });

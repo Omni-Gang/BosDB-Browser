@@ -7,6 +7,7 @@ export interface ConnectionPermission {
     canEdit: boolean;       // Modify data (INSERT, UPDATE, DELETE)
     canCommit: boolean;     // Access version control / commit changes
     canManageSchema: boolean; // CREATE, ALTER, DROP tables
+    canDebug: boolean;      // Access to debugger
 }
 
 // Subscription plan

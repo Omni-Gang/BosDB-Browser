@@ -7,6 +7,7 @@ import { MongoDBAdapter } from './adapters/mongodb/MongoDBAdapter';
 import { RedisAdapter } from './adapters/redis/RedisAdapter';
 
 // Dynamically imported adapters (now supported!)
+import { SQLiteAdapter } from './adapters/sqlite/SQLiteAdapter';
 import { SQLServerAdapter } from './adapters/sqlserver/SQLServerAdapter';
 import { OracleAdapter } from './adapters/oracle/OracleAdapter';
 import { CassandraAdapter } from './adapters/cassandra/CassandraAdapter';
@@ -41,6 +42,9 @@ export class AdapterFactory {
             case 'singlestore':
             case 'cubrid':
                 return new MySQLAdapter();
+
+            case 'sqlite':
+                return new SQLiteAdapter();
 
             // MongoDB-compatible databases
             case 'mongodb':

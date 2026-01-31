@@ -29,6 +29,10 @@ export declare class SessionManager extends EventEmitter {
      */
     updateSessionMetadata(sessionId: string, metadata: Partial<SessionMetadata>): boolean;
     /**
+     * Terminate a session (final state)
+     */
+    terminateSession(sessionId: string): boolean;
+    /**
      * Pause a session
      */
     pauseSession(sessionId: string): boolean;
@@ -36,10 +40,6 @@ export declare class SessionManager extends EventEmitter {
      * Resume a session
      */
     resumeSession(sessionId: string): boolean;
-    /**
-     * Stop a session
-     */
-    stopSession(sessionId: string): boolean;
     /**
      * Delete a session
      */
@@ -65,7 +65,6 @@ export declare class SessionManager extends EventEmitter {
     /**
      * Get initial session state
      */
-    private getInitialState;
     /**
      * Get initial metadata
      */

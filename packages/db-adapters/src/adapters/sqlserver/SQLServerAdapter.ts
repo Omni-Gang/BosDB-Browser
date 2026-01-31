@@ -270,26 +270,10 @@ export class SQLServerAdapter extends BaseDBAdapter {
         };
     }
 
-    /**
-     * Fetch external DDL changes from ddl_audit_log table
-     * Returns all unprocessed audit log entries (to be deleted after VCS tracking)
-     */
-    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number; auditId?: number }[]> {
+    async getRecentQueries(connectionId: string, _lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number; auditId?: number }[]> {
         const pool = this.getConnection<any>(connectionId);
-
         try {
-            console.log(`[SQLServerAdapter] Querying ddl_audit_log for external DDL changes...`);
-
-            const result = await pool.request().query(`
-                SELECT 
-                    id,
-                    event_time,
-                    ddl_command
-                FROM ddl_audit_log
-                ORDER BY event_time ASC
-            `);
-
-            console.log(`[SQLServerAdapter] Found ${result.recordset.length} DDL entries in audit log.`);
+            const result = await pool.request().query('SELECT id, ddl_command, event_time FROM ddl_audit_log ORDER BY id ASC');
 
             return result.recordset.map((row: any) => ({
                 query: row.ddl_command,
@@ -298,7 +282,6 @@ export class SQLServerAdapter extends BaseDBAdapter {
             }));
         } catch (error: any) {
             console.warn('[SQLServerAdapter] Failed to fetch audit log:', error.message);
-            // If table doesn't exist, return empty
             if (error.message && error.message.includes('Invalid object name')) {
                 console.warn('[SQLServerAdapter] ddl_audit_log table not found. External DDL tracking disabled.');
                 return [];

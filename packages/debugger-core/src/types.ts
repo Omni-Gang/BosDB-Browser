@@ -30,8 +30,10 @@ export interface DebugSession {
     metadata: SessionMetadata;
 }
 
+export type SessionStatus = 'CREATED' | 'RUNNING' | 'PAUSED' | 'ERROR' | 'COMPLETED' | 'TERMINATED';
+
 export interface SessionState {
-    status: 'running' | 'paused' | 'stopped' | 'error';
+    status: SessionStatus;
     currentExecutionPoint?: ExecutionPoint;
     activeBreakpoints: Breakpoint[];
     callStack: StackFrame[];
@@ -159,9 +161,49 @@ export interface Variable {
     name: string;
     value: any;
     type: string;
-    scope: 'local' | 'session' | 'global';
+    scope: 'local' | 'session' | 'global' | 'trigger' | 'cursor';
     mutable: boolean;
     children?: Variable[];
+    timeline?: HistoricalVariable[];
+}
+
+export interface HistoricalVariable {
+    timestamp: Date;
+    value: any;
+    executionPointId: string;
+}
+
+// ========== Cursor Types ==========
+
+export interface CursorState {
+    id: string;
+    sessionId: string;
+    name: string;
+    sql: string;
+    status: 'open' | 'closed';
+    rowCount: number;
+    currentRow?: any;
+    history: CursorHistoryPoint[];
+}
+
+export interface CursorHistoryPoint {
+    timestamp: Date;
+    executionPointId: string;
+    action: 'open' | 'fetch' | 'close';
+    rowSnapshot?: any;
+    rowCount: number;
+}
+
+// ========== Trigger Types ==========
+
+export interface TriggerContext {
+    name: string;
+    table: string;
+    timing: 'BEFORE' | 'AFTER';
+    event: 'INSERT' | 'UPDATE' | 'DELETE';
+    oldValues?: any;
+    newValues?: any;
+    dml: string;
 }
 
 // ========== Transaction Types ==========
@@ -256,8 +298,11 @@ export interface Snapshot {
     executionPoint: ExecutionPoint;
     transactionState?: TransactionState;
     variables: Map<string, any>;
+    callStack: StackFrame[];
+    cursors: Map<string, CursorState>;
+    triggerContext?: TriggerContext;
     storage: {
-        storagePath: string;
+        storagePath?: string;
         compressed: boolean;
         sizeBytes: number;
     };

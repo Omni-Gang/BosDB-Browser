@@ -9,7 +9,6 @@ export declare class DebugEngine extends EventEmitter {
     private breakpointManager;
     private executionController;
     private stateInspector;
-    private timeTravelEngine;
     constructor();
     /**
      * Create a new debug session

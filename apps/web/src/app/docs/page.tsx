@@ -2,16 +2,21 @@
 
 import { Database, Book, Code, GitBranch, Zap, ChevronRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function DocumentationPage() {
+    const router = useRouter();
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Hero Section */}
             <div className="border-b border-border pb-8">
                 <div className="flex items-center gap-3 mb-4">
-                    <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <button
+                        onClick={() => router.back()}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
                         <ArrowLeft className="w-6 h-6" />
-                    </Link>
+                    </button>
                     <Book className="w-10 h-10 text-primary" />
                     <h1 className="text-4xl font-bold tracking-tight">Documentation</h1>
                 </div>

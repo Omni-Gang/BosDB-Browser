@@ -1,0 +1,35 @@
+[
+  {
+    "name": "jjj",
+    "description": "jjj",
+    "query": "agvedhygfvchugdafsvgcfg",
+    "connectionId": "conn_1767358132773_4q9xyimqd",
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "saved_1767370849464_s69gtywkd",
+    "createdAt": "2026-01-02T16:20:49.464Z",
+    "updatedAt": "2026-01-02T16:20:49.464Z"
+  },
+  {
+    "name": "ayush",
+    "description": "",
+    "query": "guuu",
+    "connectionId": "conn_1767358132773_4q9xyimqd",
+    "userEmail": "ayush@flipkart.com",
+    "orgId": "flipkart.com",
+    "id": "saved_1767374989526_aqa9vsru6",
+    "createdAt": "2026-01-02T17:29:49.526Z",
+    "updatedAt": "2026-01-02T17:29:49.526Z"
+  },
+  {
+    "name": "dd",
+    "description": "ee",
+    "query": "SELECT * FROM information_schema.tables LIMIT 10",
+    "connectionId": "conn_1768070265255_9zpn1b0ua",
+    "userEmail": "maru@durex.com",
+    "orgId": "durex.com",
+    "id": "saved_1768070808943_bxxgmygeq",
+    "createdAt": "2026-01-10T18:46:48.942Z",
+    "updatedAt": "2026-01-10T18:46:48.942Z"
+  }
+]

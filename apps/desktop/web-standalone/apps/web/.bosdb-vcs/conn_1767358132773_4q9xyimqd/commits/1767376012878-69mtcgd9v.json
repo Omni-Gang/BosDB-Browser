@@ -1,0 +1,31 @@
+{
+  "id": "1767376012878-69mtcgd9v",
+  "message": "Revert: DROP users (17673760)",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T17:46:52.877Z"
+  },
+  "timestamp": "2026-01-02T17:46:52.878Z",
+  "parentIds": [
+    "1767376007335-otroj2kq4"
+  ],
+  "treeId": "1767376012878-69mtcgd9v",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "ROLLBACK",
+      "target": "users",
+      "tableName": "users",
+      "description": "Undone: Drop table users",
+      "query": "DROP TABLE IF EXISTS users",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T17:46:36.522Z",
+      "id": "change-1767375996522-8ceyvm4vm"
+    }
+  ],
+  "branchName": "main"
+}

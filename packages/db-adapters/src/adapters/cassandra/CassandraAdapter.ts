@@ -200,8 +200,4 @@ export class CassandraAdapter extends BaseDBAdapter {
         };
     }
 
-    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
-        // External query tracking not yet implemented for Cassandra
-        return [];
-    }
 }

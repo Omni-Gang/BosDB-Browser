@@ -40,7 +40,11 @@ export class SessionManager extends EventEmitter {
             connectionId,
             createdAt: new Date(),
             config: this.getDefaultConfig(config),
-            state: this.getInitialState(),
+            state: {
+                status: 'CREATED',
+                activeBreakpoints: [],
+                callStack: [],
+            },
             metadata: this.getInitialMetadata(),
         };
 
@@ -110,24 +114,24 @@ export class SessionManager extends EventEmitter {
     }
 
     /**
+     * Terminate a session (final state)
+     */
+    terminateSession(sessionId: string): boolean {
+        return this.updateSessionState(sessionId, { status: 'TERMINATED' });
+    }
+
+    /**
      * Pause a session
      */
     pauseSession(sessionId: string): boolean {
-        return this.updateSessionState(sessionId, { status: 'paused' });
+        return this.updateSessionState(sessionId, { status: 'PAUSED' });
     }
 
     /**
      * Resume a session
      */
     resumeSession(sessionId: string): boolean {
-        return this.updateSessionState(sessionId, { status: 'running' });
-    }
-
-    /**
-     * Stop a session
-     */
-    stopSession(sessionId: string): boolean {
-        return this.updateSessionState(sessionId, { status: 'stopped' });
+        return this.updateSessionState(sessionId, { status: 'RUNNING' });
     }
 
     /**
@@ -155,7 +159,7 @@ export class SessionManager extends EventEmitter {
             const sessionAge = now - session.createdAt.getTime();
 
             if (
-                session.state.status === 'stopped' &&
+                (session.state.status === 'COMPLETED' || session.state.status === 'TERMINATED' || session.state.status === 'ERROR') &&
                 sessionAge > maxAgeMs
             ) {
                 this.deleteSession(sessionId);
@@ -221,13 +225,15 @@ export class SessionManager extends EventEmitter {
     /**
      * Get initial session state
      */
-    private getInitialState(): SessionState {
+    /*
+    private _getInitialState(): SessionState {
         return {
-            status: 'running',
+            status: 'RUNNING',
             activeBreakpoints: [],
             callStack: [],
         };
     }
+    */
 
     /**
      * Get initial metadata

@@ -16,7 +16,24 @@
         "declarationMap": true,
         "sourceMap": true,
         "incremental": true,
-        "forceConsistentCasingInFileNames": true
+        "forceConsistentCasingInFileNames": true,
+        "paths": {
+            "@bosdb/core": [
+                "./packages/core/src"
+            ],
+            "@bosdb/utils": [
+                "./packages/utils/src"
+            ],
+            "@bosdb/debugger-core": [
+                "./packages/debugger-core/src"
+            ],
+            "@bosdb/debugger-protocol": [
+                "./packages/debugger-protocol/src"
+            ],
+            "@bosdb/db-adapters": [
+                "./packages/db-adapters/src"
+            ]
+        }
     },
     "exclude": [
         "node_modules",

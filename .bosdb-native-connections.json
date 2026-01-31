@@ -1,0 +1,15 @@
+{
+  "railway_1769886647988": {
+    "id": "railway_1769886647988",
+    "name": "Railway DB (Railway Postgres)",
+    "type": "postgres",
+    "host": "metro.proxy.rlwy.net",
+    "port": 14609,
+    "database": "bosdb_nat_postgres_ml2ot73d",
+    "username": "u_ml2ot73d",
+    "password": ".dtsjqr1mswg",
+    "ssl": true,
+    "isRailway": true,
+    "createdAt": "2026-01-31T19:10:47.992Z"
+  }
+}

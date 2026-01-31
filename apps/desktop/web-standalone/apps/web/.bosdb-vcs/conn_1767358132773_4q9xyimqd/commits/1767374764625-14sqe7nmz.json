@@ -1,0 +1,31 @@
+{
+  "id": "1767374764625-14sqe7nmz",
+  "message": "DROP traveling_list_items",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T17:26:04.620Z"
+  },
+  "timestamp": "2026-01-02T17:26:04.625Z",
+  "parentIds": [
+    "1767370999869-og664bqb9"
+  ],
+  "treeId": "1767374764625-14sqe7nmz",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "DROP",
+      "target": "traveling_list_items",
+      "tableName": "traveling_list_items",
+      "description": "Drop table traveling_list_items",
+      "query": "DROP TABLE IF EXISTS traveling_list_items",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T17:25:03.757Z",
+      "id": "change-1767374703757-ancffmx85"
+    }
+  ],
+  "branchName": "main"
+}

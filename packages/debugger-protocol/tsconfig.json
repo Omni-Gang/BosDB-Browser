@@ -1,10 +1,21 @@
 {
-    "extends": "../debugger-core/tsconfig.json",
+    "extends": "../../tsconfig.json",
     "compilerOptions": {
         "outDir": "./dist",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "composite": true,
+        "paths": {
+            "@bosdb/debugger-core": [
+                "../debugger-core/src"
+            ]
+        }
     },
     "include": [
         "src/**/*"
+    ],
+    "references": [
+        {
+            "path": "../debugger-core"
+        }
     ]
 }

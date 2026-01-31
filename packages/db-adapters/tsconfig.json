@@ -6,7 +6,18 @@
         "composite": true,
         "types": [
             "node"
-        ]
+        ],
+        "paths": {
+            "@bosdb/core": [
+                "../core/src"
+            ],
+            "@bosdb/utils": [
+                "../utils/src"
+            ],
+            "@bosdb/debugger-core": [
+                "../debugger-core/src"
+            ]
+        }
     },
     "include": [
         "src/**/*"
@@ -22,6 +33,9 @@
         },
         {
             "path": "../utils"
+        },
+        {
+            "path": "../debugger-core"
         }
     ]
 }

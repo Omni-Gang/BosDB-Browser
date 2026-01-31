@@ -33,6 +33,8 @@ export default function PricingPage() {
     const [isPaid, setIsPaid] = useState(false);
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi'>('card');
+    const [upiId, setUpiId] = useState('');
     const toast = useToast();
 
     useEffect(() => {
@@ -162,18 +164,27 @@ export default function PricingPage() {
         setError('');
         const finalPrice = calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon);
 
-        // ALWAYS require valid card details - even for $0 after discount
-        if (cardNumber.replace(/\s/g, '').length !== 16) {
-            setError('Card number must be 16 digits');
-            return;
+        // Bypass card validation for 100% discount
+        if (finalPrice > 0 && paymentMethod === 'card') {
+            if (cardNumber.replace(/\s/g, '').length !== 16) {
+                setError('Card number must be 16 digits');
+                return;
+            }
+            if (!expiry.match(/^\d{2}\/\d{2}$/)) {
+                setError('Expiry must be MM/YY format');
+                return;
+            }
+            if (cvv.length !== 3) {
+                setError('CVV must be 3 digits');
+                return;
+            }
         }
-        if (!expiry.match(/^\d{2}\/\d{2}$/)) {
-            setError('Expiry must be MM/YY format');
-            return;
-        }
-        if (cvv.length !== 3) {
-            setError('CVV must be 3 digits');
-            return;
+
+        if (finalPrice > 0 && paymentMethod === 'upi') {
+            if (!upiId || !upiId.includes('@')) {
+                setError('Please enter a valid UPI ID (e.g. user@okaxis)');
+                return;
+            }
         }
 
         setLoading(true);
@@ -190,7 +201,9 @@ export default function PricingPage() {
                     plan: selectedPlan,
                     orgId: user?.organizationId, // Organization subscription
                     userId: user?.id,
-                    cardNumber: cardNumber.replace(/\s/g, ''),
+                    paymentMethod,
+                    cardNumber: paymentMethod === 'card' ? cardNumber.replace(/\s/g, '') : undefined,
+                    upiId: paymentMethod === 'upi' ? upiId : undefined,
                     expiryDate: expiry,
                     cvv: cvv,
                     coupon: appliedCoupon
@@ -597,64 +610,116 @@ export default function PricingPage() {
                                             </Elements>
                                         ) : (
                                             <>
-                                                {/* Card Section */}
-                                                <div className="mb-8">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <label className="block text-[11px] font-bold text-gray-500 uppercase">Card Information</label>
-                                                        <div className="flex gap-1">
-                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
-                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
-                                                            <div className="w-6 h-4 bg-gray-800 rounded-sm" />
+                                                {/* Payment Method Selector */}
+                                                {calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) > 0 && (
+                                                    <div className="mb-8">
+                                                        <label className="block text-[11px] font-bold text-gray-500 uppercase mb-3">Payment Method</label>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <button
+                                                                onClick={() => setPaymentMethod('card')}
+                                                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition ${paymentMethod === 'card' ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-white/5 text-gray-400 hover:border-white/10'}`}
+                                                            >
+                                                                <CreditCard className="w-4 h-4" />
+                                                                <span className="text-sm font-semibold">Card</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setPaymentMethod('upi')}
+                                                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition ${paymentMethod === 'upi' ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-white/5 text-gray-400 hover:border-white/10'}`}
+                                                            >
+                                                                <Zap className="w-4 h-4" />
+                                                                <span className="text-sm font-semibold">UPI</span>
+                                                            </button>
                                                         </div>
                                                     </div>
+                                                )}
 
-                                                    <div className="space-y-0 border border-white/10 rounded-xl overflow-hidden shadow-inner bg-[#2a2a2a]">
-                                                        <div className="relative">
-                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                                                                <CreditCard className="w-4 h-4" />
+                                                {/* Card Section - Hide if free OR if UPI selected */}
+                                                {calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) > 0 && paymentMethod === 'card' && (
+                                                    <div className="mb-8">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <label className="block text-[11px] font-bold text-gray-500 uppercase">Card Information</label>
+                                                            <div className="flex gap-1">
+                                                                <div className="w-6 h-4 bg-gray-800 rounded-sm" />
+                                                                <div className="w-6 h-4 bg-gray-800 rounded-sm" />
+                                                                <div className="w-6 h-4 bg-gray-800 rounded-sm" />
                                                             </div>
-                                                            <input
-                                                                type="text"
-                                                                value={cardNumber}
-                                                                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                                                                placeholder="1234 5678 9123 0000"
-                                                                maxLength={19}
-                                                                disabled={loading}
-                                                                className="w-full pl-11 pr-4 py-3 bg-transparent border-b border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
-                                                            />
                                                         </div>
-                                                        <div className="grid grid-cols-2">
-                                                            <input
-                                                                type="text"
-                                                                value={expiry}
-                                                                onChange={(e) => setExpiry(e.target.value)}
-                                                                placeholder="MM / YY"
-                                                                maxLength={5}
-                                                                disabled={loading}
-                                                                className="w-full px-4 py-3 bg-transparent border-r border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
-                                                            />
+
+                                                        <div className="space-y-0 border border-white/10 rounded-xl overflow-hidden shadow-inner bg-[#2a2a2a]">
                                                             <div className="relative">
-                                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
-                                                                    <Lock className="w-3 h-3" />
+                                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                                                                    <CreditCard className="w-4 h-4" />
                                                                 </div>
                                                                 <input
                                                                     type="text"
-                                                                    value={cvv}
-                                                                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                                                                    placeholder="CVC"
-                                                                    maxLength={3}
+                                                                    value={cardNumber}
+                                                                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                                                                    placeholder="1234 5678 9123 0000"
+                                                                    maxLength={19}
                                                                     disabled={loading}
-                                                                    className="w-full px-4 py-3 bg-transparent text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                                    className="w-full pl-11 pr-4 py-3 bg-transparent border-b border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
                                                                 />
                                                             </div>
+                                                            <div className="grid grid-cols-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={expiry}
+                                                                    onChange={(e) => setExpiry(e.target.value)}
+                                                                    placeholder="MM / YY"
+                                                                    maxLength={5}
+                                                                    disabled={loading}
+                                                                    className="w-full px-4 py-3 bg-transparent border-r border-white/5 text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                                />
+                                                                <div className="relative">
+                                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
+                                                                        <Lock className="w-3 h-3" />
+                                                                    </div>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={cvv}
+                                                                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                                                                        placeholder="CVC"
+                                                                        maxLength={3}
+                                                                        disabled={loading}
+                                                                        className="w-full px-4 py-3 bg-transparent text-sm text-white focus:bg-white/[0.02] outline-none transition disabled:opacity-50"
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         </div>
+                                                        {error && !error.includes('coupon') && (
+                                                            <p className="text-red-400 text-[10px] mt-2 flex items-center gap-1">
+                                                                <X className="w-3 h-3" /> {error}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    {error && !error.includes('coupon') && (
-                                                        <p className="text-red-400 text-[10px] mt-2 flex items-center gap-1">
-                                                            <X className="w-3 h-3" /> {error}
+                                                )}
+
+                                                {/* UPI Section */}
+                                                {calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) > 0 && paymentMethod === 'upi' && (
+                                                    <div className="mb-8">
+                                                        <label className="block text-[11px] font-bold text-gray-500 uppercase mb-2">UPI ID</label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                                                                <Zap className="w-4 h-4" />
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                value={upiId}
+                                                                onChange={(e) => setUpiId(e.target.value)}
+                                                                placeholder="username@bank"
+                                                                className="w-full pl-11 pr-4 py-3 bg-[#2a2a2a] border border-white/10 rounded-xl text-sm text-white focus:bg-white/[0.02] outline-none transition"
+                                                            />
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-500 mt-2">
+                                                            Proceed to verify and complete payment via your UPI app.
                                                         </p>
-                                                    )}
-                                                </div>
+                                                        {error && !error.includes('coupon') && (
+                                                            <p className="text-red-400 text-[10px] mt-2 flex items-center gap-1">
+                                                                <X className="w-3 h-3" /> {error}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 <button
                                                     onClick={handlePayment}
@@ -674,10 +739,12 @@ export default function PricingPage() {
                                                     )}
                                                 </button>
 
-                                                <div className="mt-6 flex items-center justify-center gap-2 grayscale opacity-50">
-                                                    <Landmark className="w-3 h-3 text-gray-400" />
-                                                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Powered by Stripe</span>
-                                                </div>
+                                                {calculateDiscountedPrice((PRICING as any)[selectedPlan].price, appliedCoupon) > 0 && (
+                                                    <div className="mt-6 flex items-center justify-center gap-2 grayscale opacity-50">
+                                                        <Landmark className="w-3 h-3 text-gray-400" />
+                                                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-tighter">Powered by Stripe</span>
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>

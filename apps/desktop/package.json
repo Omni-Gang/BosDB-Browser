@@ -1,0 +1,72 @@
+{
+    "name": "@bosdb/desktop",
+    "version": "0.1.0",
+    "main": "main.js",
+    "description": "Desktop client for BosDB",
+    "author": {
+        "name": "Ayush Gupta",
+        "email": "ayushgupta9906@gmail.com"
+    },
+    "homepage": "https://github.com/ayushgupta9906/BosDB-Browser",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "build": "electron-builder build",
+        "build:standalone": "npm run prebuild && electron-builder build",
+        "prebuild": "rm -rf web-standalone && mkdir -p web-standalone && cp -rv ../web/.next/standalone/* ./web-standalone/ && mkdir -p web-standalone/apps/web/.next/static && cp -rv ../web/.next/static/* ./web-standalone/apps/web/.next/static/ && mkdir -p web-standalone/apps/web/public && cp -rv ../web/public/* ./web-standalone/apps/web/public/",
+        "build:win": "electron-builder build --win",
+        "build:mac": "electron-builder build --mac",
+        "build:linux": "electron-builder build --linux"
+    },
+    "dependencies": {
+        "electron-is-dev": "^2.0.0"
+    },
+    "devDependencies": {
+        "electron": "28.0.0",
+        "electron-builder": "^24.9.1",
+        "@bosdb/web": "*"
+    },
+    "build": {
+        "appId": "com.bosdb.browser",
+        "productName": "BosDB",
+        "copyright": "Copyright © 2024 BosDB",
+        "artifactName": "${productName}-${version}-${arch}.${ext}",
+        "directories": {
+            "output": "dist",
+            "buildResources": "assets"
+        },
+        "asar": true,
+        "files": [
+            "main.js",
+            "preload.js",
+            "assets/**/*"
+        ],
+        "extraResources": [
+            {
+                "from": "web-standalone",
+                "to": "web-standalone",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "assets/icon.png"
+        },
+        "mac": {
+            "target": "dmg",
+            "category": "public.app-category.developer-tools",
+            "icon": "assets/icon.png"
+        },
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "category": "Development",
+            "icon": "assets/icon.png",
+            "maintainer": "Ayush Gupta <ayushgupta9906@gmail.com>"
+        }
+    }
+}

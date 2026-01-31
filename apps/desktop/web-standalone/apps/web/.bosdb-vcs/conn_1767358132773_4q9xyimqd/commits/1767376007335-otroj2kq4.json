@@ -1,0 +1,31 @@
+{
+  "id": "1767376007335-otroj2kq4",
+  "message": "DROP users",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T17:46:47.334Z"
+  },
+  "timestamp": "2026-01-02T17:46:47.335Z",
+  "parentIds": [
+    "1767375969691-v62kcezne"
+  ],
+  "treeId": "1767376007335-otroj2kq4",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "DROP",
+      "target": "users",
+      "tableName": "users",
+      "description": "Drop table users",
+      "query": "DROP TABLE IF EXISTS users",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T17:46:36.522Z",
+      "id": "change-1767375996522-8ceyvm4vm"
+    }
+  ],
+  "branchName": "main"
+}

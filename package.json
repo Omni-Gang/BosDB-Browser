@@ -4,19 +4,25 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "desktopclient"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "concurrently -k \"npm run dev:only\" \"npm run native:dev\"",
     "dev:only": "npm run dev --workspace=apps/web",
     "dev:all": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "desktop": "npm run dev --workspace=@bosdb/desktop",
+    "desktop:build": "turbo run build:standalone --filter=@bosdb/desktop",
+    "native:dev": "npm run electron:dev --workspace=@bosdb/desktopclient",
+    "native:build": "npm run build --workspace=@bosdb/desktopclient",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/whatwg-url": "^13.0.0",
+    "concurrently": "^9.2.1",
     "prettier": "^3.0.3",
     "turbo": "^1.10.16",
     "typescript": "^5.2.2"

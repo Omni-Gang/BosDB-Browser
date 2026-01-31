@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: false,
-    output: process.env.VERCEL ? undefined : 'standalone', // Standalone for Docker, Standard for Vercel
+    output: process.env.EXPORT ? 'export' : (process.env.VERCEL ? undefined : 'standalone'), // export for Electron, standalone for Docker, undefined for Vercel
+    trailingSlash: process.env.EXPORT ? true : false,
+    images: {
+        unoptimized: process.env.EXPORT ? true : false,
+    },
     transpilePackages: [],
     onDemandEntries: {
         // Suppress lockfile patching warnings

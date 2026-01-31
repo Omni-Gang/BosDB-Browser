@@ -21,7 +21,7 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
                 port: config.port,
                 database: config.database,
                 user: config.username,
-                password: config.password,
+                password: config.password || '',
                 ssl: config.ssl ? { rejectUnauthorized: false } : false,
                 max: config.maxPoolSize || 10,
                 idleTimeoutMillis: 30000,
@@ -80,7 +80,7 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
                 port: config.port,
                 database: config.database,
                 user: config.username,
-                password: config.password,
+                password: config.password || '',
                 ssl: config.ssl ? { rejectUnauthorized: false } : false,
                 max: 1,
                 connectionTimeoutMillis: config.connectionTimeout || 5000,
@@ -112,8 +112,18 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
         poolInfo.lastUsed = new Date();
         const startTime = Date.now();
         let client = null;
+        let isSharedClient = false;
         try {
-            client = await poolInfo.pool.connect();
+            // Check if we have a dedicated session client (for transactions)
+            if (this.connectionMap.has(request.connectionId)) {
+                client = this.connectionMap.get(request.connectionId);
+                isSharedClient = true;
+            }
+            else {
+                client = await poolInfo.pool.connect();
+            }
+            if (!client)
+                throw new Error('Failed to obtain database client');
             // Set query timeout
             const timeout = request.timeout || core_1.DEFAULT_QUERY_TIMEOUT;
             await client.query(`SET statement_timeout = ${timeout}`);
@@ -143,7 +153,7 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
             throw new Error(`Query execution failed: ${error.message}`);
         }
         finally {
-            if (client) {
+            if (client && !isSharedClient) {
                 client.release();
             }
         }
@@ -161,12 +171,6 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
       FROM information_schema.schemata s
       WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast', 'pg_temp_1', 'pg_cache_1')
       -- Strict Isolation: Show ONLY public, the database itself, or schemas belonging to this project
-      AND (
-        schema_name = 'public' 
-        OR schema_name = $1 
-        OR schema_name LIKE $1 || '_%'
-        OR schema_name LIKE 'bosdb_pg_' || $1 || '_%'
-      )
       ORDER BY schema_name;
     `;
         const pool = poolInfo?.pool || new pg_1.Pool();
@@ -309,10 +313,83 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
             version: row?.version || 'Unknown',
             currentDatabase: row?.current_database,
             currentUser: row?.current_user,
-            encoding: row?.encoding,
         };
     }
-    // Helper methods
+    async startTransaction(connectionId) {
+        const poolInfo = this.pools.get(connectionId);
+        if (!poolInfo) {
+            throw new Error(`Connection not found: ${connectionId}`);
+        }
+        const client = await poolInfo.pool.connect();
+        const transactionId = this.generateConnectionId('pg_txn');
+        try {
+            await client.query('BEGIN');
+            this.connectionMap.set(transactionId, client);
+            // Also map the original connection info so executeQuery can find the pool if needed (though it uses the client now)
+            this.pools.set(transactionId, poolInfo);
+            return transactionId;
+        }
+        catch (error) {
+            client.release();
+            throw new Error(`Failed to start transaction: ${error.message}`);
+        }
+    }
+    async commitTransaction(transactionId) {
+        const client = this.connectionMap.get(transactionId);
+        if (!client)
+            return;
+        try {
+            await client.query('COMMIT');
+        }
+        finally {
+            client.release();
+            this.connectionMap.delete(transactionId);
+            this.pools.delete(transactionId);
+        }
+    }
+    async rollbackTransaction(transactionId) {
+        const client = this.connectionMap.get(transactionId);
+        if (!client)
+            return;
+        try {
+            await client.query('ROLLBACK');
+        }
+        finally {
+            client.release();
+            this.connectionMap.delete(transactionId);
+            this.pools.delete(transactionId);
+        }
+    }
+    async getVariables(connectionId) {
+        const poolInfo = this.pools.get(connectionId);
+        if (!poolInfo)
+            return [];
+        try {
+            // Probe for session variables (custom GUC parameters)
+            // This finds variables set via 'SET my.var = ...'
+            const result = await this.executeQuery({
+                connectionId,
+                query: `
+          SELECT name, setting as value, vartype as type
+          FROM pg_settings
+          WHERE name LIKE '%.%' 
+          AND name NOT LIKE 'pg_catalog.%'
+          AND name NOT LIKE 'information_schema.%'
+        `,
+            });
+            return result.rows.map(row => ({
+                name: row.name,
+                value: row.value,
+                type: row.type || 'string',
+                scope: 'session',
+                mutable: true
+            }));
+        }
+        catch (error) {
+            console.error('[Postgres] Failed to probe variables:', error);
+            return [];
+        }
+    }
     async getColumns(connectionId, schema, table) {
         const query = `
       SELECT
@@ -442,11 +519,6 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
             3802: 'jsonb',
         };
         return typeMap[oid] || 'unknown';
-    }
-    async getRecentQueries(connectionId, lastTimestamp) {
-        // Postgres requires 'pg_stat_statements' extension for query history
-        // For now, we return empty to avoid errors if extension is missing
-        return [];
     }
 }
 exports.PostgreSQLAdapter = PostgreSQLAdapter;

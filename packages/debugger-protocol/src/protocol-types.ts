@@ -9,7 +9,6 @@ import {
     Variable,
     Scope,
     ExecutionPoint,
-    TransactionState,
 } from '@bosdb/debugger-core';
 
 // ========== Client to Server Messages ==========

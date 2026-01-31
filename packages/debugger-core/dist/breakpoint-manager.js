@@ -146,10 +146,18 @@ class BreakpointManager extends eventemitter3_1.EventEmitter {
     /**
      * Evaluate data breakpoint (watch expressions)
      */
-    evaluateDataBreakpoint(_bp, _context) {
-        // This would check if the watched expression changed
-        // For now, simplified implementation
-        return false; // TODO: Implement data watching
+    evaluateDataBreakpoint(bp, _context) {
+        const varName = bp.expression;
+        // const _currentValue = context.variables.get(varName);
+        // This requires comparison with previous state
+        // In a real implementation, we'd peek at the previous snapshot
+        // For now, if it's a 'write', we assume any execution on that variable counts
+        // or we check if the value is different from a cached previous value.
+        if (bp.changeType === 'write') {
+            // Logic to detect write...
+            // For simplicity in this demo, we'll return false unless we have full history access here
+        }
+        return false;
     }
     /**
      * Evaluate transaction breakpoint

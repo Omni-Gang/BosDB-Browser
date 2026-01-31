@@ -26,7 +26,7 @@ export class DebugEngine extends EventEmitter {
     private breakpointManager: BreakpointManager;
     private executionController: ExecutionController;
     private stateInspector: StateInspector;
-    private timeTravelEngine: TimeTravelEngine;
+    // private _timeTravelEngine: TimeTravelEngine;
 
     constructor() {
         super();
@@ -35,7 +35,7 @@ export class DebugEngine extends EventEmitter {
         this.sessionManager = new SessionManager();
         this.breakpointManager = new BreakpointManager();
         this.stateInspector = new StateInspector();
-        this.timeTravelEngine = new TimeTravelEngine();
+        // this._timeTravelEngine = new TimeTravelEngine();
         this.executionController = new ExecutionController(
             this.breakpointManager,
             this.sessionManager

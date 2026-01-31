@@ -456,7 +456,8 @@ function ConnectionRow({
         canRead: hasAccess,
         canEdit: false,
         canCommit: false,
-        canManageSchema: false
+        canManageSchema: false,
+        canDebug: false
     });
 
     const fetchPermissions = useCallback(async () => {
@@ -558,7 +559,7 @@ function ConnectionRow({
                     action: 'assign'
                 })
             });
-            setPermissions({ canRead: true, canEdit: false, canCommit: false, canManageSchema: false });
+            setPermissions({ canRead: true, canEdit: false, canCommit: false, canManageSchema: false, canDebug: false });
             setExpanded(true);
             onUpdate();
         } catch (err) {
@@ -645,6 +646,16 @@ function ConnectionRow({
                                 className="w-4 h-4 rounded border-border"
                             />
                             <span>🏗️ Manage Schema</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={(permissions as any).canDebug}
+                                onChange={(e) => updatePermission('canDebug', e.target.checked)}
+                                disabled={loading}
+                                className="w-4 h-4 rounded border-border"
+                            />
+                            <span>🐞 Debugger Access</span>
                         </label>
                     </div>
                     <button

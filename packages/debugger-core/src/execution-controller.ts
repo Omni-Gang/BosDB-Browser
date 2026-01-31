@@ -14,6 +14,9 @@ import {
 } from './types';
 import { BreakpointManager } from './breakpoint-manager';
 import { SessionManager } from './session-manager';
+import { SnapshotEngine } from './snapshot-engine';
+import { CursorDebugger } from './cursor-debugger';
+import { TriggerDebugger } from './trigger-debugger';
 
 export type ExecutionMode = 'running' | 'paused' | 'stepping' | 'stopped';
 
@@ -21,12 +24,18 @@ export class ExecutionController extends EventEmitter {
     private executionMode: Map<string, ExecutionMode> = new Map();
     private executionHistory: Map<string, ExecutionPoint[]> = new Map();
     private pendingExecutions: Map<string, QueryExecution> = new Map();
+    private snapshotEngine: SnapshotEngine;
+    private cursorDebugger: CursorDebugger;
+    private triggerDebugger: TriggerDebugger;
 
     constructor(
         private breakpointManager: BreakpointManager,
         private sessionManager: SessionManager
     ) {
         super();
+        this.snapshotEngine = new SnapshotEngine();
+        this.cursorDebugger = new CursorDebugger();
+        this.triggerDebugger = new TriggerDebugger();
     }
 
     /**
@@ -101,10 +110,48 @@ export class ExecutionController extends EventEmitter {
                     });
                 }
 
+                // Capture state before execution
+                const variables = context.variables;
+                const callStack = session.state.callStack || [];
+                const cursors = this.cursorDebugger.getCursors(sessionId);
+
+                // Intercept triggers for DML
+                const triggerContext = await this.triggerDebugger.interceptDML(sessionId, stmt, execPoint, runner);
+
+                this.snapshotEngine.capture(
+                    sessionId,
+                    execPoint,
+                    variables,
+                    callStack,
+                    cursors,
+                    triggerContext
+                );
+
                 // Execute actual statement
                 const result = await runner(stmt, []);
 
-                // Aggregrate results (mostly take the last one or accumulate)
+                // Finalize trigger if intercepted
+                if (triggerContext) {
+                    await this.triggerDebugger.finalizeTrigger(triggerContext, runner);
+                }
+
+                // If it's a cursor operation, track it (simplified detection)
+                if (stmt.toUpperCase().startsWith('OPEN ') || stmt.toUpperCase().startsWith('FETCH ')) {
+                    const match = stmt.match(/(OPEN|FETCH)\s+(\w+)/i);
+                    if (match) {
+                        this.cursorDebugger.trackCursorAction(
+                            sessionId,
+                            match[2],
+                            stmt,
+                            execPoint,
+                            match[1].toLowerCase() as any,
+                            result.rows[0],
+                            result.rowCount
+                        );
+                    }
+                }
+
+                // Aggregate results
                 finalResults.rows = [...finalResults.rows, ...result.rows];
                 finalResults.rowCount += result.rowCount;
                 if (result.fields) finalResults.fields = result.fields;
@@ -144,6 +191,7 @@ export class ExecutionController extends EventEmitter {
     /**
      * Execute with instrumentation at each stage
      */
+    /*
     private async execWithInstrumentation(
         sessionId: string,
         queryId: string,
@@ -205,6 +253,7 @@ export class ExecutionController extends EventEmitter {
             await this.simulateStageExecution(stage);
         }
     }
+    */
 
     /**
      * Simulate stage execution (placeholder for actual execution)
@@ -256,7 +305,7 @@ export class ExecutionController extends EventEmitter {
      */
     async stepOver(sessionId: string): Promise<void> {
         this.executionMode.set(sessionId, 'stepping');
-        this.sessionManager.updateSessionState(sessionId, { status: 'running' });
+        this.sessionManager.updateSessionState(sessionId, { status: 'RUNNING' });
 
         this.emit('stepped', { sessionId, stepType: 'over' });
 
@@ -280,32 +329,44 @@ export class ExecutionController extends EventEmitter {
     }
 
     /**
-     * Rewind execution (execute inverse SQL of last statement)
+     * Step back (reverse execution)
+     */
+    async stepBack(sessionId: string): Promise<void> {
+        const history = this.executionHistory.get(sessionId);
+        if (!history || history.length <= 1) return;
+
+        // Current point is the last one in history
+        const currentPoint = history.pop();
+        if (!currentPoint) return;
+
+        // The target point is the one before the current point
+        const targetPoint = history[history.length - 1];
+        if (!targetPoint) return;
+
+        // Restore state from snapshot
+        const snapshot = this.snapshotEngine.getSnapshot(sessionId, targetPoint.id);
+        if (snapshot) {
+            this.sessionManager.updateSessionState(sessionId, {
+                currentExecutionPoint: targetPoint,
+                callStack: snapshot.callStack,
+            });
+
+            // Restore cursors
+            // const _restoredCursors = this.cursorDebugger.restoreCursorState(sessionId, targetPoint.id);
+            // In a real implementation, we'd update some cursor manager here
+
+            this.executionMode.set(sessionId, 'paused');
+            this.emit('stepped', { sessionId, stepType: 'back', executionPoint: targetPoint });
+        } else {
+            this.emit('error', { sessionId, message: 'Snapshot not found for step-back' });
+        }
+    }
+
+    /**
+     * Rewind execution (alias for stepBack, keeping backward compatibility)
      */
     async rewind(sessionId: string, _runner: (sql: string) => Promise<any>): Promise<void> {
-        const history = this.executionHistory.get(sessionId);
-        if (!history || history.length === 0) return;
-
-        // Get the last execution point
-        const lastPoint = history[history.length - 1];
-        if (!lastPoint) return;
-
-        // In a full implementation, we'd find the inverse SQL from the timeline
-        // For this demo/first-pass, we'll emit an event and decrement history
-        history.pop();
-
-        this.emit('rewound', { sessionId, executionPoint: lastPoint });
-
-        // Pause at the new "last" point
-        const prevPoint = history[history.length - 1];
-        if (prevPoint) {
-            this.sessionManager.updateSessionState(sessionId, {
-                currentExecutionPoint: prevPoint,
-            });
-            this.executionMode.set(sessionId, 'paused');
-        } else {
-            this.executionMode.set(sessionId, 'stopped');
-        }
+        return this.stepBack(sessionId);
     }
 
     /**

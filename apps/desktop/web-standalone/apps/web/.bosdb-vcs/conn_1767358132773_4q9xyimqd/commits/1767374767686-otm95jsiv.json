@@ -1,0 +1,31 @@
+{
+  "id": "1767374767686-otm95jsiv",
+  "message": "CREATE traveling_list_items",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T17:26:07.684Z"
+  },
+  "timestamp": "2026-01-02T17:26:07.686Z",
+  "parentIds": [
+    "1767374764625-14sqe7nmz"
+  ],
+  "treeId": "1767374767686-otm95jsiv",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "CREATE",
+      "target": "traveling_list_items",
+      "tableName": "traveling_list_items",
+      "description": "Create table traveling_list_items",
+      "query": "CREATE TABLE traveling_list_items (\r\n    id SERIAL PRIMARY KEY,\r\n    trip_name VARCHAR(100) NOT NULL,\r\n    item_name VARCHAR(100) NOT NULL,\r\n    category VARCHAR(50),\r\n    quantity INT DEFAULT 1,\r\n    is_packed BOOLEAN DEFAULT FALSE,\r\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\r\n)",
+      "rollbackSQL": "DROP TABLE IF EXISTS traveling_list_items;",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T17:24:51.885Z",
+      "id": "change-1767374691885-ad7mlpft1"
+    }
+  ],
+  "branchName": "main"
+}

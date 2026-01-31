@@ -56,6 +56,16 @@ export async function GET() {
             status: 'approved',
             accountType: 'enterprise',
             organizationId: 'demo-company-org'
+        },
+        {
+            id: 'ritvik-flipkart',
+            email: 'ritvik@flipkart.com',
+            name: 'Ritvik (Flipkart)',
+            password: 'Demo123!',
+            role: 'admin',
+            status: 'approved',
+            accountType: 'enterprise',
+            organizationId: 'flipkart-org'
         }
     ];
 

@@ -24,6 +24,13 @@ export function UserWidget() {
     useEffect(() => {
         const u = getCurrentUser();
         setUser(u);
+
+        // Initialize Proxy Manager (client-side only)
+        if (typeof window !== 'undefined') {
+            import('@/lib/proxy-manager').then(({ proxyManager }) => {
+                proxyManager.init();
+            });
+        }
     }, []);
 
     const fetchTeamMembers = async () => {
@@ -53,7 +60,7 @@ export function UserWidget() {
 
     const handleLogout = () => {
         document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-        localStorage.removeItem('bosdb-user');
+        localStorage.removeItem('bosdb_current_user');
         router.push('/login');
     };
 

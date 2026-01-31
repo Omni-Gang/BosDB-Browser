@@ -1,0 +1,31 @@
+{
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "CREATE",
+      "target": "sex",
+      "tableName": "sex",
+      "description": "Create table sex",
+      "query": "CREATE TABLE sex (\n    id SERIAL PRIMARY KEY,\n    sex VARCHAR(20) NOT NULL\n)",
+      "rollbackSQL": "DROP TABLE IF EXISTS sex;",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768153724920-h1iwsfljr",
+      "timestamp": "2026-01-11T17:48:44.920Z"
+    },
+    {
+      "type": "DATA",
+      "operation": "INSERT",
+      "target": "sex",
+      "tableName": "sex",
+      "description": "Insert 3 row(s) into sex",
+      "query": "INSERT INTO sex (sex) VALUES\n('Male'),\n('Female'),\n('Other')",
+      "affectedRows": 3,
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "id": "change-1768153729592-mfmlbj6sj",
+      "timestamp": "2026-01-11T17:48:49.592Z"
+    }
+  ]
+}

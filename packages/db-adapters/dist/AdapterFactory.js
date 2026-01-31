@@ -7,6 +7,7 @@ const MySQLAdapter_1 = require("./adapters/mysql/MySQLAdapter");
 const MongoDBAdapter_1 = require("./adapters/mongodb/MongoDBAdapter");
 const RedisAdapter_1 = require("./adapters/redis/RedisAdapter");
 // Dynamically imported adapters (now supported!)
+const SQLiteAdapter_1 = require("./adapters/sqlite/SQLiteAdapter");
 const SQLServerAdapter_1 = require("./adapters/sqlserver/SQLServerAdapter");
 const OracleAdapter_1 = require("./adapters/oracle/OracleAdapter");
 const CassandraAdapter_1 = require("./adapters/cassandra/CassandraAdapter");
@@ -39,6 +40,8 @@ class AdapterFactory {
             case 'singlestore':
             case 'cubrid':
                 return new MySQLAdapter_1.MySQLAdapter();
+            case 'sqlite':
+                return new SQLiteAdapter_1.SQLiteAdapter();
             // MongoDB-compatible databases
             case 'mongodb':
             case 'mongo':

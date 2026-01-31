@@ -15,6 +15,13 @@ export interface IUser {
     subscription?: any;
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
+    settings?: {
+        queryLimit?: number;
+        autoSave?: boolean;
+        fontSize?: number;
+        density?: 'comfortable' | 'compact';
+        aiPersonality?: 'conservative' | 'creative';
+    };
     createdAt: Date;
 }
 
@@ -32,6 +39,13 @@ const UserSchema = new Schema<IUser>({
     subscription: { type: Schema.Types.Mixed },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    settings: {
+        queryLimit: { type: Number, default: 100 },
+        autoSave: { type: Boolean, default: true },
+        fontSize: { type: Number, default: 14 },
+        density: { type: String, enum: ['comfortable', 'compact'], default: 'comfortable' },
+        aiPersonality: { type: String, enum: ['conservative', 'creative'], default: 'conservative' }
+    },
     createdAt: { type: Date, default: Date.now },
 });
 

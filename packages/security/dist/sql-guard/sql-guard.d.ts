@@ -24,4 +24,8 @@ export declare function escapeString(value: string): string;
  * Check if query is read-only (safe for read-only connections)
  */
 export declare function isReadOnlyQuery(query: string): boolean;
+/**
+ * Check if query is a DDL (Data Definition Language) query
+ */
+export declare function isDDLQuery(query: string): boolean;
 //# sourceMappingURL=sql-guard.d.ts.map

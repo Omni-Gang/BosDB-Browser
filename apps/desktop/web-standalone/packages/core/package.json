@@ -1,0 +1,29 @@
+{
+    "name": "@bosdb/core",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./types": {
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/types/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "clean": "rm -rf dist",
+        "lint": "eslint src/"
+    },
+    "devDependencies": {
+        "@types/node": "^20.8.0",
+        "eslint": "^8.57.0",
+        "eslint-config-next": "^16.1.1",
+        "typescript": "^5.2.2"
+    }
+}

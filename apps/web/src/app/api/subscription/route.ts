@@ -209,9 +209,13 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        // For paid plans, validate card (demo) - Skip if 100% off coupon applied OR if using Stripe (action confirmed)
+        // For paid plans, validate card (demo) - Skip if 100% off coupon applied OR if using Stripe (action confirmed) OR if using UPI
         if (plan !== 'pro_trial' && !isFreeWithCoupon && action !== 'confirm_payment') {
-            if (!process.env.STRIPE_SECRET_KEY) {
+            if (body.paymentMethod === 'upi') {
+                // Mock UPI Verification
+                console.log('[Subscription API] Verifying UPI payment for ID:', body.upiId);
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate bank callback delay
+            } else if (!process.env.STRIPE_SECRET_KEY) {
                 // Only enforce manual card checks if we are NOT using Stripe (Simulation Mode)
                 if (!cardNumber || cardNumber.length !== 16) {
                     return NextResponse.json({ error: 'Invalid card number' }, { status: 400 });

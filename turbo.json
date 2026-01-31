@@ -17,7 +17,18 @@
             "outputs": [
                 ".next/**",
                 "!.next/cache/**",
-                "dist/**"
+                "dist/**",
+                "out/**"
+            ]
+        },
+        "build:standalone": {
+            "dependsOn": [
+                "^build:standalone"
+            ],
+            "outputs": [
+                ".next/standalone/**",
+                ".next/static/**",
+                "public/**"
             ]
         },
         "lint": {

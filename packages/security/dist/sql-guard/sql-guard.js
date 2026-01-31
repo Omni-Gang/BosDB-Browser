@@ -7,6 +7,7 @@ exports.validateQuery = validateQuery;
 exports.sanitizeIdentifier = sanitizeIdentifier;
 exports.escapeString = escapeString;
 exports.isReadOnlyQuery = isReadOnlyQuery;
+exports.isDDLQuery = isDDLQuery;
 /**
  * Validate a SQL query for potentially dangerous patterns
  * This is a defense-in-depth measure, not a replacement for parameterized queries
@@ -116,5 +117,13 @@ function isReadOnlyQuery(query) {
     // Allow SELECT, EXPLAIN, SHOW, DESCRIBE
     const readOnlyKeywords = ['select', 'explain', 'show', 'describe', 'with'];
     return readOnlyKeywords.some((keyword) => normalized.startsWith(keyword));
+}
+/**
+ * Check if query is a DDL (Data Definition Language) query
+ */
+function isDDLQuery(query) {
+    const normalized = query.trim().toLowerCase();
+    const ddlKeywords = ['create', 'alter', 'drop', 'truncate', 'rename', 'comment'];
+    return ddlKeywords.some((keyword) => normalized.startsWith(keyword));
 }
 //# sourceMappingURL=sql-guard.js.map

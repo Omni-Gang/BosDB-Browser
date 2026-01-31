@@ -10,6 +10,18 @@ const logger = new Logger('ConnectionsAPI');
 // Active connection tracking
 const activeConnections = new Map<string, string>(); // connectionId -> adapterId
 
+// Helper for CORS headers
+function cors(res: NextResponse) {
+    res.headers.set('Access-Control-Allow-Origin', '*');
+    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-email, x-org-id, x-user-role');
+    return res;
+}
+
+export async function OPTIONS() {
+    return cors(new NextResponse(null, { status: 200 }));
+}
+
 export async function GET(request: NextRequest) {
     try {
         // Get user email and org ID from headers
@@ -18,10 +30,10 @@ export async function GET(request: NextRequest) {
 
         // ⚠️ SECURITY FIX: Require authentication
         if (!userEmail && !orgId) {
-            return NextResponse.json(
+            return cors(NextResponse.json(
                 { error: 'Unauthorized - Please login to view connections' },
                 { status: 401 }
-            );
+            ));
         }
 
         // Filter connections by user or organization
@@ -31,25 +43,61 @@ export async function GET(request: NextRequest) {
             return isOwner || isOrgShared;
         });
 
+        // Fetch user permissions if not admin
+        const { findUserByEmail } = await import('@/lib/users-store');
+        const user = userEmail ? await findUserByEmail(userEmail) : null;
+        const userRole = request.headers.get('x-user-role');
+        const isAdmin = userRole === 'admin';
+
         logger.info(`User ${userEmail || 'org:' + orgId} viewing ${visibleConnections.length} connections`);
 
-        return NextResponse.json({
-            connections: visibleConnections.map((conn) => ({
-                id: conn.id,
-                name: conn.name,
-                type: conn.type,
-                host: conn.host,
-                port: conn.port,
-                database: conn.database,
-                readOnly: conn.readOnly,
-                userEmail: conn.userEmail,
-                organizationId: conn.organizationId,
-                status: activeConnections.has(conn.id) ? 'connected' : 'disconnected',
-            })),
-        });
+        return cors(NextResponse.json({
+            connections: visibleConnections.map((conn) => {
+                let permission = null;
+
+                if (isAdmin) {
+                    // Admins have all permissions
+                    permission = {
+                        canRead: true,
+                        canEdit: true,
+                        canCommit: true,
+                        canManageSchema: true,
+                        canDebug: true
+                    };
+                } else if (user) {
+                    // Check if user is owner (full permissions)
+                    if (conn.userEmail === userEmail) {
+                        permission = {
+                            canRead: true,
+                            canEdit: true,
+                            canCommit: true,
+                            canManageSchema: true,
+                            canDebug: true
+                        };
+                    } else {
+                        // Get assigned permissions
+                        permission = user.permissions?.find(p => p.connectionId === conn.id) || null;
+                    }
+                }
+
+                return {
+                    id: conn.id,
+                    name: conn.name,
+                    type: conn.type,
+                    host: conn.host,
+                    port: conn.port,
+                    database: conn.database,
+                    readOnly: conn.readOnly,
+                    userEmail: conn.userEmail,
+                    organizationId: conn.organizationId,
+                    status: activeConnections.has(conn.id) ? 'connected' : 'disconnected',
+                    permission // Attach permission object
+                };
+            }),
+        }));
     } catch (error: any) {
         logger.error('Failed to fetch connections', error);
-        return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 });
+        return cors(NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 }));
     }
 }
 
@@ -137,8 +185,8 @@ export async function POST(request: NextRequest) {
             password: finalConfig.password,
         });
 
-        // Generate connection ID
-        const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Generate connection ID or use provided one (for sync)
+        const connectionId = body.id || `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         // Store connection info
         const connectionInfo = {

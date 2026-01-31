@@ -3,8 +3,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { UserWidget } from '@/components/UserWidget';
+import { TitleBar } from '@/components/desktop/TitleBar';
 
-const inter = Inter({ subsets: ['latin'] });
+// const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'BosDB - Browser-based Database Manager',
@@ -18,9 +19,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={inter.className}>
+            <body className="font-sans antialiased bg-slate-950 text-slate-50">
                 <Providers>
-                    {children}
+                    <TitleBar />
+                    <main className="min-h-screen transition-all">
+                        {children}
+                    </main>
                     <UserWidget />
                 </Providers>
             </body>

@@ -1,0 +1,31 @@
+{
+  "id": "1767378409149-fp2jqsypn",
+  "message": "DROP unknown",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T18:26:49.149Z"
+  },
+  "timestamp": "2026-01-02T18:26:49.149Z",
+  "parentIds": [
+    "1767376012878-69mtcgd9v"
+  ],
+  "treeId": "1767378409149-fp2jqsypn",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "DROP",
+      "target": "unknown",
+      "tableName": "unknown",
+      "description": "Drop table unknown",
+      "query": "-- Drop table",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T18:21:22.850Z",
+      "id": "change-1767378082850-66fatzbmd"
+    }
+  ],
+  "branchName": "main"
+}

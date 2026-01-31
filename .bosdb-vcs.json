@@ -1,0 +1,39 @@
+{
+  "pendingChanges": {
+    "railway_1769314655059": [
+      {
+        "type": "SCHEMA",
+        "operation": "CREATE",
+        "target": "test",
+        "description": "Created table test",
+        "query": "CREATE TABLE test (id int);",
+        "rollbackSQL": "DROP TABLE test;",
+        "id": "change_1769314861153_roczn",
+        "timestamp": "2026-01-25T04:21:01.153Z"
+      },
+      {
+        "type": "SCHEMA",
+        "operation": "CREATE",
+        "target": "test",
+        "description": "Created table test",
+        "query": "CREATE TABLE test (id int);",
+        "rollbackSQL": "DROP TABLE test;",
+        "id": "change_1769314864838_etfyn",
+        "timestamp": "2026-01-25T04:21:04.838Z"
+      },
+      {
+        "type": "SCHEMA",
+        "operation": "CREATE",
+        "target": "test",
+        "description": "Created table test",
+        "query": "CREATE TABLE test (id int);\nselect *from test",
+        "rollbackSQL": "DROP TABLE test;",
+        "id": "change_1769314880848_o7eqy",
+        "timestamp": "2026-01-25T04:21:20.848Z"
+      }
+    ]
+  },
+  "commits": {},
+  "branches": {},
+  "currentBranch": {}
+}

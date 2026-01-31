@@ -135,3 +135,12 @@ export function isReadOnlyQuery(query: string): boolean {
 
     return readOnlyKeywords.some((keyword) => normalized.startsWith(keyword));
 }
+
+/**
+ * Check if query is a DDL (Data Definition Language) query
+ */
+export function isDDLQuery(query: string): boolean {
+    const normalized = query.trim().toLowerCase();
+    const ddlKeywords = ['create', 'alter', 'drop', 'truncate', 'rename', 'comment'];
+    return ddlKeywords.some((keyword) => normalized.startsWith(keyword));
+}

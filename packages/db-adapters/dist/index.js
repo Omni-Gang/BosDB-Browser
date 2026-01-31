@@ -16,5 +16,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./interfaces/IDBAdapter"), exports);
 __exportStar(require("./adapters/postgresql/PostgreSQLAdapter"), exports);
+__exportStar(require("./adapters/mysql/MySQLAdapter"), exports);
+__exportStar(require("./adapters/sqlite/SQLiteAdapter"), exports);
 __exportStar(require("./AdapterFactory"), exports);
 //# sourceMappingURL=index.js.map

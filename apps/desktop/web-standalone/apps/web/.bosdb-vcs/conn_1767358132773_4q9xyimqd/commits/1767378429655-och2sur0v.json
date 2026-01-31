@@ -1,0 +1,31 @@
+{
+  "id": "1767378429655-och2sur0v",
+  "message": "Revert: DROP unknown (17673784)",
+  "author": {
+    "name": "Ayush Gupta",
+    "email": "ayush@flipkart.com",
+    "userId": "ayush",
+    "timestamp": "2026-01-02T18:27:09.653Z"
+  },
+  "timestamp": "2026-01-02T18:27:09.655Z",
+  "parentIds": [
+    "1767378409149-fp2jqsypn"
+  ],
+  "treeId": "1767378429655-och2sur0v",
+  "changes": [
+    {
+      "type": "SCHEMA",
+      "operation": "ROLLBACK",
+      "target": "unknown",
+      "tableName": "unknown",
+      "description": "Undone: Drop table unknown",
+      "query": "-- Drop table",
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T18:21:22.850Z",
+      "id": "change-1767378082850-66fatzbmd"
+    }
+  ],
+  "branchName": "main"
+}

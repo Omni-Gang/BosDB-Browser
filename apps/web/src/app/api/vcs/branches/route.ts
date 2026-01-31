@@ -34,6 +34,24 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // --- ENFORCE USER PERMISSIONS ---
+        const userEmail = request.headers.get('x-user-email');
+        const userRole = request.headers.get('x-user-role');
+
+        if (userRole !== 'admin') {
+            const { findUserByEmail } = await import('@/lib/users-store');
+            if (userEmail) {
+                const user = await findUserByEmail(userEmail);
+                if (user) {
+                    const permission = user.permissions?.find(p => p.connectionId === connectionId);
+                    if (!permission || !permission.canCommit) {
+                        return NextResponse.json({ error: 'Access denied: Version Control permission required' }, { status: 403 });
+                    }
+                }
+            }
+        }
+        // --- END ENFORCE USER PERMISSIONS ---
+
         if (action === 'create') {
             await createBranchInStorage(connectionId, name);
             return NextResponse.json({ success: true, branch: name });

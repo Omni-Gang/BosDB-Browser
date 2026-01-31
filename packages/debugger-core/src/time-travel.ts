@@ -3,7 +3,7 @@
  * Generates inverse operations for DML to allow reverse execution
  */
 
-import { DebugOperation, QueryResult } from './types';
+// import { DebugOperation, QueryResult } from './types';
 
 export class TimeTravelEngine {
     /**

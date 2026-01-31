@@ -9,7 +9,6 @@ import {
     Lock,
     ExecutionContext,
     Scope,
-    StackFrame,
 } from './types';
 
 export class StateInspector {

@@ -241,6 +241,11 @@ export const COUPONS: Record<string, { discount_percent: number, description: st
         discount_percent: 100,
         description: '100% OFF Yearly Plan',
         allowed_plans: ['pro_yearly', 'enterprise_yearly']
+    },
+    'yarm100': {
+        discount_percent: 100,
+        description: 'Exclusive 100% OFF - No Card Required',
+        allowed_plans: ['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly']
     }
 };
 

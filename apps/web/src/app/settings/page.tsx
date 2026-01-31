@@ -20,27 +20,71 @@ export default function SettingsPage() {
     useEffect(() => {
         setMounted(true);
         fetchConnections();
-
-        // Load settings from localStorage
-        const savedLimit = localStorage.getItem('bosdb_query_limit');
-        if (savedLimit) setQueryLimit(parseInt(savedLimit));
-
-        const savedAutoSave = localStorage.getItem('bosdb_auto_save');
-        if (savedAutoSave) setAutoSave(savedAutoSave === 'true');
-
-        const savedFontSize = localStorage.getItem('bosdb_font_size');
-        if (savedFontSize) setFontSize(parseInt(savedFontSize));
-
-        const savedDensity = localStorage.getItem('bosdb_density');
-        if (savedDensity) setDensity(savedDensity as any);
-
-        const savedAI = localStorage.getItem('bosdb_ai_personality');
-        if (savedAI) setAiPersonality(savedAI as any);
+        fetchSettings();
     }, []);
 
-    const updateSetting = (key: string, value: any, setter: Function) => {
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch('/api/settings', { headers: getHeaders() });
+            const data = await res.json();
+            if (data.settings) {
+                if (data.settings.queryLimit) setQueryLimit(data.settings.queryLimit);
+                if (data.settings.autoSave !== undefined) setAutoSave(data.settings.autoSave);
+                if (data.settings.fontSize) setFontSize(data.settings.fontSize);
+                if (data.settings.density) setDensity(data.settings.density);
+                if (data.settings.aiPersonality) setAiPersonality(data.settings.aiPersonality);
+            }
+        } catch (error) {
+            console.error('Failed to fetch settings:', error);
+        }
+    };
+
+    const getHeaders = () => {
+        const currentUser = (window as any).__USER__ || { email: 'user@bosdb.com' }; // Fallback or use auth lib
+        return {
+            'Content-Type': 'application/json',
+            'x-user-email': currentUser.email
+        };
+    };
+
+    const updateSetting = async (key: string, value: any, setter: Function) => {
         setter(value);
-        localStorage.setItem(key, value.toString());
+
+        // Optimistic UI update, then persist to backend
+        try {
+            // Map the localStorage key format to backend field name
+            const fieldMap: Record<string, string> = {
+                'bosdb_query_limit': 'queryLimit',
+                'bosdb_auto_save': 'autoSave',
+                'bosdb_font_size': 'fontSize',
+                'bosdb_density': 'density',
+                'bosdb_ai_personality': 'aiPersonality'
+            };
+
+            const fieldName = fieldMap[key];
+            if (!fieldName) return;
+
+            // Get current settings to update incrementally
+            const currentSettings = {
+                queryLimit,
+                autoSave,
+                fontSize,
+                density,
+                aiPersonality,
+                [fieldName]: value
+            };
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ settings: currentSettings })
+            });
+
+            // Also keep localStorage for redundancy and instant load
+            localStorage.setItem(key, value.toString());
+        } catch (error) {
+            console.error('Failed to save setting:', error);
+        }
     };
 
     const fetchConnections = async () => {

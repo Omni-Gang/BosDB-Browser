@@ -83,6 +83,10 @@ function LoginForm() {
     setSuccessMessage('');
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [token, setToken] = useState('');
+
   const handleLogin = async () => {
     clearMessages();
     if (!loginEmail.trim() || !loginPassword.trim()) {
@@ -106,278 +110,322 @@ function LoginForm() {
 
       if (res.ok && data.success) {
         localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
+
+        // Handle desktop app redirect
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+
+        if (redirect && redirect.startsWith('bosdb://auth')) {
+          console.log('[Auth] Desktop redirect detected:', redirect);
+          try {
+            // Use safe base64 encoding for Unicode characters
+            const userStr = JSON.stringify(data.user);
+            // @ts-ignore
+            const encodedToken = btoa(unescape(encodeURIComponent(userStr)));
+            setToken(encodedToken);
+            setRedirecting(true);
+
+            setSuccessMessage('Login successful! Redirecting to BosDB...');
+
+            console.log('[Auth] Redirecting with token...');
+
+            // Try local HTTP relay first (100% reliable on Linux/Dev Windows)
+            // This is a "fire and forget" attempt to unlock the native app silently
+            try {
+              fetch(`http://localhost:51735/auth?token=${encodedToken}`, {
+                mode: 'cors',
+                cache: 'no-cache'
+              }).then(r => {
+                if (r.ok) console.log('[Auth] Local relay successful');
+              }).catch(e => {
+                console.warn('[Auth] Local relay failed (app likely closed or blocked):', e);
+              });
+            } catch (e) { }
+
+            window.location.href = `${redirect}?token=${encodedToken}`;
+
+            // Stay in redirecting state to show fallback options
+          } catch (e) {
+            console.error('[Auth] Token encoding failed:', e);
+            setError('Auth token generation failed. Please try again.');
+            setIsLoading(false);
+          }
+          return;
+        }
+
         router.push('/dashboard');
       } else {
         setError(data.error || 'Login failed');
+        setIsLoading(false);
       }
     } catch (err: any) {
       setError(err.message || 'Connection error');
     } finally {
       setLoading(false);
     }
-  };
+};
 
-  const handleRegister = async () => {
-    clearMessages();
-    setLoading(true);
+const handleRegister = async () => {
+  clearMessages();
+  setLoading(true);
 
-    const isCompany = registerTab === 'enterprise';
-    const formData = isCompany ? companyForm : individualForm;
+  const isCompany = registerTab === 'enterprise';
+  const formData = isCompany ? companyForm : individualForm;
 
-    // Validation
-    if (!formData.name || !formData.email || !formData.password || !formData.id) {
-      setError('All fields are required');
+  // Validation
+  if (!formData.name || !formData.email || !formData.password || !formData.id) {
+    setError('All fields are required');
+    setLoading(false);
+    return;
+  }
+
+  if (isCompany) {
+    const domain = extractDomain(formData.email);
+    if (BLOCKED_DOMAINS.includes(domain)) {
+      setError('Please use your company email (domain email) to register as company.');
       setLoading(false);
       return;
     }
+  }
 
-    if (isCompany) {
-      const domain = extractDomain(formData.email);
-      if (BLOCKED_DOMAINS.includes(domain)) {
-        setError('Please use your company email (domain email) to register as company.');
-        setLoading(false);
-        return;
-      }
-    }
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'register',
+        ...formData,
+        accountType: registerTab
+      })
+    });
 
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'register',
-          ...formData,
-          accountType: registerTab
-        })
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+    // Check TOTP
+    if (data.requiresTOTP) {
+      setTotpData({
+        email: data.email,
+        qrCode: data.qrCode,
+        secret: data.secret,
+        organizationName: data.organizationName
       });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Registration failed');
-
-      // Check TOTP
-      if (data.requiresTOTP) {
-        setTotpData({
-          email: data.email,
-          qrCode: data.qrCode,
-          secret: data.secret,
-          organizationName: data.organizationName
-        });
-        setAuthMode('login'); // Hide register form
-        setShowTOTPVerify(true);
-        setSuccessMessage(data.message || 'Scan QR Code required');
-        return;
-      }
-
-      setSuccessMessage(data.message || 'Registration successful! Please login.');
-      setAuthMode('login'); // Switch to login view
-
-      // Clear forms
-      setIndividualForm({ name: '', email: '', password: '', id: '' });
-      setCompanyForm({ name: '', email: '', password: '', id: '', role: 'user' });
-
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    clearMessages();
-    if (!forgotEmail) {
-      setError('Please enter your email');
+      setAuthMode('login'); // Hide register form
+      setShowTOTPVerify(true);
+      setSuccessMessage(data.message || 'Scan QR Code required');
       return;
     }
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'forgot_password',
-          email: forgotEmail
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSuccessMessage(data.message);
-      } else {
-        setError(data.error || 'Request failed');
-      }
-    } catch (err) {
-      setError('Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleResetPassword = async () => {
-    clearMessages();
-    if (!newPassword || newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'reset_password',
-          token: resetToken,
-          newPassword
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSuccessMessage('Password reset successful! Please login.');
-        setTimeout(() => {
-          setShowForgotPassword(false);
-          setIsResetMode(false);
-          setResetToken('');
-        }, 2000);
-      } else {
-        setError(data.error || 'Reset failed');
-      }
-    } catch (err) {
-      setError('Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setSuccessMessage(data.message || 'Registration successful! Please login.');
+    setAuthMode('login'); // Switch to login view
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'google_login',
-          idToken: credentialResponse.credential,
-          userType: 'individual' // Strictly forced
-        })
-      });
-      const data = await res.json();
+    // Clear forms
+    setIndividualForm({ name: '', email: '', password: '', id: '' });
+    setCompanyForm({ name: '', email: '', password: '', id: '', role: 'user' });
 
-      if (res.ok) {
-        if (data.requiresRegistration) {
-          // This case handles a new user who signed in via Google
-          // We might want to auto-login them if the bankend created the user.
-          // However, trusting the endpoint response:
-          if (data.success && data.user) {
-            localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
-            router.push('/dashboard');
-          } else {
-            // Fallback if backend asks for more info, but current backend creates user automatically.
-            // If we get here without user data, something is odd.
-            setError('Login successful but no user data returned.');
-          }
-        } else {
-          // Success login
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleForgotPassword = async () => {
+  clearMessages();
+  if (!forgotEmail) {
+    setError('Please enter your email');
+    return;
+  }
+  setLoading(true);
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'forgot_password',
+        email: forgotEmail
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setSuccessMessage(data.message);
+    } else {
+      setError(data.error || 'Request failed');
+    }
+  } catch (err) {
+    setError('Network error');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleResetPassword = async () => {
+  clearMessages();
+  if (!newPassword || newPassword.length < 8) {
+    setError('Password must be at least 8 characters');
+    return;
+  }
+  setLoading(true);
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'reset_password',
+        token: resetToken,
+        newPassword
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setSuccessMessage('Password reset successful! Please login.');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setIsResetMode(false);
+        setResetToken('');
+      }, 2000);
+    } else {
+      setError(data.error || 'Reset failed');
+    }
+  } catch (err) {
+    setError('Network error');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleGoogleSuccess = async (credentialResponse: any) => {
+  setLoading(true);
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'google_login',
+        idToken: credentialResponse.credential,
+        userType: 'individual' // Strictly forced
+      })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      if (data.requiresRegistration) {
+        // This case handles a new user who signed in via Google
+        // We might want to auto-login them if the bankend created the user.
+        // However, trusting the endpoint response:
+        if (data.success && data.user) {
           localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
           router.push('/dashboard');
+        } else {
+          // Fallback if backend asks for more info, but current backend creates user automatically.
+          // If we get here without user data, something is odd.
+          setError('Login successful but no user data returned.');
         }
       } else {
-        setError(data.error || 'Google Login failed');
+        // Success login
+        localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
+        router.push('/dashboard');
       }
-    } catch (err: any) {
-      setError('Network error: ' + err.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setError(data.error || 'Google Login failed');
     }
-  };
+  } catch (err: any) {
+    setError('Network error: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleVerifyTOTP = async () => {
-    // ... (Same as before, reusing logic)
-    setError('');
-    if (!totpInput || totpInput.length !== 6) { setError('Invalid code'); return; }
+const handleVerifyTOTP = async () => {
+  // ... (Same as before, reusing logic)
+  setError('');
+  if (!totpInput || totpInput.length !== 6) { setError('Invalid code'); return; }
 
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'verify_totp',
-          email: totpData?.email,
-          token: totpInput.trim()
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'verify_totp',
+        email: totpData?.email,
+        token: totpInput.trim()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
 
-      setSuccessMessage('Verification successful!');
-      localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
-      setTimeout(() => router.push('/dashboard'), 2000);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+    setSuccessMessage('Verification successful!');
+    localStorage.setItem('bosdb_current_user', JSON.stringify(data.user));
+    setTimeout(() => router.push('/dashboard'), 2000);
+  } catch (err: any) {
+    setError(err.message);
+  }
+};
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6 text-white font-sans">
+return (
+  <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6 text-white font-sans">
 
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+    {/* Background Decor */}
+    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+    </div>
+
+    <div className="max-w-md w-full relative z-10">
+      <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Home
+      </Link>
+
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold mb-2 tracking-tight">🗄️ BosDB</h1>
+        <p className="text-gray-400">Database Version Control System</p>
       </div>
 
-      <div className="max-w-md w-full relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Home
-        </Link>
-
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 tracking-tight">🗄️ BosDB</h1>
-          <p className="text-gray-400">Database Version Control System</p>
+      {/* --- NOTIFICATIONS --- */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-200 rounded-lg flex items-start gap-3 text-sm animate-fadeIn">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
         </div>
+      )}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-500/10 border border-green-500/50 text-green-200 rounded-lg flex items-start gap-3 text-sm animate-fadeIn">
+          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span>{successMessage}</span>
+        </div>
+      )}
 
-        {/* --- NOTIFICATIONS --- */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-200 rounded-lg flex items-start gap-3 text-sm animate-fadeIn">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/50 text-green-200 rounded-lg flex items-start gap-3 text-sm animate-fadeIn">
-            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{successMessage}</span>
-          </div>
-        )}
+      {/* --- MAIN CARD --- */}
+      <div className="bg-gray-800/80 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
 
-        {/* --- MAIN CARD --- */}
-        <div className="bg-gray-800/80 backdrop-blur-md border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+        {showTOTPVerify ? (
+          <div className="p-8">
+            <h2 className="text-2xl font-bold mb-4">🔐 2FA Verification</h2>
+            <p className="text-gray-400 text-sm mb-6">Scan QR code for <span className="text-purple-400">{totpData?.organizationName}</span></p>
 
-          {showTOTPVerify ? (
-            <div className="p-8">
-              <h2 className="text-2xl font-bold mb-4">🔐 2FA Verification</h2>
-              <p className="text-gray-400 text-sm mb-6">Scan QR code for <span className="text-purple-400">{totpData?.organizationName}</span></p>
-
-              {totpData && <div className="bg-white p-2 rounded-lg inline-block mb-6"><img src={totpData.qrCode} className="w-40 h-40" /></div>}
-              <div className="mb-6">
-                <input
-                  type="text"
-                  placeholder="000000"
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-center text-2xl tracking-widest text-white focus:border-purple-500 outline-none"
-                  maxLength={6}
-                  value={totpInput}
-                  onChange={e => setTotpInput(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-              <button onClick={handleVerifyTOTP} className="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-semibold transition">Verify</button>
-              <button onClick={() => setShowTOTPVerify(false)} className="w-full mt-3 text-gray-400 hover:text-white text-sm">Cancel</button>
+            {totpData && <div className="bg-white p-2 rounded-lg inline-block mb-6"><img src={totpData.qrCode} className="w-40 h-40" /></div>}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="000000"
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-center text-2xl tracking-widest text-white focus:border-purple-500 outline-none"
+                maxLength={6}
+                value={totpInput}
+                onChange={e => setTotpInput(e.target.value.replace(/\D/g, ''))}
+              />
             </div>
-          ) : showForgotPassword ? (
-            /* --- FORGOT PASSWORD MODAL CONTENT --- */
-            <div className="p-8">
-              <h2 className="text-2xl font-bold mb-2">
-                {isResetMode ? 'Reset Password' : 'Forgot Password'}
-              </h2>
-              <p className="text-gray-400 text-sm mb-6">
-                {isResetMode ? 'Enter your new password below.' : 'Enter your email to receive a reset link.'}
+            <button onClick={handleVerifyTOTP} className="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-semibold transition">Verify</button>
+            <button onClick={() => setShowTOTPVerify(false)} className="w-full mt-3 text-gray-400 hover:text-white text-sm">Cancel</button>
+          </div>
+        ) : showForgotPassword ? (
+          /* --- FORGOT PASSWORD MODAL CONTENT --- */
+          <div className="p-8">
+            <h2 className="text-2xl font-bold mb-2">
+              {isResetMode ? 'Reset Password' : 'Forgot Password'}
+            </h2>
+            <p className="text-gray-400 text-sm mb-6">
+              {isResetMode ? 'Enter your new password below.' : 'Enter your email to receive a reset link.'}
               </p>
 
               {isResetMode ? (
@@ -426,7 +474,7 @@ function LoginForm() {
                 Back to Login
               </button>
             </div>
-          ) : (
+            ) : (
             /* --- LOGIN / REGISTER TABS --- */
             <div>
               {/* Tab Switcher */}
@@ -628,18 +676,18 @@ function LoginForm() {
               </div>
             </div>
           )}
-        </div>
+          </div>
       </div>
     </div>
-  );
+    );
 }
 
-export default function LoginPage() {
+    export default function LoginPage() {
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'}>
       <LoginForm />
     </GoogleOAuthProvider>
-  );
+    );
 }
 
 

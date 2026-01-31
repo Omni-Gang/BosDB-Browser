@@ -1,0 +1,18 @@
+{
+  "changes": [
+    {
+      "type": "DATA",
+      "operation": "INSERT",
+      "target": "users",
+      "tableName": "users",
+      "description": "Insert 2 row(s) into users",
+      "query": "INSERT INTO users (name, email)\r\nVALUES\r\n('Rahul', 'rahul@example.com'),\r\n('Ankit', 'ankit@example.com')",
+      "affectedRows": 2,
+      "rollbackSQL": "MANUAL",
+      "status": "APPLIED",
+      "metadata": {},
+      "timestamp": "2026-01-02T18:27:50.418Z",
+      "id": "change-1767378470418-fkz766yg1"
+    }
+  ]
+}

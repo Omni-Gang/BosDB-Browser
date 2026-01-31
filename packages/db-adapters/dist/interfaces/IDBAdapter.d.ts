@@ -1,4 +1,5 @@
 import type { ConnectionConfig, ConnectionResult, TestResult, QueryRequest, QueryResult, ExplainResult, Schema, Table, TableMetadata, Index, DatabaseInfo } from '@bosdb/core';
+import type { Variable } from '@bosdb/debugger-core';
 /**
  * Core database adapter interface
  * All database-specific adapters must implement this interface
@@ -76,6 +77,7 @@ export interface IDBAdapter {
      */
     getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
     /**
+    /**
      * Get recent queries executed on the database
      * Used for external VCS tracking
      * @param connectionId Connection ID
@@ -87,6 +89,28 @@ export interface IDBAdapter {
         executionTime: Date;
         duration?: number;
     }[]>;
+    /**
+     * Get current variable values from the database session
+     * @param connectionId Connection ID
+     * @returns Array of variables
+     */
+    getVariables(connectionId: string): Promise<Variable[]>;
+    /**
+     * Start a transaction on a dedicated connection
+     * @param connectionId Base connection ID
+     * @returns New connection ID tied to the transaction
+     */
+    startTransaction(connectionId: string): Promise<string>;
+    /**
+     * Commit an active transaction
+     * @param transactionConnectionId Transactional connection ID
+     */
+    commitTransaction(transactionConnectionId: string): Promise<void>;
+    /**
+     * Rollback an active transaction
+     * @param transactionConnectionId Transactional connection ID
+     */
+    rollbackTransaction(transactionConnectionId: string): Promise<void>;
 }
 /**
  * Base adapter class with common functionality
@@ -104,11 +128,15 @@ export declare abstract class BaseDBAdapter implements IDBAdapter {
     abstract explainQuery(connectionId: string, query: string): Promise<ExplainResult>;
     abstract getVersion(connectionId: string): Promise<string>;
     abstract getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
-    abstract getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
+    getRecentQueries(_connectionId: string, _lastTimestamp: Date): Promise<{
         query: string;
         executionTime: Date;
         duration?: number;
     }[]>;
+    getVariables(_connectionId: string): Promise<Variable[]>;
+    startTransaction(_connectionId: string): Promise<string>;
+    commitTransaction(_transactionConnectionId: string): Promise<void>;
+    rollbackTransaction(_transactionConnectionId: string): Promise<void>;
     /**
      * Generate a unique connection ID
      */
