@@ -269,4 +269,58 @@ export class SQLServerAdapter extends BaseDBAdapter {
             currentUser: dbResult.recordset[0]?.user_name,
         };
     }
+
+    /**
+     * Fetch external DDL changes from ddl_audit_log table
+     * Returns all unprocessed audit log entries (to be deleted after VCS tracking)
+     */
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number; auditId?: number }[]> {
+        const pool = this.getConnection<any>(connectionId);
+
+        try {
+            console.log(`[SQLServerAdapter] Querying ddl_audit_log for external DDL changes...`);
+
+            const result = await pool.request().query(`
+                SELECT 
+                    id,
+                    event_time,
+                    ddl_command
+                FROM ddl_audit_log
+                ORDER BY event_time ASC
+            `);
+
+            console.log(`[SQLServerAdapter] Found ${result.recordset.length} DDL entries in audit log.`);
+
+            return result.recordset.map((row: any) => ({
+                query: row.ddl_command,
+                executionTime: row.event_time,
+                auditId: row.id
+            }));
+        } catch (error: any) {
+            console.warn('[SQLServerAdapter] Failed to fetch audit log:', error.message);
+            // If table doesn't exist, return empty
+            if (error.message && error.message.includes('Invalid object name')) {
+                console.warn('[SQLServerAdapter] ddl_audit_log table not found. External DDL tracking disabled.');
+                return [];
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Delete processed audit log entries after successful VCS tracking
+     */
+    async deleteAuditLogEntries(connectionId: string, auditIds: number[]): Promise<void> {
+        const pool = this.getConnection<any>(connectionId);
+
+        if (auditIds.length === 0) return;
+
+        const idsStr = auditIds.join(',');
+        await pool.request().query(`
+            DELETE FROM ddl_audit_log 
+            WHERE id IN (${idsStr})
+        `);
+
+        console.log(`[SQLServerAdapter] Deleted ${auditIds.length} audit log entries.`);
+    }
 }

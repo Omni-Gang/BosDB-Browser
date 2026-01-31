@@ -357,6 +357,10 @@ class MongoDBAdapter extends IDBAdapter_1.BaseDBAdapter {
             return Array.from(types)[0];
         return 'mixed';
     }
+    async getRecentQueries(connectionId, lastTimestamp) {
+        // External query tracking not yet implemented for MongoDB
+        return [];
+    }
 }
 exports.MongoDBAdapter = MongoDBAdapter;
 //# sourceMappingURL=MongoDBAdapter.js.map

@@ -323,4 +323,9 @@ export class RedisAdapter extends BaseDBAdapter {
             throw new Error(`Failed to get database info: ${error.message}`);
         }
     }
+
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
+        // External query tracking not yet implemented for Redis
+        return [];
+    }
 }

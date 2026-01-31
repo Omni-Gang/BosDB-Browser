@@ -387,7 +387,37 @@ function QueryPageContent() {
         return headers;
     };
 
+    const syncExternalChanges = async () => {
+        if (!connectionId) return;
+        try {
+            const res = await fetch('/api/vcs/sync', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ connectionId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (data.trackedCount > 0) {
+                    toast.success(`Synced ${data.trackedCount} external changes`);
+                    await loadPendingChanges(); // Refresh badge
+                } else {
+                    toast.info('No new external changes found');
+                }
+            } else {
+                if (data.message && data.message.includes('not supported')) {
+                    toast.error('External tracking not supported for this database');
+                } else {
+                    toast.error(data.error || 'Failed to sync changes');
+                }
+            }
+        } catch (error) {
+            console.error('Sync failed', error);
+            toast.error('Sync failed');
+        }
+    };
+
     const handleRefresh = async () => {
+
         setSchemas([]);
         setSchemaTables(new Map());
         setSchemaProcedures(new Map());
@@ -1371,6 +1401,15 @@ function QueryPageContent() {
                         </button>
 
 
+
+                        <button
+                            className="px-3 py-2 border border-border rounded-lg hover:bg-accent transition flex items-center gap-2"
+                            onClick={syncExternalChanges}
+                            title="Sync changes made by external tools"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            Sync External
+                        </button>
 
                         <Link
                             href={`/version-control?connection=${connectionId}`}

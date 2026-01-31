@@ -115,10 +115,10 @@ export async function clearPendingChanges(connectionId: string): Promise<void> {
  */
 export async function removePendingChanges(connectionId: string, changeIds: string[]): Promise<void> {
     let current = await getPendingChangesFromStorage(connectionId);
-    
+
     // Filter out the committed changes
     current = current.filter(c => !changeIds.includes(c.id || ''));
-    
+
     inMemoryPendingChanges.set(connectionId, current);
 
     // Persist to file system in local dev
@@ -314,10 +314,30 @@ export async function switchBranch(connectionId: string, branchName: string): Pr
     }
 }
 
-/**
- * Get commit by ID
- */
 export async function getCommitById(connectionId: string, commitId: string): Promise<VCSCommit | null> {
     const commits = await getCommits(connectionId);
     return commits.find(c => c.id === commitId) || null;
+}
+
+// In-memory sync timestamp storage
+const inMemoryLastSync = new Map<string, string>();
+
+/**
+ * Get the last sync timestamp for a connection
+ */
+export async function getLastSyncTimestamp(connectionId: string): Promise<Date> {
+    const ts = inMemoryLastSync.get(connectionId);
+    if (ts) return new Date(ts);
+
+    // Default to 1 hour ago if no sync record exists, to avoid fetching too much history initially
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    return oneHourAgo;
+}
+
+/**
+ * Update the last sync timestamp for a connection
+ */
+export async function setLastSyncTimestamp(connectionId: string, date: Date): Promise<void> {
+    inMemoryLastSync.set(connectionId, date.toISOString());
 }

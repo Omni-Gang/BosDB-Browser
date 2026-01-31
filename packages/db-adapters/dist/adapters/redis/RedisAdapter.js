@@ -283,6 +283,10 @@ class RedisAdapter extends IDBAdapter_1.BaseDBAdapter {
             throw new Error(`Failed to get database info: ${error.message}`);
         }
     }
+    async getRecentQueries(connectionId, lastTimestamp) {
+        // External query tracking not yet implemented for Redis
+        return [];
+    }
 }
 exports.RedisAdapter = RedisAdapter;
 //# sourceMappingURL=RedisAdapter.js.map

@@ -98,6 +98,16 @@ export interface IDBAdapter {
      * @returns Database info
      */
     getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
+
+    /**
+     * Get recent queries executed on the database
+     * Used for external VCS tracking
+     * @param connectionId Connection ID
+     * @param lastTimestamp Only return queries after this timestamp
+     * @returns Array of query logs
+     */
+    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]>;
+
 }
 
 /**
@@ -121,6 +131,8 @@ export abstract class BaseDBAdapter implements IDBAdapter {
     abstract explainQuery(connectionId: string, query: string): Promise<ExplainResult>;
     abstract getVersion(connectionId: string): Promise<string>;
     abstract getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
+    abstract getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]>;
+
 
     /**
      * Generate a unique connection ID
