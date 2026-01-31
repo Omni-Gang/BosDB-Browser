@@ -19,5 +19,10 @@ export declare class RedisAdapter extends BaseDBAdapter {
     explainQuery(_connectionId: string, _query: string): Promise<ExplainResult>;
     getVersion(connectionId: string): Promise<string>;
     getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
+    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
+        query: string;
+        executionTime: Date;
+        duration?: number;
+    }[]>;
 }
 //# sourceMappingURL=RedisAdapter.d.ts.map

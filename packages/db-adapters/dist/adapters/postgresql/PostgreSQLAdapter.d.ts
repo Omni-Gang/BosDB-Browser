@@ -20,5 +20,10 @@ export declare class PostgreSQLAdapter extends BaseDBAdapter {
     private getColumns;
     private getForeignKeys;
     private mapDataType;
+    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
+        query: string;
+        executionTime: Date;
+        duration?: number;
+    }[]>;
 }
 //# sourceMappingURL=PostgreSQLAdapter.d.ts.map

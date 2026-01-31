@@ -213,7 +213,13 @@ export class ElasticsearchAdapter extends BaseDBAdapter {
 
         return {
             version: info.version?.number || 'Unknown',
-            serverVersion: info.version?.build_hash,
+            serverVersion: info.version?.number || 'Unknown',
+            currentDatabase: 'elasticsearch',
         };
+    }
+
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
+        // External query tracking not yet implemented for Elasticsearch
+        return [];
     }
 }

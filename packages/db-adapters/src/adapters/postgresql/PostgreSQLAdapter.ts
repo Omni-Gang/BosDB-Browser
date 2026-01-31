@@ -525,4 +525,9 @@ export class PostgreSQLAdapter extends BaseDBAdapter {
 
         return typeMap[oid] || 'unknown';
     }
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
+        // Postgres requires 'pg_stat_statements' extension for query history
+        // For now, we return empty to avoid errors if extension is missing
+        return [];
+    }
 }

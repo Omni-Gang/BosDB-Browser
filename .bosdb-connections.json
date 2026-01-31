@@ -194,5 +194,19 @@
     "organizationId": "ind-goandbuyeasy77",
     "createdAt": "2026-01-17T18:18:27.595Z",
     "ssl": true
+  },
+  "conn_1769880600690_hxvct8ons": {
+    "id": "conn_1769880600690_hxvct8ons",
+    "name": "TEST",
+    "type": "mssql",
+    "host": "localhost",
+    "port": 1433,
+    "database": "master",
+    "credentials": "FcN1QlBlR4kUH0sWeaAHA1RjpZ6mBw3wiEt/Rmb1H2CYmlILMwwE/FalkL3Gil6KoFpYoPKY9XGSG/1tZXcqTGIcTGnXPo4XXsaMjUWS",
+    "readOnly": false,
+    "userEmail": "testy@gmail.com",
+    "organizationId": "ind-testy",
+    "createdAt": "2026-01-31T17:30:00.690Z",
+    "isProvisioned": false
   }
 }

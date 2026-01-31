@@ -79,6 +79,12 @@ export function sanitizeHost(host: string, port: number): string {
         console.warn(`[CloudProvisioner] Detected misconfigured localhost for port ${port}. Forcing host to ${RAILWAY_PORT_MAP[port]}`);
         return RAILWAY_PORT_MAP[port];
     }
+
+    // Fix for local Windows SQL Server using "(local)" alias
+    if (host === '(local)') {
+        console.log(`[CloudProvisioner] Sanitizing host: (local) -> localhost`);
+        return 'localhost';
+    }
     console.log(`[CloudProvisioner] Sanitizing host: ${host} -> ${host} (Port: ${port})`);
     return host;
 }

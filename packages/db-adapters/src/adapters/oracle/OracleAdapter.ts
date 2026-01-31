@@ -206,14 +206,18 @@ export class OracleAdapter extends BaseDBAdapter {
     async getDatabaseInfo(connectionId: string): Promise<DatabaseInfo> {
         const connection = this.getConnection<any>(connectionId);
 
-        const versionResult = await connection.execute('SELECT * FROM V$VERSION WHERE BANNER LIKE \'Oracle%\'');
-        const userResult = await connection.execute('SELECT SYS_CONTEXT(\'USERENV\', \'CURRENT_USER\') FROM DUAL');
-        const dbResult = await connection.execute('SELECT SYS_CONTEXT(\'USERENV\', \'DB_NAME\') FROM DUAL');
+        const result = await connection.execute('SELECT * FROM v$version WHERE banner LIKE \'Oracle%\'');
+        const userResult = await connection.execute('SELECT USER FROM dual');
 
         return {
-            version: (versionResult.rows as any[])?.[0]?.[0] || 'Oracle Database',
-            currentDatabase: (dbResult.rows as any[])?.[0]?.[0],
-            currentUser: (userResult.rows as any[])?.[0]?.[0],
+            version: result.rows?.[0]?.[0] || 'Oracle',
+            serverVersion: result.rows?.[0]?.[0] || 'Oracle',
+            currentUser: userResult.rows?.[0]?.[0],
         };
+    }
+
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
+        // External query tracking not yet implemented for Oracle
+        return [];
     }
 }

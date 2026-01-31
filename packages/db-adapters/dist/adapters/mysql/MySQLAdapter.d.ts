@@ -17,6 +17,11 @@ export declare class MySQLAdapter extends BaseDBAdapter {
     explainQuery(connectionId: string, query: string): Promise<ExplainResult>;
     getVersion(connectionId: string): Promise<string>;
     getDatabaseInfo(connectionId: string): Promise<DatabaseInfo>;
+    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
+        query: string;
+        executionTime: Date;
+        duration?: number;
+    }[]>;
     private mapMySQLType;
 }
 //# sourceMappingURL=MySQLAdapter.d.ts.map

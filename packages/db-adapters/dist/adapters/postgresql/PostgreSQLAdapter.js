@@ -443,6 +443,11 @@ class PostgreSQLAdapter extends IDBAdapter_1.BaseDBAdapter {
         };
         return typeMap[oid] || 'unknown';
     }
+    async getRecentQueries(connectionId, lastTimestamp) {
+        // Postgres requires 'pg_stat_statements' extension for query history
+        // For now, we return empty to avoid errors if extension is missing
+        return [];
+    }
 }
 exports.PostgreSQLAdapter = PostgreSQLAdapter;
 //# sourceMappingURL=PostgreSQLAdapter.js.map

@@ -191,12 +191,17 @@ export class CassandraAdapter extends BaseDBAdapter {
 
     async getDatabaseInfo(connectionId: string): Promise<DatabaseInfo> {
         const client = this.getConnection<any>(connectionId);
-
-        const result = await client.execute('SELECT cluster_name, release_version FROM system.local');
+        const result = await client.execute('SELECT release_version FROM system.local');
 
         return {
-            version: result.rows[0]?.release_version || 'Cassandra',
+            version: result.rows[0]?.release_version || 'Unknown',
+            serverVersion: result.rows[0]?.release_version || 'Unknown',
             currentDatabase: client.keyspace,
         };
+    }
+
+    async getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{ query: string; executionTime: Date; duration?: number }[]> {
+        // External query tracking not yet implemented for Cassandra
+        return [];
     }
 }

@@ -350,6 +350,10 @@ class MySQLAdapter extends IDBAdapter_1.BaseDBAdapter {
             throw new Error(`Failed to get database info: ${error.message}`);
         }
     }
+    async getRecentQueries(connectionId, lastTimestamp) {
+        // External query tracking not yet implemented for MySQL
+        return [];
+    }
     mapMySQLType(type) {
         // MySQL field type constants
         const types = {

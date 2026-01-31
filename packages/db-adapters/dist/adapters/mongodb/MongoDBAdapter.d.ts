@@ -28,5 +28,10 @@ export declare class MongoDBAdapter extends BaseDBAdapter {
      * Infer MongoDB field type from sample documents
      */
     private inferMongoType;
+    getRecentQueries(connectionId: string, lastTimestamp: Date): Promise<{
+        query: string;
+        executionTime: Date;
+        duration?: number;
+    }[]>;
 }
 //# sourceMappingURL=MongoDBAdapter.d.ts.map
